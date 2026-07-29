@@ -67,9 +67,7 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
         );
     }
 
-    pub fn update(&mut self, coords: Coords, data: Data)
-    where
-        Data: std::fmt::Debug,
+    pub fn update(&mut self, coords: Coords, data: Option<Data>)
     {
         let morton_code: Morton = coords.into();
 
@@ -92,22 +90,26 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
                 data: ref leaf_data,
             } = self.nodes[current_index]
             {
+                if data == *leaf_data {
+                    return;
+                }
+
                 let children_index = self.nodes().len();
-                let data = leaf_data.clone();
+                let leaf_data = leaf_data.clone();
 
                 self.nodes[current_index] = Node::Branch { children_index };
 
                 for _ in 0..7 {
-                    self.nodes.push(Node::leaf(data.clone()));
+                    self.nodes.push(Node::leaf(leaf_data.clone()));
                 }
-                self.nodes.push(Node::leaf(data));
+                self.nodes.push(Node::leaf(leaf_data));
             };
 
             if let Node::Branch { children_index } = self.nodes[current_index] {
                 let target = children_index + octant;
 
                 if depth == TREE_DEPTH - 1 {
-                    self.nodes[target] = Node::leaf(Some(data));
+                    self.nodes[target] = Node::leaf(data);
                     return;
                 }
 
