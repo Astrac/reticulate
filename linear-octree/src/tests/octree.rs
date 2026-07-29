@@ -25,10 +25,7 @@ fn log_octree<Data: std::fmt::Debug + Clone + PartialEq>(octree: &Octree<Data>, 
 
     for (idx, n) in octree.nodes().iter().enumerate() {
         match n {
-            Node::Branch {
-                children_index,
-                children_mask: _,
-            } => {
+            Node::Branch { children_index } => {
                 tokens.push(format!("\t{idx:0>8}: Branch: {children_index}"));
             }
             Node::Leaf { data } => {

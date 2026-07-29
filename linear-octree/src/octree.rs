@@ -39,10 +39,7 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
             );
 
             match &self.nodes[current_index] {
-                Node::Branch {
-                    children_index,
-                    children_mask: _,
-                } => {
+                Node::Branch { children_index } => {
                     let target = children_index + octant;
 
                     if depth == TREE_DEPTH - 1 {
@@ -91,38 +88,32 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
                 self.nodes[current_index]
             );
 
+            if let Node::Leaf {
+                data: ref leaf_data,
+            } = self.nodes[current_index]
             {
-                if let Node::Leaf { data: leaf_data } = &self.nodes[current_index] {
-                    let children_index = self.nodes().len();
-                    let children_mask = if leaf_data.is_none() { 0x00 } else { 0xFF };
-                    let data = leaf_data.clone();
+                let children_index = self.nodes().len();
+                let data = leaf_data.clone();
 
-                    self.nodes[current_index] = Node::Branch {
-                        children_index,
-                        children_mask,
-                    };
+                self.nodes[current_index] = Node::Branch { children_index };
 
-                    for _ in 0..7 {
-                        self.nodes.push(Node::leaf(data.clone()));
-                    }
-                    self.nodes.push(Node::leaf(data));
-                };
-
-                if let Node::Branch {
-                    children_index,
-                    children_mask: _,
-                } = self.nodes[current_index]
-                {
-                    if depth == TREE_DEPTH - 1 {
-                        let target = children_index + octant;
-                        self.nodes[target] = Node::leaf(Some(data));
-                        return;
-                    }
-
-                    current_index = children_index + octant;
-                } else {
-                    panic!("Unexpected: Leaf should have been overwritten at this point")
+                for _ in 0..7 {
+                    self.nodes.push(Node::leaf(data.clone()));
                 }
+                self.nodes.push(Node::leaf(data));
+            };
+
+            if let Node::Branch { children_index } = self.nodes[current_index] {
+                let target = children_index + octant;
+
+                if depth == TREE_DEPTH - 1 {
+                    self.nodes[target] = Node::leaf(Some(data));
+                    return;
+                }
+
+                current_index = target;
+            } else {
+                panic!("Unexpected: Leaf should have been overwritten at this point")
             }
         }
 
@@ -135,13 +126,8 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
 
 #[derive(Clone, Debug)]
 pub enum Node<Data> {
-    Branch {
-        children_index: usize,
-        children_mask: u8, // TODO: Properly implement
-    },
-    Leaf {
-        data: Option<Data>,
-    },
+    Branch { children_index: usize },
+    Leaf { data: Option<Data> },
 }
 
 impl<Data> Node<Data> {
