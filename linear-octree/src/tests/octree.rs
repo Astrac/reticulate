@@ -1,4 +1,4 @@
-use crate::{Coords, Octree, octree::Node};
+use crate::{Coords, Octree, octree::OctreeNode};
 
 use spdlog::{Level, LevelFilter};
 
@@ -25,10 +25,10 @@ fn log_octree<Data: std::fmt::Debug + Clone + PartialEq>(octree: &Octree<Data>, 
 
     for (idx, n) in octree.nodes().iter().enumerate() {
         match n {
-            Node::Branch { children_index } => {
+            OctreeNode::Branch { children_index } => {
                 tokens.push(format!("\t{idx:0>8}: Branch: {children_index}"));
             }
-            Node::Leaf { data } => {
+            OctreeNode::Leaf { data } => {
                 tokens.push(format!("\t{idx:0>8}: Leaf: {data:?}"));
             }
         }

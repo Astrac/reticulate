@@ -25,6 +25,12 @@ impl From<Coords> for Morton {
     }
 }
 
+impl From<u32> for Morton {
+    fn from(value: u32) -> Self {
+        Morton(value)
+    }
+}
+
 // N             = 0000000000a00b00c00d00e00f00g00h
 // MASK          = 00000000001001001001001001001001
 // N | (N >> 2)  = 0000000000a0ab0bc0cd0de0ef0fg0gh

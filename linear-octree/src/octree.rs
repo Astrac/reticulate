@@ -2,7 +2,7 @@ use crate::{Coords, Morton};
 
 #[derive(Clone, Debug)]
 pub struct Octree<Data> {
-    nodes: Vec<Node<Data>>,
+    nodes: Vec<OctreeNode<Data>>,
 }
 
 // TODO: This should somehow be reflected in Coords (validations/assertions/warnings?)
@@ -12,11 +12,11 @@ const TREE_DEPTH: u8 = 6;
 impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
     pub fn new() -> Octree<Data> {
         Octree {
-            nodes: vec![Node::leaf(None)],
+            nodes: vec![OctreeNode::leaf(None)],
         }
     }
 
-    pub fn nodes(&self) -> &[Node<Data>] {
+    pub fn nodes(&self) -> &[OctreeNode<Data>] {
         &self.nodes
     }
 
@@ -39,11 +39,11 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
             );
 
             match &self.nodes[current_index] {
-                Node::Branch { children_index } => {
+                OctreeNode::Branch { children_index } => {
                     let target = children_index + octant;
 
                     if depth == TREE_DEPTH - 1 {
-                        if let Node::Leaf { data } = &self.nodes[target] {
+                        if let OctreeNode::Leaf { data } = &self.nodes[target] {
                             return data.as_ref();
                         } else {
                             panic!(
@@ -55,7 +55,7 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
 
                     current_index = *children_index + octant;
                 }
-                Node::Leaf { data } => {
+                OctreeNode::Leaf { data } => {
                     return data.as_ref();
                 }
             };
@@ -67,8 +67,7 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
         );
     }
 
-    pub fn update(&mut self, coords: Coords, data: Option<Data>)
-    {
+    pub fn update(&mut self, coords: Coords, data: Option<Data>) {
         let morton_code: Morton = coords.into();
 
         log::debug!(
@@ -86,7 +85,7 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
                 self.nodes[current_index]
             );
 
-            if let Node::Leaf {
+            if let OctreeNode::Leaf {
                 data: ref leaf_data,
             } = self.nodes[current_index]
             {
@@ -97,19 +96,19 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
                 let children_index = self.nodes().len();
                 let leaf_data = leaf_data.clone();
 
-                self.nodes[current_index] = Node::Branch { children_index };
+                self.nodes[current_index] = OctreeNode::Branch { children_index };
 
                 for _ in 0..7 {
-                    self.nodes.push(Node::leaf(leaf_data.clone()));
+                    self.nodes.push(OctreeNode::leaf(leaf_data.clone()));
                 }
-                self.nodes.push(Node::leaf(leaf_data));
+                self.nodes.push(OctreeNode::leaf(leaf_data));
             };
 
-            if let Node::Branch { children_index } = self.nodes[current_index] {
+            if let OctreeNode::Branch { children_index } = self.nodes[current_index] {
                 let target = children_index + octant;
 
                 if depth == TREE_DEPTH - 1 {
-                    self.nodes[target] = Node::leaf(data);
+                    self.nodes[target] = OctreeNode::leaf(data);
                     return;
                 }
 
@@ -127,13 +126,13 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
 }
 
 #[derive(Clone, Debug)]
-pub enum Node<Data> {
+pub enum OctreeNode<Data> {
     Branch { children_index: usize },
     Leaf { data: Option<Data> },
 }
 
-impl<Data> Node<Data> {
-    fn leaf(data: Option<Data>) -> Node<Data> {
-        Node::Leaf { data }
+impl<Data> OctreeNode<Data> {
+    fn leaf(data: Option<Data>) -> OctreeNode<Data> {
+        OctreeNode::Leaf { data }
     }
 }
