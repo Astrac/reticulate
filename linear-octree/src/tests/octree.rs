@@ -1,9 +1,9 @@
-use crate::{Coords, Octree};
+use crate::{Coords, Fixed8Octree};
 
 #[test]
 fn test_new_creates_empty_octree() {
     super::init_logging();
-    let octree: Octree<i32> = Octree::new();
+    let octree: Fixed8Octree<i32> = Fixed8Octree::new();
     let coords = Coords { x: 0, y: 0, z: 0 };
     assert!(octree.get(coords).is_none());
 }
@@ -11,7 +11,7 @@ fn test_new_creates_empty_octree() {
 #[test]
 fn test_update_and_get_basic() {
     super::init_logging();
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
     let coords = Coords {
         x: 10,
         y: 20,
@@ -28,7 +28,7 @@ fn test_update_and_get_basic() {
 #[test]
 fn test_update_overwrites_existing_data() {
     super::init_logging();
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
     let coords = Coords { x: 5, y: 5, z: 5 };
 
     // Updated: Wrap data in Some
@@ -43,7 +43,7 @@ fn test_update_overwrites_existing_data() {
 #[test]
 fn test_remove_existing_data() {
     super::init_logging();
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
     let coords = Coords {
         x: 10,
         y: 20,
@@ -62,7 +62,7 @@ fn test_remove_existing_data() {
 #[test]
 fn test_remove_non_existent_data() {
     super::init_logging();
-    let mut octree = Octree::<u32>::new();
+    let mut octree = Fixed8Octree::<u32>::new();
     let coords = Coords {
         x: 10,
         y: 20,
@@ -77,7 +77,7 @@ fn test_remove_non_existent_data() {
 #[test]
 fn test_remove_and_reinsert() {
     super::init_logging();
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
     let coords = Coords { x: 5, y: 5, z: 5 };
 
     // Insert initial data
@@ -96,7 +96,7 @@ fn test_remove_and_reinsert() {
 #[test]
 fn test_distinct_coordinates_are_independent() {
     super::init_logging();
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
 
     let c1 = Coords { x: 0, y: 0, z: 0 };
     let c2 = Coords { x: 1, y: 1, z: 1 };
@@ -113,7 +113,7 @@ fn test_distinct_coordinates_are_independent() {
 #[test]
 fn test_boundary_coordinates() {
     super::init_logging();
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
 
     let min_coords = Coords { x: 0, y: 0, z: 0 };
     // Updated: Wrap data in Some
@@ -139,7 +139,7 @@ fn test_generic_data_types() {
         val: u32,
     }
 
-    let mut octree: Octree<CustomData> = Octree::new();
+    let mut octree: Fixed8Octree<CustomData> = Fixed8Octree::new();
     let coords = Coords {
         x: 100,
         y: 100,

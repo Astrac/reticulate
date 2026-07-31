@@ -1,10 +1,11 @@
+mod compact;
 mod block_faces;
 mod morton;
 mod octree;
 
 use spdlog::{Level, LevelFilter};
 
-use crate::{Octree, octree::OctreeNode};
+use crate::{Fixed8Octree, octree::Fixed8OctreeNode};
 
 // TODO: Check if simpler using env_logger or anythign else; avoid multiple inits
 pub fn init_logging() {
@@ -24,15 +25,15 @@ pub fn init_logging() {
 }
 
 #[allow(dead_code)]
-pub fn log_octree<Data: std::fmt::Debug + Clone + PartialEq>(octree: &Octree<Data>, message: &str) {
+pub fn log_octree<Data: std::fmt::Debug + Clone + PartialEq>(octree: &Fixed8Octree<Data>, message: &str) {
     let mut tokens = Vec::with_capacity(octree.nodes().len());
 
     for (idx, n) in octree.nodes().iter().enumerate() {
         match n {
-            OctreeNode::Branch { children_index } => {
+            Fixed8OctreeNode::Branch { children_index } => {
                 tokens.push(format!("\t{idx:0>8}: Branch: {children_index}"));
             }
-            OctreeNode::Leaf { data } => {
+            Fixed8OctreeNode::Leaf { data } => {
                 tokens.push(format!("\t{idx:0>8}: Leaf: {data:?}"));
             }
         }

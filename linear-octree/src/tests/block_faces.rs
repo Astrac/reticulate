@@ -1,4 +1,4 @@
-use crate::{BlockFaces, Coords, Octree, block_faces::*, tests::init_logging};
+use crate::{BlockFaces, Coords, Fixed8Octree, block_faces::*, tests::init_logging};
 
 pub const ALL_FACES: u8 = 0b00111111;
 
@@ -8,14 +8,14 @@ fn has_face(face: &BlockFaces, mask: u8) -> bool {
 
 #[test]
 fn test_empty_octree_returns_empty_vec() {
-    let octree = Octree::new();
+    let octree = Fixed8Octree::new();
     let faces = BlockFaces::from_octree(&octree, 0);
     assert!(faces.is_empty(), "Empty octree should yield no faces");
 }
 
 #[test]
 fn test_single_block_exposes_all_faces() {
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
     octree.update(
         Coords {
             x: 50,
@@ -45,7 +45,7 @@ fn test_single_block_exposes_all_faces() {
 
 #[test]
 fn test_adjacent_blocks_hide_shared_face_x_axis() {
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
     octree.update(
         Coords {
             x: 10,
@@ -84,7 +84,7 @@ fn test_adjacent_blocks_hide_shared_face_x_axis() {
 
 #[test]
 fn test_adjacent_blocks_hide_shared_face_y_axis() {
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
     octree.update(
         Coords {
             x: 10,
@@ -119,7 +119,7 @@ fn test_adjacent_blocks_hide_shared_face_y_axis() {
 
 #[test]
 fn test_adjacent_blocks_hide_shared_face_z_axis() {
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
     octree.update(
         Coords {
             x: 10,
@@ -154,7 +154,7 @@ fn test_adjacent_blocks_hide_shared_face_z_axis() {
 
 #[test]
 fn test_boundary_blocks_expose_outer_faces() {
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
     octree.update(Coords { x: 0, y: 0, z: 0 }, Some(()));
 
     let faces = BlockFaces::from_octree(&octree, 0);
@@ -171,7 +171,7 @@ fn test_boundary_blocks_expose_outer_faces() {
 
 #[test]
 fn test_removing_block_updates_faces() {
-    let mut octree = Octree::new();
+    let mut octree = Fixed8Octree::new();
     octree.update(
         Coords {
             x: 10,
@@ -214,7 +214,7 @@ fn test_removing_block_updates_faces() {
 
 #[test]
 fn test_hollow_chunk_exposes_inner_and_outer_surfaces() {
-    let mut octree: Octree<()> = Octree::new();
+    let mut octree: Fixed8Octree<()> = Fixed8Octree::new();
 
     // Build a 3x3x3 hollow shell from (10,10,10) to (12,12,12)
     // The center at (11,11,11) remains empty.
@@ -378,7 +378,7 @@ fn test_hollow_chunk_exposes_inner_and_outer_surfaces() {
 #[test]
 fn test_from_octree_3x3x3_cube() {
     init_logging();
-    let mut octree = Octree::<()>::new();
+    let mut octree = Fixed8Octree::<()>::new();
 
     // Populate a solid 3x3x3 block starting at (0, 0, 0)
     for x in 0..3 {
@@ -459,7 +459,7 @@ fn test_from_octree_3x3x3_cube() {
 #[test]
 fn test_from_octree_2x2x2_cube() {
     init_logging();
-    let mut octree = Octree::<()>::new();
+    let mut octree = Fixed8Octree::<()>::new();
     let start_x = 0;
     let start_y = 0;
     let start_z = 0;

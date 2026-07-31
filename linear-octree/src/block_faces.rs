@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
-use crate::octree::OctreeNode;
-use crate::{Coords, Morton, Octree};
+use crate::octree::Fixed8OctreeNode;
+use crate::{Coords, Morton, Fixed8Octree};
 
 pub const FACE_RIGHT: u8 = 0b00000001; // +X
 pub const FACE_LEFT: u8 = 0b00000010; // -X
@@ -57,7 +57,7 @@ impl Debug for BlockFaces {
 }
 
 impl BlockFaces {
-    pub fn from_octree(octree: &Octree<()>, root_node_index: usize) -> Vec<BlockFaces> {
+    pub fn from_octree(octree: &Fixed8Octree<()>, root_node_index: usize) -> Vec<BlockFaces> {
         let octree_nodes = octree.nodes();
         let mut traversal_stack: Vec<OctreeBlockFaces> = Vec::new();
         let mut pending_stack: Vec<OctreeBlockFaces> = Vec::new();
@@ -77,7 +77,7 @@ impl BlockFaces {
 
                 // Check cross-boundaries against anything already waiting in the pending buffer
                 for pending in pending_stack.iter_mut() {
-                    if let TouchingFace::Match(face_a, face_b) =
+                    if let TouchingFace::Match(face_a, _) =
                         check_neighborhood(&current_block, pending)
                     {
                         if is_block_solid(pending, octree_nodes, root_node_index) {
@@ -123,17 +123,17 @@ impl BlockFaces {
     }
 }
 
-fn requires_deeper_detail(block: &OctreeBlockFaces, octree_nodes: &[OctreeNode<()>]) -> bool {
+fn requires_deeper_detail(block: &OctreeBlockFaces, octree_nodes: &[Fixed8OctreeNode<()>]) -> bool {
     matches!(
         &octree_nodes[block.node_array_index],
-        OctreeNode::Branch { .. }
+        Fixed8OctreeNode::Branch { .. }
     )
 }
 
 // Verifies if a terminal leaf block is filled geometry or air space
 fn is_block_solid(
     block: &OctreeBlockFaces,
-    octree_nodes: &[OctreeNode<()>],
+    octree_nodes: &[Fixed8OctreeNode<()>],
     root_index: usize,
 ) -> bool {
     let mut current_idx = root_index;
@@ -143,29 +143,29 @@ fn is_block_solid(
         let child_octant = ((block.morton.as_u32() >> shift) & 0b111) as usize;
 
         match &octree_nodes[current_idx] {
-            OctreeNode::Branch { children_index } => {
+            Fixed8OctreeNode::Branch { children_index } => {
                 current_idx = (*children_index as usize) + child_octant;
             }
-            OctreeNode::Leaf { data } => return data.is_some(),
+            Fixed8OctreeNode::Leaf { data } => return data.is_some(),
         }
     }
 
     matches!(
         &octree_nodes[current_idx],
-        OctreeNode::Leaf { data: Some(_) }
+        Fixed8OctreeNode::Leaf { data: Some(_) }
     )
 }
 
 fn generate_children(
     parent: &OctreeBlockFaces,
-    octree_nodes: &[OctreeNode<()>],
+    octree_nodes: &[Fixed8OctreeNode<()>],
 ) -> [OctreeBlockFaces; 8] {
     let next_depth = parent.depth + 1;
     let base_morton = parent.morton.as_u32() << 3;
 
     // Fetch the pointer where the 8 sibling chunks live in the array
     let children_start = match &octree_nodes[parent.node_array_index] {
-        OctreeNode::Branch { children_index } => *children_index as usize,
+        Fixed8OctreeNode::Branch { children_index } => *children_index as usize,
         _ => unreachable!("generate_children was called on a terminal leaf node"),
     };
 
@@ -190,7 +190,7 @@ fn generate_children(
         let sibling_x = octant ^ 1;
         if matches!(
             &octree_nodes[children_start + sibling_x as usize],
-            OctreeNode::Leaf { data: Some(..) }
+            Fixed8OctreeNode::Leaf { data: Some(..) }
         ) {
             mask &= if is_right { !FACE_LEFT } else { !FACE_RIGHT };
         }
@@ -199,7 +199,7 @@ fn generate_children(
         let sibling_y = octant ^ 2;
         if matches!(
             &octree_nodes[children_start + sibling_y as usize],
-            OctreeNode::Leaf { data: Some(..) }
+            Fixed8OctreeNode::Leaf { data: Some(..) }
         ) {
             mask &= if is_top { !FACE_BOTTOM } else { !FACE_TOP };
         }
@@ -208,7 +208,7 @@ fn generate_children(
         let sibling_z = octant ^ 4;
         if matches!(
             &octree_nodes[children_start + sibling_z as usize],
-            OctreeNode::Leaf { data: Some(..) }
+            Fixed8OctreeNode::Leaf { data: Some(..) }
         ) {
             mask &= if is_front { !FACE_BACK } else { !FACE_FRONT };
         }
@@ -246,6 +246,7 @@ fn generate_children(
     children
 }
 
+#[allow(unused)]
 enum TouchingFace {
     Match(u8, u8), // (Face mask flag for block A, Face mask flag for block B)
     None,

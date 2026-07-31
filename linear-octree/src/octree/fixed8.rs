@@ -1,22 +1,22 @@
 use crate::{Coords, Morton};
 
 #[derive(Clone, Debug)]
-pub struct Octree<Data> {
-    nodes: Vec<OctreeNode<Data>>,
+pub struct Fixed8Octree<Data> {
+    pub nodes: Vec<Fixed8OctreeNode<Data>>,
 }
 
 // TODO: This should somehow be reflected in Coords (validations/assertions/warnings?)
 const TREE_DEPTH: u8 = 6;
 
 // TODO: Drop Debug for Data
-impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
-    pub fn new() -> Octree<Data> {
-        Octree {
-            nodes: vec![OctreeNode::leaf(None)],
+impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
+    pub fn new() -> Fixed8Octree<Data> {
+        Fixed8Octree {
+            nodes: vec![Fixed8OctreeNode::leaf(None)],
         }
     }
 
-    pub fn nodes(&self) -> &[OctreeNode<Data>] {
+    pub fn nodes(&self) -> &[Fixed8OctreeNode<Data>] {
         &self.nodes
     }
 
@@ -39,11 +39,11 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
             );
 
             match &self.nodes[current_index] {
-                OctreeNode::Branch { children_index } => {
+                Fixed8OctreeNode::Branch { children_index } => {
                     let target = children_index + octant;
 
                     if depth == TREE_DEPTH - 1 {
-                        if let OctreeNode::Leaf { data } = &self.nodes[target] {
+                        if let Fixed8OctreeNode::Leaf { data } = &self.nodes[target] {
                             return data.as_ref();
                         } else {
                             panic!(
@@ -55,7 +55,7 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
 
                     current_index = *children_index + octant;
                 }
-                OctreeNode::Leaf { data } => {
+                Fixed8OctreeNode::Leaf { data } => {
                     return data.as_ref();
                 }
             };
@@ -85,7 +85,7 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
                 self.nodes[current_index]
             );
 
-            if let OctreeNode::Leaf {
+            if let Fixed8OctreeNode::Leaf {
                 data: ref leaf_data,
             } = self.nodes[current_index]
             {
@@ -96,15 +96,15 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
                 let children_index = self.nodes().len();
                 let leaf_data = leaf_data.clone();
 
-                self.nodes[current_index] = OctreeNode::Branch { children_index };
+                self.nodes[current_index] = Fixed8OctreeNode::Branch { children_index };
 
                 for _ in 0..7 {
-                    self.nodes.push(OctreeNode::leaf(leaf_data.clone()));
+                    self.nodes.push(Fixed8OctreeNode::leaf(leaf_data.clone()));
                 }
-                self.nodes.push(OctreeNode::leaf(leaf_data));
+                self.nodes.push(Fixed8OctreeNode::leaf(leaf_data));
             };
 
-            if let OctreeNode::Branch { children_index } = self.nodes[current_index] {
+            if let Fixed8OctreeNode::Branch { children_index } = self.nodes[current_index] {
                 let target = children_index + octant;
 
                 if depth == TREE_DEPTH - 1 {
@@ -112,7 +112,7 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
                         "Setting leaf at index {target} - has value: {:?}",
                         data.is_some()
                     );
-                    self.nodes[target] = OctreeNode::leaf(data);
+                    self.nodes[target] = Fixed8OctreeNode::leaf(data);
                     return;
                 }
 
@@ -130,13 +130,13 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
 }
 
 #[derive(Clone, Debug)]
-pub enum OctreeNode<Data> {
+pub enum Fixed8OctreeNode<Data> {
     Branch { children_index: usize },
     Leaf { data: Option<Data> },
 }
 
-impl<Data> OctreeNode<Data> {
-    fn leaf(data: Option<Data>) -> OctreeNode<Data> {
-        OctreeNode::Leaf { data }
+impl<Data> Fixed8OctreeNode<Data> {
+    fn leaf(data: Option<Data>) -> Fixed8OctreeNode<Data> {
+        Fixed8OctreeNode::Leaf { data }
     }
 }
