@@ -4,9 +4,9 @@ mod block_faces;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Coords {
-    x: u8,
-    y: u8,
-    z: u8,
+    pub x: u8,
+    pub y: u8,
+    pub z: u8,
 }
 
 pub use morton::Morton;

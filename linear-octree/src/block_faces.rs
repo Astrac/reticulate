@@ -1,14 +1,16 @@
+use std::fmt::Debug;
+
 use crate::octree::OctreeNode;
 use crate::{Coords, Morton, Octree};
 
-pub const FACE_LEFT: u8 = 0b00000001; // -X
-pub const FACE_RIGHT: u8 = 0b00000010; // +X
-pub const FACE_BOTTOM: u8 = 0b00000100; // -Y
-pub const FACE_TOP: u8 = 0b00001000; // +Y
-pub const FACE_BACK: u8 = 0b00010000; // -Z
-pub const FACE_FRONT: u8 = 0b00100000; // +Z
+pub const FACE_RIGHT: u8 = 0b00000001; // +X
+pub const FACE_LEFT: u8 = 0b00000010; // -X
+pub const FACE_TOP: u8 = 0b00000100; // +Y
+pub const FACE_BOTTOM: u8 = 0b00001000; // -Y
+pub const FACE_FRONT: u8 = 0b00010000; // +Z
+pub const FACE_BACK: u8 = 0b00100000; // -Z
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 struct OctreeBlockFaces {
     depth: u8,
     morton: Morton,
@@ -26,45 +28,63 @@ impl OctreeBlockFaces {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+impl Debug for OctreeBlockFaces {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OctreeBlockFaces")
+            .field("depth", &self.depth)
+            .field("morton", &format!("{:#06o}", self.morton.as_u32()))
+            .field("face_mask", &format!("{:#06b}", self.face_mask))
+            .field("node_array_index", &self.node_array_index)
+            .finish()
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct BlockFaces {
     pub depth: u8,
     pub coords: Coords,
     pub face_mask: u8,
 }
 
+impl Debug for BlockFaces {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BlockFaces")
+            .field("depth", &self.depth)
+            .field("coords", &self.coords)
+            .field("face_mask", &format!("{:#06b}", &self.face_mask))
+            .finish()
+    }
+}
+
 impl BlockFaces {
     pub fn from_octree(octree: &Octree<()>, root_node_index: usize) -> Vec<BlockFaces> {
         let octree_nodes = octree.nodes();
-        // TraversalStack: Holds blocks cleared or currently being evaluated for splits
         let mut traversal_stack: Vec<OctreeBlockFaces> = Vec::new();
-
-        // PendingStack: Tracks active siblings and neighbors waiting for
-        // mutual face-culling checks before being committed to vertices.
         let mut pending_stack: Vec<OctreeBlockFaces> = Vec::new();
-
-        // Established blocks
         let mut finalized_blocks: Vec<BlockFaces> = Vec::new();
 
-        // Seed the traversal with the root block. All 6 exterior faces active.
         traversal_stack.push(OctreeBlockFaces {
             depth: 0,
             morton: 0.into(),
             face_mask: 0b00111111,
-            node_array_index: 0,
+            node_array_index: root_node_index,
         });
 
         while !traversal_stack.is_empty() || !pending_stack.is_empty() {
             // --- 1. PROCESS THE TRAVERSAL STACK ---
             if let Some(mut current_block) = traversal_stack.pop() {
+                log::trace!("Traversing: {current_block:?}");
+
                 // Check cross-boundaries against anything already waiting in the pending buffer
                 for pending in pending_stack.iter_mut() {
                     if let TouchingFace::Match(face_a, face_b) =
                         check_neighborhood(&current_block, pending)
                     {
-                        // Cull touching faces using high-performance bitwise AND NOT
-                        current_block.face_mask &= !face_a;
-                        pending.face_mask &= !face_b;
+                        if is_block_solid(pending, octree_nodes, root_node_index) {
+                            // Cull touching faces using high-performance bitwise AND NOT
+                            current_block.face_mask &= !face_a;
+                            log::trace!("Culled current: {current_block:?}");
+                        }
                     }
                 }
 
@@ -72,13 +92,21 @@ impl BlockFaces {
                 if requires_deeper_detail(&current_block, octree_nodes) {
                     // Generate all 8 children with inherited outer masks and active inner faces
                     let children = generate_children(&current_block, octree_nodes);
+                    log::trace!(
+                        "Need more detail: {current_block:?}; generated children: {children:?}"
+                    );
                     for child_block in children {
                         pending_stack.push(child_block);
                     }
                 } else {
                     // If it doesn't need to split, check if it's visible (Full) or empty space
-                    if is_block_solid(&current_block, octree_nodes, root_node_index) {
-                        // Only emit vertices if faces remain exposed after neighbor evaluations
+                    let is_solid = is_block_solid(&current_block, octree_nodes, root_node_index);
+                    log::trace!(
+                        "No details needed: {current_block:?}; is_solid: {is_solid}, face_mask: {:#06b}, coords: {:?}",
+                        current_block.face_mask,
+                        Coords::from(current_block.morton)
+                    );
+                    if is_solid {
                         if current_block.face_mask != 0 {
                             finalized_blocks.push(current_block.finalize());
                         }
@@ -86,10 +114,8 @@ impl BlockFaces {
                 }
             }
 
-            // --- 2. CYCLE PENDING ELEMENTS ---
-            // Move processed items from the pending lookup buffer back into the primary traversal
-            if let Some(ready_block) = pending_stack.pop() {
-                traversal_stack.push(ready_block);
+            if let Some(next_block) = pending_stack.pop() {
+                traversal_stack.push(next_block);
             }
         }
 
@@ -137,137 +163,87 @@ fn generate_children(
     let next_depth = parent.depth + 1;
     let base_morton = parent.morton.as_u32() << 3;
 
-    // Get the base block address of the 8 children in the array
+    // Fetch the pointer where the 8 sibling chunks live in the array
     let children_start = match &octree_nodes[parent.node_array_index] {
         OctreeNode::Branch { children_index } => *children_index as usize,
-        _ => panic!("Unexpected: generate_children called on a Leaf"),
+        _ => unreachable!("generate_children was called on a terminal leaf node"),
     };
 
-    let make_mask = |octant: u8| -> u8 {
-        let mut mask = 0b00111111; // All 6 faces open initially
+    // Initialize our array container for the 8 children
+    let mut children = [OctreeBlockFaces {
+        depth: next_depth,
+        morton: 0.into(),
+        face_mask: 0b00111111,
+        node_array_index: 0,
+    }; 8];
 
-        // Flips the X bit to find the adjacent internal sibling
-        let sibling_x_octant = octant ^ 1; // Flips the X bit
+    for octant in 0..8 {
+        let mut mask = 0b00111111; // Start completely unoccluded
+
+        // 1. AXIS EXTRACTOR (Bit 0 = X, Bit 1 = Y, Bit 2 = Z)
+        let is_right = (octant & 1) != 0; // true if +X, false if -X
+        let is_top = (octant & 2) != 0; // true if +Y, false if -Y
+        let is_front = (octant & 4) != 0; // true if +Z, false if -Z
+
+        // 2. INTERNAL SIBLING CULLING (Only cull faces if the true neighbor is SOLID)
+        // Check X Sibling (Flip bit 0)
+        let sibling_x = octant ^ 1;
         if matches!(
-            &octree_nodes[children_start + sibling_x_octant as usize],
-            OctreeNode::Leaf { .. }
+            &octree_nodes[children_start + sibling_x as usize],
+            OctreeNode::Leaf { data: Some(..) }
         ) {
-            // If my immediate internal sibling is solid, the face pointing to it is occluded
-            mask = mask
-                & (if (octant & 1) == 0 {
-                    !FACE_RIGHT
-                } else {
-                    !FACE_LEFT
-                });
-        }
-        // Inherit parent's outer X constraint if on the exterior boundary
-        if (octant & 1) == 0 {
-            if (parent.face_mask & FACE_LEFT) == 0 {
-                mask &= !FACE_LEFT;
-            }
-        } else {
-            if (parent.face_mask & FACE_RIGHT) == 0 {
-                mask &= !FACE_RIGHT;
-            }
+            mask &= if is_right { !FACE_LEFT } else { !FACE_RIGHT };
         }
 
-        // Y-Axis Internal Sibling Occlusion
-        let sibling_y_octant = octant ^ 2; // Flips the Y bit
+        // Check Y Sibling (Flip bit 1)
+        let sibling_y = octant ^ 2;
         if matches!(
-            &octree_nodes[children_start + sibling_y_octant as usize],
-            OctreeNode::Leaf { .. }
+            &octree_nodes[children_start + sibling_y as usize],
+            OctreeNode::Leaf { data: Some(..) }
         ) {
-            mask &= if (octant & 2) == 0 {
-                !FACE_TOP
-            } else {
-                !FACE_BOTTOM
-            };
-        }
-        if (octant & 2) == 0 {
-            if (parent.face_mask & FACE_BOTTOM) == 0 {
-                mask &= !FACE_BOTTOM;
-            }
-        } else {
-            if (parent.face_mask & FACE_TOP) == 0 {
-                mask &= !FACE_TOP;
-            }
+            mask &= if is_top { !FACE_BOTTOM } else { !FACE_TOP };
         }
 
-        // Z-Axis Internal Sibling Occlusion
-        let sibling_z_octant = octant ^ 4; // Flips the Z bit
+        // Check Z Sibling (Flip bit 2)
+        let sibling_z = octant ^ 4;
         if matches!(
-            &octree_nodes[children_start + sibling_z_octant as usize],
-            OctreeNode::Leaf { .. }
+            &octree_nodes[children_start + sibling_z as usize],
+            OctreeNode::Leaf { data: Some(..) }
         ) {
-            mask &= if (octant & 4) == 0 {
-                !FACE_FRONT
-            } else {
-                !FACE_BACK
-            };
-        }
-        if (octant & 4) == 0 {
-            if (parent.face_mask & FACE_BACK) == 0 {
-                mask &= !FACE_BACK;
-            }
-        } else {
-            if (parent.face_mask & FACE_FRONT) == 0 {
-                mask &= !FACE_FRONT;
-            }
+            mask &= if is_front { !FACE_BACK } else { !FACE_FRONT };
         }
 
-        mask
-    };
+        // 3. EXTERIOR PARENT BOUNDARY INHERITANCE
+        // A child only drops a face if it sits on that outer border AND the parent face was culled
+        if !is_right && (parent.face_mask & FACE_LEFT) == 0 {
+            mask &= !FACE_LEFT;
+        }
+        if is_right && (parent.face_mask & FACE_RIGHT) == 0 {
+            mask &= !FACE_RIGHT;
+        }
+        if !is_top && (parent.face_mask & FACE_BOTTOM) == 0 {
+            mask &= !FACE_BOTTOM;
+        }
+        if is_top && (parent.face_mask & FACE_TOP) == 0 {
+            mask &= !FACE_TOP;
+        }
+        if !is_front && (parent.face_mask & FACE_BACK) == 0 {
+            mask &= !FACE_BACK;
+        }
+        if is_front && (parent.face_mask & FACE_FRONT) == 0 {
+            mask &= !FACE_FRONT;
+        }
 
-    [
-        OctreeBlockFaces {
+        // 4. EMIT ASSIGNMENT
+        children[octant as usize] = OctreeBlockFaces {
             depth: next_depth,
-            morton: (base_morton | 0).into(),
-            face_mask: make_mask(0),
-            node_array_index: children_start + 0,
-        },
-        OctreeBlockFaces {
-            depth: next_depth,
-            morton: (base_morton | 1).into(),
-            face_mask: make_mask(1),
-            node_array_index: children_start + 1,
-        },
-        OctreeBlockFaces {
-            depth: next_depth,
-            morton: (base_morton | 2).into(),
-            face_mask: make_mask(2),
-            node_array_index: children_start + 2,
-        },
-        OctreeBlockFaces {
-            depth: next_depth,
-            morton: (base_morton | 3).into(),
-            face_mask: make_mask(3),
-            node_array_index: children_start + 3,
-        },
-        OctreeBlockFaces {
-            depth: next_depth,
-            morton: (base_morton | 4).into(),
-            face_mask: make_mask(4),
-            node_array_index: children_start + 4,
-        },
-        OctreeBlockFaces {
-            depth: next_depth,
-            morton: (base_morton | 5).into(),
-            face_mask: make_mask(5),
-            node_array_index: children_start + 5,
-        },
-        OctreeBlockFaces {
-            depth: next_depth,
-            morton: (base_morton | 6).into(),
-            face_mask: make_mask(6),
-            node_array_index: children_start + 6,
-        },
-        OctreeBlockFaces {
-            depth: next_depth,
-            morton: (base_morton | 7).into(),
-            face_mask: make_mask(7),
-            node_array_index: children_start + 7,
-        },
-    ]
+            morton: (base_morton | octant).into(),
+            face_mask: mask,
+            node_array_index: children_start + octant as usize,
+        };
+    }
+
+    children
 }
 
 enum TouchingFace {
@@ -323,60 +299,3 @@ fn check_neighborhood(a: &OctreeBlockFaces, b: &OctreeBlockFaces) -> TouchingFac
 
     TouchingFace::None
 }
-
-// // Array tracking the 4 corner layout offsets of a standard unit cube face.
-// /// Ordered counter-clockwise to match Bevy's backface culling engine.
-// static FACE_CORNER_OFFSETS: [[[f32; 3]; 4]; 6] = [
-//     // 0: Front Face (+Z)
-//     [
-//         [0.0, 0.0, 1.0],
-//         [1.0, 0.0, 1.0],
-//         [1.0, 1.0, 1.0],
-//         [0.0, 1.0, 1.0],
-//     ],
-//     // 1: Back Face (-Z)
-//     [
-//         [1.0, 0.0, 0.0],
-//         [0.0, 0.0, 0.0],
-//         [0.0, 1.0, 0.0],
-//         [1.0, 1.0, 0.0],
-//     ],
-//     // 2: Left Face (-X)
-//     [
-//         [0.0, 0.0, 0.0],
-//         [0.0, 0.0, 1.0],
-//         [0.0, 1.0, 1.0],
-//         [0.0, 1.0, 0.0],
-//     ],
-//     // 3: Right Face (+X)
-//     [
-//         [1.0, 0.0, 1.0],
-//         [1.0, 0.0, 0.0],
-//         [1.0, 1.0, 0.0],
-//         [1.0, 1.0, 1.0],
-//     ],
-//     // 4: Top Face (+Y)
-//     [
-//         [0.0, 1.0, 1.0],
-//         [1.0, 1.0, 1.0],
-//         [1.0, 1.0, 0.0],
-//         [0.0, 1.0, 0.0],
-//     ],
-//     // 5: Bottom Face (-Y)
-//     [
-//         [0.0, 0.0, 0.0],
-//         [1.0, 0.0, 0.0],
-//         [1.0, 0.0, 1.0],
-//         [0.0, 0.0, 1.0],
-//     ],
-// ];
-//
-// /// Matching face directional unit vectors.
-// static FACE_NORMALS: [[f32; 3]; 6] = [
-//     [0.0, 0.0, 1.0],  // Front
-//     [0.0, 0.0, -1.0], // Back
-//     [-1.0, 0.0, 0.0], // Left
-//     [1.0, 0.0, 0.0],  // Right
-//     [0.0, 1.0, 0.0],  // Top
-//     [0.0, -1.0, 0.0], // Bottom
-// ];

@@ -7,6 +7,10 @@ impl Morton {
     pub fn as_u32(&self) -> u32 {
         self.0
     }
+
+    pub fn mask(&mut self, mask: u32) {
+        self.0 = self.0 & mask;
+    }
 }
 
 impl From<Morton> for Coords {

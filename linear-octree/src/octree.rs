@@ -81,7 +81,7 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
             let octant = ((morton_code.as_u32() >> shift) & 0b111) as usize;
 
             log::trace!(
-                "Evaluating: depth = {depth}; index = {current_index}; octant: {octant}; current_node: {:?}",
+                "Evaluating update: depth = {depth}; index = {current_index}; octant: {octant}; current_node: {:?}",
                 self.nodes[current_index]
             );
 
@@ -108,6 +108,10 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Octree<Data> {
                 let target = children_index + octant;
 
                 if depth == TREE_DEPTH - 1 {
+                    log::debug!(
+                        "Setting leaf at index {target} - has value: {:?}",
+                        data.is_some()
+                    );
                     self.nodes[target] = OctreeNode::leaf(data);
                     return;
                 }
