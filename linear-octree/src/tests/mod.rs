@@ -1,5 +1,5 @@
 mod compact;
-mod block_faces;
+mod faces;
 mod morton;
 mod octree;
 
