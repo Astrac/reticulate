@@ -1,6 +1,6 @@
 use crate::Coords;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Morton(u32);
 
 impl Morton {

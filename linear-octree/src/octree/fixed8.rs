@@ -5,10 +5,10 @@ pub struct Fixed8Octree<Data> {
     pub nodes: Vec<Fixed8OctreeNode<Data>>,
 }
 
-// TODO: This should somehow be reflected in Coords (validations/assertions/warnings?)
+// TODO This should somehow be reflected in Coords (validations/assertions/warnings?)
 const TREE_DEPTH: u8 = 6;
 
-// TODO: Drop Debug for Data
+// TODO Drop Debug for Data
 impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
     pub fn new() -> Fixed8Octree<Data> {
         Fixed8Octree {
@@ -39,7 +39,8 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
             );
 
             match &self.nodes[current_index] {
-                Fixed8OctreeNode::Branch { children_index } => {
+                // TODO Use children mask to skip some traversals
+                Fixed8OctreeNode::Branch { children_index, children_mask: _ } => {
                     let target = children_index + octant;
 
                     if depth == TREE_DEPTH - 1 {
@@ -95,8 +96,12 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
 
                 let children_index = self.nodes().len();
                 let leaf_data = leaf_data.clone();
+                let children_mask = if leaf_data.is_some() { 0xFF } else { 0x00 };
 
-                self.nodes[current_index] = Fixed8OctreeNode::Branch { children_index };
+                self.nodes[current_index] = Fixed8OctreeNode::Branch {
+                    children_index,
+                    children_mask,
+                };
 
                 for _ in 0..7 {
                     self.nodes.push(Fixed8OctreeNode::leaf(leaf_data.clone()));
@@ -104,14 +109,26 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
                 self.nodes.push(Fixed8OctreeNode::leaf(leaf_data));
             };
 
-            if let Fixed8OctreeNode::Branch { children_index } = self.nodes[current_index] {
-                let target = children_index + octant;
+            if let Fixed8OctreeNode::Branch {
+                children_index,
+                children_mask,
+            } = &mut self.nodes[current_index]
+            {
+                let target = *children_index + octant;
 
                 if depth == TREE_DEPTH - 1 {
                     log::debug!(
                         "Setting leaf at index {target} - has value: {:?}",
                         data.is_some()
                     );
+
+                    // TODO: Bubble up setting children masks if it changed!!!
+                    if data.is_some() {
+                        *children_mask = *children_mask | (1 << octant);
+                    } else {
+                        *children_mask = *children_mask & !(1 << octant);
+                    }
+
                     self.nodes[target] = Fixed8OctreeNode::leaf(data);
                     return;
                 }
@@ -131,8 +148,13 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
 
 #[derive(Clone, Debug)]
 pub enum Fixed8OctreeNode<Data> {
-    Branch { children_index: usize },
-    Leaf { data: Option<Data> },
+    Branch {
+        children_index: usize,
+        children_mask: u8,
+    },
+    Leaf {
+        data: Option<Data>,
+    },
 }
 
 impl<Data> Fixed8OctreeNode<Data> {

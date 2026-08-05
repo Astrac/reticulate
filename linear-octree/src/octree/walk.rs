@@ -54,7 +54,6 @@ impl<Data> Walk<Data> for CompactOctree<Data> {
                         branch_octant,
                         branch_morton.into(),
                     );
-
                 } else {
                     // TODO Proper error checking here
                     break;
@@ -81,14 +80,10 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
             let node_morton = (current_morton << 3) | octant as u32;
 
             match node {
-                Fixed8OctreeNode::Branch { children_index } => {
-                    walker.on_branch_start(
-                        open_branches.len() as u8,
-                        octant,
-                        node_morton.into(),
-                        0xFF,
-                    );
-
+                Fixed8OctreeNode::Branch {
+                    children_index,
+                    children_mask,
+                } => {
                     for i in 0..8 {
                         pending.push((children_index + i, i as u8));
                     }
@@ -96,6 +91,12 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
                     open_branches.push(remaining_children);
                     remaining_children = 8;
                     current_morton = node_morton;
+                    walker.on_branch_start(
+                        open_branches.len() as u8,
+                        octant,
+                        node_morton.into(),
+                        *children_mask,
+                    );
                 }
                 Fixed8OctreeNode::Leaf { data } => {
                     remaining_children -= 1;

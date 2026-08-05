@@ -39,7 +39,7 @@ impl<Data: Clone + std::fmt::Debug + PartialEq> CompactOctree<Data> {
                                 subtrees.push(Vec::new());
                             }
                         }
-                        Fixed8OctreeNode::Branch { children_index } => {
+                        Fixed8OctreeNode::Branch { children_index, children_mask: _ } => {
                             // Schedule the assembly step for after the children are processed
                             stack.push(Action::Assemble {
                                 children_index: *children_index,

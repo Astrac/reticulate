@@ -1,3 +1,4 @@
+pub mod boundaries;
 mod compact;
 mod fixed8;
 mod walk;

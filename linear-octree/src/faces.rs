@@ -42,11 +42,11 @@ impl BlockFaces {
 
             match node {
                 CompactOctreeNode::Branch(mask) => {
-                    println!(
-                        "BF_BRANCH_START: {}, {octant}, {:#06o}, {mask:#08b}",
-                        pending_branches.len(),
-                        node_morton
-                    );
+                    // println!(
+                    //     "BF_BRANCH_START: {}, {octant}, {:#06o}, {mask:#08b}",
+                    //     pending_branches.len(),
+                    //     node_morton
+                    // );
 
                     // Save current state before descending into the new branch
                     pending_branches.push((
@@ -62,11 +62,11 @@ impl BlockFaces {
                 }
                 CompactOctreeNode::Leaf(_) => {
                     current_branch_mask &= current_branch_mask - 1;
-                    println!(
-                        "BF_LEAF: {}, {octant}, {:#06o}",
-                        pending_branches.len(),
-                        node_morton
-                    );
+                    // println!(
+                    //     "BF_LEAF: {}, {octant}, {:#06o}",
+                    //     pending_branches.len(),
+                    //     node_morton
+                    // );
                     let depth = pending_branches.len() as u8;
 
                     // Only emit the face mesh if it has at least one visible external face
@@ -83,12 +83,12 @@ impl BlockFaces {
             // Ascend the tree levels if the current branch has been fully iterated
             while current_branch_mask == 0 {
                 if let Some((b_rem, b_orig, faces_inh)) = pending_branches.pop() {
-                    println!(
-                        "BF_BRANCH_END: {}, {}, {:#06o}",
-                        pending_branches.len(),
-                        (current_morton & 0b111) as u8,
-                        current_morton
-                    );
+                    // println!(
+                    //     "BF_BRANCH_END: {}, {}, {:#06o}",
+                    //     pending_branches.len(),
+                    //     (current_morton & 0b111) as u8,
+                    //     current_morton
+                    // );
 
                     current_branch_mask = b_rem & (b_rem - 1);
                     original_branch_mask = b_orig;
@@ -151,7 +151,7 @@ fn culled_faces(octant: u8, current_inherited_faces: u8, original_branch_mask: u
         }
     }
 
-    println!("BF_CULLED: {octant}, {current_inherited_faces:#08b}, {original_branch_mask:#08b}");
+    // println!("BF_CULLED: {octant}, {current_inherited_faces:#08b}, {original_branch_mask:#08b}");
 
     node_face_mask
 }

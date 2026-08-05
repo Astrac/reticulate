@@ -97,7 +97,5 @@ fn culled_node_faces(octant: u8, current_inherited_faces: u8, original_branch_ma
         }
     }
 
-    println!("WK_CULLED: {octant}, {current_inherited_faces:#08b}, {original_branch_mask:#08b}");
-
     node_face_mask
 }
