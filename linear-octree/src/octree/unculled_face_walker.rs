@@ -18,11 +18,11 @@ impl<Data, F> Walker<Data> for UnculledFaceWalker<F>
 where
     F: FnMut(Morton, u8, Face),
 {
-    fn on_branch_start(&mut self, _depth: u8, _octant: u8, _morton: Morton, _children_mask: u8) {}
+    fn on_branch_start(&mut self, _depth: u8, _morton: Morton, _children_mask: u8) {}
 
-    fn on_branch_end(&mut self, _depth: u8, _octant: u8, _morton: Morton) {}
+    fn on_branch_end(&mut self, _depth: u8, _morton: Morton) {}
 
-    fn on_leaf(&mut self, depth: u8, _octant: u8, morton: Morton, _data: &Data) {
+    fn on_leaf(&mut self, depth: u8, morton: Morton, _data: &Data) {
         (self.on_face)(morton, depth, FACE_X_N);
         (self.on_face)(morton, depth, FACE_X_P);
         (self.on_face)(morton, depth, FACE_Y_N);

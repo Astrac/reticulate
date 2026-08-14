@@ -47,9 +47,10 @@ impl<Data, F> Walker<Data> for FaceWalker<F>
 where
     F: FnMut(Morton, u8, Face),
 {
-    fn on_branch_start(&mut self, _depth: u8, octant: u8, _morton: Morton, _children_mask: u8) {
+    fn on_branch_start(&mut self, _depth: u8, morton: Morton, _children_mask: u8) {
         let current_boundaries = &self.boundaries;
         let mut new_boundaries = Boundaries::default();
+        let octant = (morton.as_u32() & 0b111) as u8;
 
         if octant & AXIS_X.as_u8() == 0 {
             new_boundaries.x_out_pos = current_boundaries.x_inn_neg;
@@ -79,14 +80,14 @@ where
         self.boundaries = new_boundaries;
     }
 
-    fn on_branch_end(&mut self, _depth: u8, octant: u8, _morton: Morton) {
+    fn on_branch_end(&mut self, depth: u8, morton: Morton) {
         let current_boundaries = &self.boundaries;
 
         harvest_faces(
             Some(&current_boundaries.x_inn_pos),
             Some(&current_boundaries.x_inn_neg),
-            _morton.as_u32(),
-            _depth,
+            morton.as_u32(),
+            depth,
             AXIS_X,
             &mut self.on_face,
         );
@@ -94,8 +95,8 @@ where
         harvest_faces(
             Some(&current_boundaries.y_inn_pos),
             Some(&current_boundaries.y_inn_neg),
-            _morton.as_u32(),
-            _depth,
+            morton.as_u32(),
+            depth,
             AXIS_Y,
             &mut self.on_face,
         );
@@ -103,13 +104,15 @@ where
         harvest_faces(
             Some(&current_boundaries.z_inn_pos),
             Some(&current_boundaries.z_inn_neg),
-            _morton.as_u32(),
-            _depth,
+            morton.as_u32(),
+            depth,
             AXIS_Z,
             &mut self.on_face,
         );
 
         if let Some(mut previous) = self.stack.pop() {
+            let octant = (morton.as_u32() & 0b0111) as u8;
+
             if octant & AXIS_X.as_u8() == 0 {
                 previous.x_inn_neg = current_boundaries.x_out_pos;
                 previous.x_out_neg = current_boundaries.x_out_neg;
@@ -138,12 +141,12 @@ where
         }
 
         let current_boundaries = &self.boundaries;
-        if _depth == 0 {
+        if depth == 0 {
             harvest_faces(
                 Some(&current_boundaries.x_out_pos),
                 None,
-                _morton.as_u32(),
-                _depth,
+                morton.as_u32(),
+                depth,
                 AXIS_X,
                 &mut self.on_face,
             );
@@ -151,8 +154,8 @@ where
             harvest_faces(
                 None,
                 Some(&current_boundaries.x_out_neg),
-                _morton.as_u32(),
-                _depth,
+                morton.as_u32(),
+                depth,
                 AXIS_X,
                 &mut self.on_face,
             );
@@ -160,8 +163,8 @@ where
             harvest_faces(
                 Some(&current_boundaries.y_out_pos),
                 None,
-                _morton.as_u32(),
-                _depth,
+                morton.as_u32(),
+                depth,
                 AXIS_Y,
                 &mut self.on_face,
             );
@@ -169,16 +172,16 @@ where
             harvest_faces(
                 None,
                 Some(&current_boundaries.y_out_neg),
-                _morton.as_u32(),
-                _depth,
+                morton.as_u32(),
+                depth,
                 AXIS_Y,
                 &mut self.on_face,
             );
             harvest_faces(
                 Some(&current_boundaries.z_out_pos),
                 None,
-                _morton.as_u32(),
-                _depth,
+                morton.as_u32(),
+                depth,
                 AXIS_Z,
                 &mut self.on_face,
             );
@@ -186,15 +189,16 @@ where
             harvest_faces(
                 None,
                 Some(&current_boundaries.z_out_neg),
-                _morton.as_u32(),
-                _depth,
+                morton.as_u32(),
+                depth,
                 AXIS_Z,
                 &mut self.on_face,
             );
         }
     }
 
-    fn on_leaf(&mut self, depth: u8, octant: u8, morton: Morton, _data: &Data) {
+    fn on_leaf(&mut self, depth: u8, morton: Morton, _data: &Data) {
+        let octant = (morton.as_u32() & 0b0111) as u8;
         let leaf_size = 4096usize >> (2 * depth);
         let current_boundaries = &mut self.boundaries;
 

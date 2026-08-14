@@ -1,9 +1,9 @@
 use crate::{morton::Morton, octree::*};
 
 pub trait Walker<Data> {
-    fn on_branch_start(&mut self, depth: u8, octant: u8, morton: Morton, children_mask: u8);
-    fn on_branch_end(&mut self, depth: u8, octant: u8, morton: Morton);
-    fn on_leaf(&mut self, depth: u8, octant: u8, morton: Morton, data: &Data);
+    fn on_branch_start(&mut self, depth: u8, morton: Morton, children_mask: u8);
+    fn on_branch_end(&mut self, depth: u8, morton: Morton);
+    fn on_leaf(&mut self, depth: u8, morton: Morton, data: &Data);
 }
 
 pub trait Walk<Data> {
@@ -35,12 +35,12 @@ impl<Data> Walk<Data> for CompactOctree<Data> {
                     current_branch_mask = *mask;
                     current_morton = node_morton;
 
-                    walker.on_branch_start((depth - 1) as u8, octant, node_morton.into(), *mask);
+                    walker.on_branch_start((depth - 1) as u8, node_morton.into(), *mask);
                 }
                 CompactOctreeNode::Leaf(data) => {
                     current_branch_mask &= current_branch_mask - 1;
 
-                    walker.on_leaf(depth as u8, octant, node_morton.into(), data);
+                    walker.on_leaf(depth as u8, node_morton.into(), data);
                 }
             }
 
@@ -48,13 +48,12 @@ impl<Data> Walk<Data> for CompactOctree<Data> {
                 depth -= 1;
                 let mask = pending_branches[depth];
 
-                let branch_octant = (current_morton & 0b111) as u8;
                 let branch_morton = current_morton;
                 current_morton >>= 3;
 
                 current_branch_mask = mask & (mask - 1);
 
-                walker.on_branch_end(depth as u8, branch_octant, branch_morton.into());
+                walker.on_branch_end(depth as u8, branch_morton.into());
             }
         }
     }
@@ -91,7 +90,6 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
                     current_morton = node_morton;
                     walker.on_branch_start(
                         open_branches.len() as u8,
-                        octant,
                         node_morton.into(),
                         *children_mask,
                     );
@@ -99,7 +97,7 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
                 Fixed8OctreeNode::Leaf { data } => {
                     remaining_children -= 1;
                     if let Some(data) = &data {
-                        walker.on_leaf(open_branches.len() as u8, octant, node_morton.into(), data);
+                        walker.on_leaf(open_branches.len() as u8, node_morton.into(), data);
                     }
                 }
             }
@@ -107,7 +105,7 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
             while remaining_children == 0 {
                 if let Some(remaining) = open_branches.pop() {
                     current_morton = current_morton >> 3;
-                    walker.on_branch_end(open_branches.len() as u8, octant, current_morton.into());
+                    walker.on_branch_end(open_branches.len() as u8, current_morton.into());
                     remaining_children = remaining - 1;
                 } else {
                     // TODO Proper error checking here
