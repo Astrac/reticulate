@@ -1,4 +1,4 @@
-use crate::{Coords, Morton};
+use crate::{coords::Coords, morton::Morton};
 
 #[derive(Clone, Debug)]
 pub struct Fixed8Octree<Data> {
@@ -40,7 +40,10 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
 
             match &self.nodes[current_index] {
                 // TODO Use children mask to skip some traversals
-                Fixed8OctreeNode::Branch { children_index, children_mask: _ } => {
+                Fixed8OctreeNode::Branch {
+                    children_index,
+                    children_mask: _,
+                } => {
                     let target = children_index + octant;
 
                     if depth == TREE_DEPTH - 1 {

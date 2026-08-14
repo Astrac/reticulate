@@ -1,5 +1,4 @@
-use crate::Coords;
-use crate::octree::axis::*;
+use crate::{axis, coords::Coords};
 
 // It might be a good idea to left-align it on the u32 inestead of using lsb
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -14,15 +13,16 @@ impl Morton {
         self.0 = self.0 & mask;
     }
 
-    pub fn project_on_plane(&self, axis: Axis) -> u32 {
-        match axis.as_u8() {
-            0b00100 => {
+    // TODO: Introduce Morton2D
+    pub fn project_on_plane(&self, axis: axis::Axis) -> u32 {
+        match axis {
+            axis::AXIS_Z => {
                 // AXIS_Z: Keep X (bit 0) and Y (bit 1), discard Z (bit 2)
                 let x = compact_3d_channel(self.0 >> 0);
                 let y = compact_3d_channel(self.0 >> 1);
                 interleave_2d_planes(x, y)
             }
-            0b00010 => {
+            axis::AXIS_Y => {
                 // AXIS_Y: Keep X (bit 0) and Z (bit 2), discard Y (bit 1)
                 let x = compact_3d_channel(self.0 >> 0);
                 let z = compact_3d_channel(self.0 >> 2);
@@ -37,7 +37,7 @@ impl Morton {
         }
     }
 }
-///
+
 /// Correctly compacts a single 1D coordinate out of a 3D Morton layout.
 /// This flawlessly isolates bits at positions 0, 3, 6, 9... up to 30 bits.
 #[inline(always)]

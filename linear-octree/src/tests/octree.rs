@@ -1,4 +1,4 @@
-use crate::{Coords, Fixed8Octree};
+use crate::{coords::Coords, octree::Fixed8Octree};
 
 #[test]
 fn test_new_creates_empty_octree() {

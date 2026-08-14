@@ -1,8 +1,10 @@
 use bitvec::prelude::*;
 
 use crate::{
-    Coords, Morton, Walker,
-    octree::{axis::*, faces::*},
+    coords::Coords,
+    morton::Morton,
+    octree::Walker,
+    {axis::*, face::*},
 };
 
 const BOUNDARY_BITS_COUNT: usize = 64 * 64;

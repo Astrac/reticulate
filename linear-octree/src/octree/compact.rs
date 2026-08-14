@@ -1,4 +1,4 @@
-use crate::{Fixed8Octree, Fixed8OctreeNode};
+use crate::octree::{Fixed8Octree, Fixed8OctreeNode};
 
 // TODO: Optimize Vec?
 #[allow(dead_code)]

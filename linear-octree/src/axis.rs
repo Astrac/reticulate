@@ -1,4 +1,4 @@
-use crate::octree::faces::Face;
+use crate::face::Face;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq)]

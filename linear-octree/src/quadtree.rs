@@ -1,6 +1,6 @@
 use smallvec::SmallVec;
 
-use crate::Morton;
+use crate::morton::Morton;
 
 #[allow(dead_code)]
 const TREE_DEPTH: usize = 6;

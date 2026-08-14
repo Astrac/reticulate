@@ -1,4 +1,4 @@
-use crate::octree::faces::Face;
+use crate::face::Face;
 
 // TODO: Remove this file, it seems useless
 
@@ -41,17 +41,28 @@ impl From<Boundary> for u8 {
     }
 }
 
+#[allow(dead_code)]
 pub const OUTER_NEGATIVE_X: Boundary = Boundary(0b00001);
+#[allow(dead_code)]
 pub const OUTER_NEGATIVE_Y: Boundary = Boundary(0b00010);
+#[allow(dead_code)]
 pub const OUTER_NEGATIVE_Z: Boundary = Boundary(0b00100);
+#[allow(dead_code)]
 pub const OUTER_POSITIVE_X: Boundary = Boundary(0b01001);
+#[allow(dead_code)]
 pub const OUTER_POSITIVE_Y: Boundary = Boundary(0b01010);
+#[allow(dead_code)]
 pub const OUTER_POSITIVE_Z: Boundary = Boundary(0b01100);
+#[allow(dead_code)]
 pub const INNER_X: Boundary = Boundary(0b10001);
+#[allow(dead_code)]
 pub const INNER_Y: Boundary = Boundary(0b10010);
+#[allow(dead_code)]
 pub const INNER_Z: Boundary = Boundary(0b10100);
 
+#[allow(dead_code)]
 pub const INNERS: [Boundary; 3] = [INNER_X, INNER_Y, INNER_Z];
+#[allow(dead_code)]
 pub const OUTERS: [Boundary; 6] = [
     OUTER_NEGATIVE_X,
     OUTER_NEGATIVE_Y,
@@ -61,6 +72,7 @@ pub const OUTERS: [Boundary; 6] = [
     OUTER_POSITIVE_Z,
 ];
 
+#[allow(dead_code)]
 pub const BOUNDARIES: [Boundary; 9] = {
     let mut list = [Boundary(0); 9];
 

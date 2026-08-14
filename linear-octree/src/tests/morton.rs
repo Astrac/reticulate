@@ -1,4 +1,4 @@
-use crate::{Coords, Morton, octree::axis::*};
+use crate::{axis::*, coords::Coords, morton::Morton};
 
 #[test]
 fn test_roundtrip_zero() {

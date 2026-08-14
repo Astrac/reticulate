@@ -1,10 +1,13 @@
-use crate::{Morton, Walker, octree::faces::*};
+use crate::{face::*, morton::Morton, octree::Walker};
+
+// TODO: publish this or strip it
 
 #[allow(dead_code)]
 pub struct UnculledFaceWalker<F> {
     on_face: F,
 }
 
+#[allow(dead_code)]
 impl<F> UnculledFaceWalker<F> {
     pub fn new(f: F) -> UnculledFaceWalker<F> {
         UnculledFaceWalker { on_face: f }

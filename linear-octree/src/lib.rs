@@ -1,19 +1,14 @@
-mod faces;
-mod morton;
-pub mod octree;
-mod quadtree;
-mod sketches;
+pub mod axis;
+pub mod face;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Coords {
-    pub x: u8,
-    pub y: u8,
-    pub z: u8,
-}
-
-pub use faces::BlockFaces;
+pub use coords::Coords;
 pub use morton::Morton;
-pub use octree::{CompactOctree, CompactOctreeNode, Fixed8Octree, Fixed8OctreeNode, Walk, Walker};
+pub use octree::{CompactOctree, FaceWalker, Fixed8Octree, Walk, Walker};
+
+mod coords;
+mod morton;
+mod octree;
+mod quadtree;
 
 #[cfg(test)]
 mod tests;

@@ -1,4 +1,4 @@
-use crate::{CompactOctree, CompactOctreeNode, Fixed8Octree, Fixed8OctreeNode, Morton};
+use crate::{morton::Morton, octree::*};
 
 pub trait Walker<Data> {
     fn on_branch_start(&mut self, depth: u8, octant: u8, morton: Morton, children_mask: u8);
