@@ -1,5 +1,6 @@
 use crate::{Fixed8Octree, Fixed8OctreeNode};
 
+// TODO: Optimize Vec?
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct CompactOctree<Data> {

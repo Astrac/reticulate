@@ -3158,6 +3158,7 @@ dependencies = [
  "proptest",
  "rstest",
  "rstest_reuse",
+ "smallvec",
  "spdlog-rs",
 ]
 
@@ -3959,6 +3960,7 @@ dependencies = [
  "proptest",
  "rstest",
  "rstest_reuse",
+ "smallvec",
  "spdlog-rs",
 ]
 

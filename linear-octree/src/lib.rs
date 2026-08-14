@@ -1,8 +1,6 @@
-mod face_walker;
-mod face_walker2;
 mod faces;
 mod morton;
-mod octree;
+pub mod octree;
 mod quadtree;
 mod sketches;
 
@@ -13,8 +11,6 @@ pub struct Coords {
     pub z: u8,
 }
 
-pub use face_walker::FaceWalker;
-pub use face_walker2::FaceWalker2;
 pub use faces::BlockFaces;
 pub use morton::Morton;
 pub use octree::{CompactOctree, CompactOctreeNode, Fixed8Octree, Fixed8OctreeNode, Walk, Walker};

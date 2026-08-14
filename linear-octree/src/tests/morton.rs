@@ -1,4 +1,4 @@
-use crate::{Coords, Morton};
+use crate::{Coords, Morton, octree::axis::*};
 
 #[test]
 fn test_roundtrip_zero() {
@@ -76,4 +76,52 @@ fn test_boundary_values() {
         let decoded: Coords = m.into();
         assert_eq!(c, decoded, "Roundtrip failed for {:?}", c);
     }
+}
+
+#[test]
+fn test_project_on_plane_axis_z() {
+    let input_code = 0b101_011;
+    let wrapper = Morton::from(input_code);
+    let projected_2d = wrapper.project_on_plane(AXIS_Z);
+    assert_eq!(projected_2d, 0b01_11);
+}
+
+#[test]
+fn test_project_on_plane_axis_z_deeper() {
+    let input_code = 0b110_101_011;
+    let wrapper = Morton::from(input_code);
+    let projected_2d = wrapper.project_on_plane(AXIS_Z);
+    assert_eq!(projected_2d, 0b10_01_11);
+}
+
+#[test]
+fn test_project_on_plane_axis_y() {
+    let input_code = 0b010_101;
+    let wrapper = Morton::from(input_code);
+    let projected_2d = wrapper.project_on_plane(AXIS_Y);
+    assert_eq!(projected_2d, 0b00_11);
+}
+
+#[test]
+fn test_project_on_plane_axis_y_deeper() {
+    let input_code = 0b110_010_101;
+    let wrapper = Morton::from(input_code);
+    let projected_2d = wrapper.project_on_plane(AXIS_Y);
+    assert_eq!(projected_2d, 0b10_00_11);
+}
+
+#[test]
+fn test_project_on_plane_axis_x() {
+    let input_code = 0b101_110;
+    let wrapper = Morton::from(input_code);
+    let projected_2d = wrapper.project_on_plane(AXIS_X);
+    assert_eq!(projected_2d, 0b10_11);
+}
+
+#[test]
+fn test_project_on_plane_axis_x_deeper() {
+    let input_code = 0b110_101_110;
+    let wrapper = Morton::from(input_code);
+    let projected_2d = wrapper.project_on_plane(AXIS_X);
+    assert_eq!(projected_2d, 0b11_10_11);
 }
