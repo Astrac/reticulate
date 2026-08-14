@@ -79,7 +79,7 @@ fn test_boundary_values() {
 }
 
 #[test]
-fn test_project_on_plane_axis_z() {
+fn test_drop_axis_axis_z() {
     let input_code = 0b101_011;
     let wrapper = Morton3D::from(input_code);
     let projected_2d = wrapper.drop_axis(AXIS_Z);
@@ -87,7 +87,7 @@ fn test_project_on_plane_axis_z() {
 }
 
 #[test]
-fn test_project_on_plane_axis_z_deeper() {
+fn test_drop_axis_axis_z_deeper() {
     let input_code = 0b110_101_011;
     let wrapper = Morton3D::from(input_code);
     let projected_2d = wrapper.drop_axis(AXIS_Z);
@@ -95,7 +95,7 @@ fn test_project_on_plane_axis_z_deeper() {
 }
 
 #[test]
-fn test_project_on_plane_axis_y() {
+fn test_drop_axis_axis_y() {
     let input_code = 0b010_101;
     let wrapper = Morton3D::from(input_code);
     let projected_2d = wrapper.drop_axis(AXIS_Y);
@@ -103,7 +103,7 @@ fn test_project_on_plane_axis_y() {
 }
 
 #[test]
-fn test_project_on_plane_axis_y_deeper() {
+fn test_drop_axis_axis_y_deeper() {
     let input_code = 0b110_010_101;
     let wrapper = Morton3D::from(input_code);
     let projected_2d = wrapper.drop_axis(AXIS_Y);
@@ -111,7 +111,7 @@ fn test_project_on_plane_axis_y_deeper() {
 }
 
 #[test]
-fn test_project_on_plane_axis_x() {
+fn test_drop_axis_axis_x() {
     let input_code = 0b101_110;
     let wrapper = Morton3D::from(input_code);
     let projected_2d = wrapper.drop_axis(AXIS_X);
@@ -119,7 +119,7 @@ fn test_project_on_plane_axis_x() {
 }
 
 #[test]
-fn test_project_on_plane_axis_x_deeper() {
+fn test_drop_axis_axis_x_deeper() {
     let input_code = 0b110_101_110;
     let wrapper = Morton3D::from(input_code);
     let projected_2d = wrapper.drop_axis(AXIS_X);

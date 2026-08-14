@@ -17,16 +17,16 @@ impl Morton3D {
         let morton_3d = self.0;
         let (coord_1, coord_2) = match axis {
             axis::AXIS_X => (
-                drop_one_every_3_bits(morton_3d >> 1),
-                drop_one_every_3_bits(morton_3d >> 2),
+                take_one_every_3_bits(morton_3d >> 1),
+                take_one_every_3_bits(morton_3d >> 2),
             ),
             axis::AXIS_Y => (
-                drop_one_every_3_bits(morton_3d),
-                drop_one_every_3_bits(morton_3d >> 2),
+                take_one_every_3_bits(morton_3d),
+                take_one_every_3_bits(morton_3d >> 2),
             ),
             axis::AXIS_Z => (
-                drop_one_every_3_bits(morton_3d),
-                drop_one_every_3_bits(morton_3d >> 1),
+                take_one_every_3_bits(morton_3d),
+                take_one_every_3_bits(morton_3d >> 1),
             ),
             _ => unreachable!(),
         };
@@ -42,9 +42,9 @@ impl Morton3D {
 impl From<Morton3D> for Coords3D {
     fn from(value: Morton3D) -> Self {
         Coords3D {
-            x: take_one_every_3_bits(value.0),
-            y: take_one_every_3_bits(value.0 >> 1),
-            z: take_one_every_3_bits(value.0 >> 2),
+            x: take_one_every_3_bits(value.0) as u8,
+            y: take_one_every_3_bits(value.0 >> 1) as u8,
+            z: take_one_every_3_bits(value.0 >> 2) as u8,
         }
     }
 }
