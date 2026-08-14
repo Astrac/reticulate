@@ -1,10 +1,10 @@
-use crate::{coords::Coords, octree::Fixed8Octree};
+use crate::{coords::Coords3D, octree::Fixed8Octree};
 
 #[test]
 fn test_new_creates_empty_octree() {
     super::init_logging();
     let octree: Fixed8Octree<i32> = Fixed8Octree::new();
-    let coords = Coords { x: 0, y: 0, z: 0 };
+    let coords = Coords3D { x: 0, y: 0, z: 0 };
     assert!(octree.get(coords).is_none());
 }
 
@@ -12,7 +12,7 @@ fn test_new_creates_empty_octree() {
 fn test_update_and_get_basic() {
     super::init_logging();
     let mut octree = Fixed8Octree::new();
-    let coords = Coords {
+    let coords = Coords3D {
         x: 10,
         y: 20,
         z: 30,
@@ -29,7 +29,7 @@ fn test_update_and_get_basic() {
 fn test_update_overwrites_existing_data() {
     super::init_logging();
     let mut octree = Fixed8Octree::new();
-    let coords = Coords { x: 5, y: 5, z: 5 };
+    let coords = Coords3D { x: 5, y: 5, z: 5 };
 
     // Updated: Wrap data in Some
     octree.update(coords, Some(1));
@@ -44,7 +44,7 @@ fn test_update_overwrites_existing_data() {
 fn test_remove_existing_data() {
     super::init_logging();
     let mut octree = Fixed8Octree::new();
-    let coords = Coords {
+    let coords = Coords3D {
         x: 10,
         y: 20,
         z: 30,
@@ -63,7 +63,7 @@ fn test_remove_existing_data() {
 fn test_remove_non_existent_data() {
     super::init_logging();
     let mut octree = Fixed8Octree::<u32>::new();
-    let coords = Coords {
+    let coords = Coords3D {
         x: 10,
         y: 20,
         z: 30,
@@ -78,7 +78,7 @@ fn test_remove_non_existent_data() {
 fn test_remove_and_reinsert() {
     super::init_logging();
     let mut octree = Fixed8Octree::new();
-    let coords = Coords { x: 5, y: 5, z: 5 };
+    let coords = Coords3D { x: 5, y: 5, z: 5 };
 
     // Insert initial data
     octree.update(coords, Some(1));
@@ -98,8 +98,8 @@ fn test_distinct_coordinates_are_independent() {
     super::init_logging();
     let mut octree = Fixed8Octree::new();
 
-    let c1 = Coords { x: 0, y: 0, z: 0 };
-    let c2 = Coords { x: 1, y: 1, z: 1 };
+    let c1 = Coords3D { x: 0, y: 0, z: 0 };
+    let c2 = Coords3D { x: 1, y: 1, z: 1 };
 
     // Updated: Wrap data in Some
     octree.update(c1, Some("Data A"));
@@ -115,12 +115,12 @@ fn test_boundary_coordinates() {
     super::init_logging();
     let mut octree = Fixed8Octree::new();
 
-    let min_coords = Coords { x: 0, y: 0, z: 0 };
+    let min_coords = Coords3D { x: 0, y: 0, z: 0 };
     // Updated: Wrap data in Some
     octree.update(min_coords, Some("Min"));
     assert_eq!(octree.get(min_coords), Some(&"Min"));
 
-    let max_coords = Coords {
+    let max_coords = Coords3D {
         x: 255,
         y: 255,
         z: 255,
@@ -140,7 +140,7 @@ fn test_generic_data_types() {
     }
 
     let mut octree: Fixed8Octree<CustomData> = Fixed8Octree::new();
-    let coords = Coords {
+    let coords = Coords3D {
         x: 100,
         y: 100,
         z: 100,

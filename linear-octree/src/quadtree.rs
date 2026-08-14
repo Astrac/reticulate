@@ -1,6 +1,6 @@
 use smallvec::SmallVec;
 
-use crate::morton::Morton;
+use crate::morton_3d::Morton3D;
 
 #[allow(dead_code)]
 const TREE_DEPTH: usize = 6;
@@ -31,7 +31,7 @@ pub struct Fixed4Quadtree<Data> {
 
 #[allow(dead_code)]
 impl<Data: PartialEq + Clone> Fixed4Quadtree<Data> {
-    pub fn update(&mut self, morton: Morton, data: Option<Data>) {
+    pub fn update(&mut self, morton: Morton3D, data: Option<Data>) {
         // TODO: implement
         let mut current_index: usize = 0;
         for depth in 0..TREE_DEPTH {
@@ -153,7 +153,7 @@ impl<Data: PartialEq + Clone> Fixed4Quadtree<Data> {
 }
 
 pub trait Walker<Data> {
-    fn on_branch_start(&mut self, depth: u8, morton: Morton, children_mask: u8);
-    fn on_branch_end(&mut self, depth: u8, morton: Morton);
-    fn on_leaf(&mut self, depth: u8, morton: Morton, data: &Data);
+    fn on_branch_start(&mut self, depth: u8, morton: Morton3D, children_mask: u8);
+    fn on_branch_end(&mut self, depth: u8, morton: Morton3D);
+    fn on_leaf(&mut self, depth: u8, morton: Morton3D, data: &Data);
 }

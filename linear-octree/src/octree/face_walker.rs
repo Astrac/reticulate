@@ -1,8 +1,8 @@
 use bitvec::prelude::*;
 
 use crate::{
-    coords::Coords,
-    morton::Morton,
+    coords::Coords3D,
+    morton_3d::Morton3D,
     octree::Walker,
     {axis::*, face::*},
 };
@@ -45,9 +45,9 @@ impl<F> FaceWalker<F> {
 
 impl<Data, F> Walker<Data> for FaceWalker<F>
 where
-    F: FnMut(Morton, u8, Face),
+    F: FnMut(Morton3D, u8, Face),
 {
-    fn on_branch_start(&mut self, _depth: u8, morton: Morton, _children_mask: u8) {
+    fn on_branch_start(&mut self, _depth: u8, morton: Morton3D, _children_mask: u8) {
         let current_boundaries = &self.boundaries;
         let mut new_boundaries = Boundaries::default();
         let octant = (morton.as_u32() & 0b111) as u8;
@@ -80,7 +80,7 @@ where
         self.boundaries = new_boundaries;
     }
 
-    fn on_branch_end(&mut self, depth: u8, morton: Morton) {
+    fn on_branch_end(&mut self, depth: u8, morton: Morton3D) {
         let current_boundaries = &self.boundaries;
 
         harvest_faces(
@@ -197,12 +197,12 @@ where
         }
     }
 
-    fn on_leaf(&mut self, depth: u8, morton: Morton, _data: &Data) {
+    fn on_leaf(&mut self, depth: u8, morton: Morton3D, _data: &Data) {
         let octant = (morton.as_u32() & 0b0111) as u8;
         let leaf_size = 4096usize >> (2 * depth);
         let current_boundaries = &mut self.boundaries;
 
-        let leaf_start = (morton.project_on_plane(AXIS_X)) as usize * leaf_size;
+        let leaf_start = (morton.drop_axis(AXIS_X)) as usize * leaf_size;
         let leaf_end = leaf_start + leaf_size;
         if octant & AXIS_X.as_u8() == 0 {
             let _ = !(&mut current_boundaries.x_out_neg[leaf_start..leaf_end]);
@@ -212,7 +212,7 @@ where
             let _ = !(&mut current_boundaries.x_inn_pos[leaf_start..leaf_end]);
         }
 
-        let leaf_start = (morton.project_on_plane(AXIS_Y)) as usize * leaf_size;
+        let leaf_start = (morton.drop_axis(AXIS_Y)) as usize * leaf_size;
         let leaf_end = leaf_start + leaf_size;
         if octant & AXIS_Y.as_u8() == 0 {
             let _ = !(&mut current_boundaries.y_out_neg[leaf_start..leaf_end]);
@@ -222,7 +222,7 @@ where
             let _ = !(&mut current_boundaries.y_inn_pos[leaf_start..leaf_end]);
         }
 
-        let leaf_start = (morton.project_on_plane(AXIS_Z) as usize) * leaf_size;
+        let leaf_start = (morton.drop_axis(AXIS_Z) as usize) * leaf_size;
         let leaf_end = leaf_start + leaf_size;
         if octant & AXIS_Z.as_u8() == 0 {
             let _ = !(&mut current_boundaries.z_out_neg[leaf_start..leaf_end]);
@@ -240,7 +240,7 @@ pub fn harvest_faces(
     morton_3d: u32,
     depth: u8,
     axis: Axis,
-    on_face: &mut impl FnMut(Morton, u8, Face),
+    on_face: &mut impl FnMut(Morton3D, u8, Face),
 ) {
     if let Some(p) = positive_bitfield
         && let Some(n) = negative_bitfield
@@ -255,15 +255,15 @@ fn harvest_inner_faces(
     morton_3d: u32,
     depth: u8,
     axis: Axis,
-    on_face_raw: &mut impl FnMut(Morton, u8, Face),
+    on_face_raw: &mut impl FnMut(Morton3D, u8, Face),
 ) {
     let mut on_face = |m, d, f| {
-        println!("ON_FACE: {:?}, {d}, {f:?}", Coords::from(m));
+        println!("ON_FACE: {:?}, {d}, {f:?}", Coords3D::from(m));
         (on_face_raw)(m, d, f);
     };
     let mut stack = Vec::new();
 
-    let base_morton_2d = Morton::from(morton_3d).project_on_plane(axis) as usize;
+    let base_morton_2d = Morton3D::from(morton_3d).drop_axis(axis) as usize;
 
     for i in 0..4 {
         stack.push((
@@ -287,8 +287,8 @@ fn harvest_inner_faces(
 
         println!(
             "-> Depth: {current_depth}; Face: {face_start}..{face_end}; Morton2D: {face_morton_2d}; Owner POS/NEG: {:?} {:?}; Leaf: {:?}",
-            Coords::from(Morton::from(face_owner_morton_3d_positive)),
-            Coords::from(Morton::from(face_owner_morton_3d_negative)),
+            Coords3D::from(Morton3D::from(face_owner_morton_3d_positive)),
+            Coords3D::from(Morton3D::from(face_owner_morton_3d_negative)),
             decode_morton_2d(face_morton_2d as u32)
         );
 

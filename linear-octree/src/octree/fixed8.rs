@@ -1,4 +1,4 @@
-use crate::{coords::Coords, morton::Morton};
+use crate::{coords::Coords3D, morton_3d::Morton3D};
 
 #[derive(Clone, Debug)]
 pub struct Fixed8Octree<Data> {
@@ -20,8 +20,8 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
         &self.nodes
     }
 
-    pub fn get(&self, coords: Coords) -> Option<&Data> {
-        let morton_code: Morton = coords.into();
+    pub fn get(&self, coords: Coords3D) -> Option<&Data> {
+        let morton_code: Morton3D = coords.into();
 
         log::debug!(
             "Getting {coords:?} (morton = {:0>32b})",
@@ -71,8 +71,8 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
         );
     }
 
-    pub fn update(&mut self, coords: Coords, data: Option<Data>) {
-        let morton_code: Morton = coords.into();
+    pub fn update(&mut self, coords: Coords3D, data: Option<Data>) {
+        let morton_code: Morton3D = coords.into();
 
         log::debug!(
             "Updating {coords:?} (morton = {:0>32b})",

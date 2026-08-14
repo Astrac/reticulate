@@ -1,9 +1,9 @@
-use crate::{morton::Morton, octree::*};
+use crate::{morton_3d::Morton3D, octree::*};
 
 pub trait Walker<Data> {
-    fn on_branch_start(&mut self, depth: u8, morton: Morton, children_mask: u8);
-    fn on_branch_end(&mut self, depth: u8, morton: Morton);
-    fn on_leaf(&mut self, depth: u8, morton: Morton, data: &Data);
+    fn on_branch_start(&mut self, depth: u8, morton: Morton3D, children_mask: u8);
+    fn on_branch_end(&mut self, depth: u8, morton: Morton3D);
+    fn on_leaf(&mut self, depth: u8, morton: Morton3D, data: &Data);
 }
 
 pub trait Walk<Data> {

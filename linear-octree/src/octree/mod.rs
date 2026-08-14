@@ -1,5 +1,9 @@
+#[allow(dead_code, unused)]
+mod meshing_planes;
 mod compact;
 mod face_walker;
+#[allow(dead_code, unused)]
+mod face_walker2;
 mod fixed8;
 mod unculled_face_walker;
 mod walk;
