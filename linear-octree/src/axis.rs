@@ -1,8 +1,10 @@
+use std::ops::{BitAnd, BitOr};
+
 use crate::face::Face;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Axis(u8);
+pub struct Axis(pub u8);
 
 impl Axis {
     #[inline(always)]
@@ -35,6 +37,27 @@ impl From<u8> for Axis {
 impl From<Axis> for u8 {
     fn from(value: Axis) -> Self {
         value.0
+    }
+}
+
+impl BitOr for Axis {
+    type Output = Axis;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Axis(self.0 | rhs.0)
+    }
+}
+
+impl BitAnd for Axis {
+    type Output = Axis;
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Axis(self.0 & rhs.0)
+    }
+}
+
+impl BitAnd<Axis> for u8 {
+    type Output = u8;
+    fn bitand(self, rhs: Axis) -> Self::Output {
+        self & rhs.0
     }
 }
 

@@ -7,18 +7,22 @@ impl Morton2D {
     pub fn as_u32(&self) -> u32 {
         self.0
     }
+
+    pub(crate) fn as_usize(&self) -> usize {
+        self.0 as usize
+    }
 }
 
 impl From<Morton2D> for Coords2D {
     fn from(value: Morton2D) -> Self {
-        let (v, u) = decode_morton(value.0);
-        Coords2D { v, u }
+        let (u, v) = decode_morton(value.0);
+        Coords2D { u, v }
     }
 }
 
 impl From<Coords2D> for Morton2D {
     fn from(value: Coords2D) -> Self {
-        Morton2D(encode_morton(value.v, value.u))
+        Morton2D(encode_morton(value.u, value.v))
     }
 }
 

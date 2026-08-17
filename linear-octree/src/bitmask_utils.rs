@@ -1,4 +1,3 @@
-// Transforms zyxzyxzyx -> zzz
 #[inline(always)]
 pub const fn take_one_every_3_bits(mut x: u32) -> u32 {
     x &= 0x0924_9249;
@@ -9,7 +8,6 @@ pub const fn take_one_every_3_bits(mut x: u32) -> u32 {
     x
 }
 
-// Transforms zzz -> z0z0z0
 #[inline(always)]
 pub const fn interleave_zeroes(mut x: u32) -> u32 {
     x &= 0x0000_FFFF;
@@ -20,7 +18,6 @@ pub const fn interleave_zeroes(mut x: u32) -> u32 {
     x
 }
 
-// Transforms zyzyzy -> zzz
 #[inline(always)]
 pub const fn take_one_every_2_bits(mut x: u32) -> u32 {
     x &= 0x5555_5555;
@@ -31,7 +28,6 @@ pub const fn take_one_every_2_bits(mut x: u32) -> u32 {
     x
 }
 
-// Transforms zzz -> z00z00z00
 #[inline(always)]
 pub const fn interleave_two_zeroes(n: u8) -> u32 {
     let mut n: u32 = n as u32;
@@ -39,6 +35,34 @@ pub const fn interleave_two_zeroes(n: u8) -> u32 {
     n = (n | (n << 4)) & 0x0C30C3;
     (n | (n << 2)) & 0x249249
 }
+
+// TODO: Maybe use these instead?
+//
+// fn compact_1_by_2(mut x: u32) -> u32 {
+//     x &= 0x09249249;
+//     x = (x | (x >> 2)) & 0x030c30c3;
+//     x = (x | (x >> 4)) & 0x0300f00f;
+//     x = (x | (x >> 8)) & 0x030000ff;
+//     x
+// }
+//
+// fn split_1_by_2(mut x: u32) -> u32 {
+//     x &= 0x000003ff;
+//     x = (x | (x << 16)) & 0x030000ff;
+//     x = (x | (x << 8)) & 0x0300f00f;
+//     x = (x | (x << 4)) & 0x030c30c3;
+//     x = (x | (x << 2)) & 0x09249249;
+//     x
+// }
+//
+// fn compact_1_by_1(mut x: u32) -> u32 {
+//     x &= 0x55555555;
+//     x = (x | (x >> 1)) & 0x33333333;
+//     x = (x | (x >> 2)) & 0x0f0f0f0f;
+//     x = (x | (x >> 4)) & 0x00ff00ff;
+//     x = (x | (x >> 8)) & 0x0000ffff;
+//     x
+// }
 
 // TODO: Move to test suite
 #[cfg(test)]

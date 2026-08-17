@@ -1,5 +1,6 @@
 mod compact;
 mod faces;
+mod fixed8;
 mod morton;
 mod octree;
 

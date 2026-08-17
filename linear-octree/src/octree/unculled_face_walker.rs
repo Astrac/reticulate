@@ -1,4 +1,4 @@
-use crate::{face::*, morton_3d::Morton3D, octree::Walker};
+use crate::{face::*, morton_3d::Morton3D, walking::Walker};
 
 // TODO: publish this or strip it
 

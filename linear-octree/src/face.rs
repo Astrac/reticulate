@@ -1,3 +1,5 @@
+use crate::axis::Axis;
+
 #[repr(transparent)]
 #[derive(Clone, Copy, Default, Debug, PartialEq)]
 pub struct Face(pub(crate) u8);
@@ -11,6 +13,15 @@ impl Face {
     #[inline(always)]
     pub const fn is_positive(&self) -> bool {
         self.0 & 0b1000 == 0
+    }
+
+    #[inline(always)]
+    pub const fn as_index(&self) -> usize {
+        (self.0.trailing_zeros() as usize) + (3 * ((self.0 as usize) >> 3))
+    }
+
+    pub fn axis(&self) -> Axis {
+        Axis(self.0 & 0b111)
     }
 }
 

@@ -3,7 +3,7 @@ use bitvec::prelude::*;
 use crate::{
     coords::Coords3D,
     morton_3d::Morton3D,
-    octree::Walker,
+    walking::Walker,
     {axis::*, face::*},
 };
 

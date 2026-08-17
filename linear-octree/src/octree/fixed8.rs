@@ -5,7 +5,6 @@ pub struct Fixed8Octree<Data> {
     pub nodes: Vec<Fixed8OctreeNode<Data>>,
 }
 
-// TODO This should somehow be reflected in Coords (validations/assertions/warnings?)
 const TREE_DEPTH: u8 = 6;
 
 // TODO Drop Debug for Data
@@ -39,7 +38,6 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
             );
 
             match &self.nodes[current_index] {
-                // TODO Use children mask to skip some traversals
                 Fixed8OctreeNode::Branch {
                     children_index,
                     children_mask: _,
@@ -149,6 +147,7 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
     }
 }
 
+// TODO: Either fully implement children_mask or remove it!
 #[derive(Clone, Debug)]
 pub enum Fixed8OctreeNode<Data> {
     Branch {

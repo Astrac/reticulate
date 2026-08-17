@@ -9,6 +9,11 @@ impl Morton3D {
         self.0
     }
 
+    #[inline(always)]
+    pub const fn octant(&self) -> u8 {
+        (self.0 & 0b111) as u8
+    }
+
     pub fn mask(&mut self, mask: u32) {
         self.0 = self.0 & mask;
     }
