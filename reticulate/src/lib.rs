@@ -3,7 +3,6 @@ pub mod face;
 pub mod meshing;
 pub mod utils;
 
-mod bitmask_utils;
 mod coords;
 mod morton_2d;
 mod morton_3d;

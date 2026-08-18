@@ -161,16 +161,6 @@ fn back_project(
         _ => unreachable!(),
     };
 
-    println!(
-        "BACK_PROJ axis={} depth={volume_depth} x={vol_x} y={vol_y} z={vol_z} face_size={face_size} face_depth={face_depth} u={face_u} v={face_v} coords={coords:?}",
-        match axis {
-            AXIS_X => "X",
-            AXIS_Y => "Y",
-            AXIS_Z => "Z",
-            _ => unreachable!(),
-        }
-    );
-
     (coords.into(), face_depth)
 }
 

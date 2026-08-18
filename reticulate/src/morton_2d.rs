@@ -1,4 +1,4 @@
-use crate::{bitmask_utils::*, coords::Coords2D};
+use crate::{utils::bitmasks::*, coords::Coords2D};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Morton2D(u32);

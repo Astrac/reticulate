@@ -1,4 +1,4 @@
-use crate::{axis, bitmask_utils::*, coords::Coords3D, morton_2d::Morton2D};
+use crate::{axis, coords::Coords3D, morton_2d::Morton2D, utils::bitmasks::*};
 
 // It might be a good idea to left-align it on the u32 inestead of using lsb
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
