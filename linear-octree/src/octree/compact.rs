@@ -1,12 +1,12 @@
 use crate::octree::{Fixed8Octree, Fixed8OctreeNode};
 
 // TODO: Optimize Vec?
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct CompactOctree<Data> {
     pub nodes: Vec<CompactOctreeNode<Data>>,
 }
 
+// TODO: Rewrite this properly in terms of Walker
 #[allow(dead_code)]
 impl<Data: Clone + std::fmt::Debug + PartialEq> CompactOctree<Data> {
     pub fn from_fixed8(source: Fixed8Octree<Data>) -> CompactOctree<Data> {
