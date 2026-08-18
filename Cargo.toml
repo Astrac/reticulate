@@ -1,8 +1,7 @@
 [workspace]
 members = [
-  "glare",
-  "linear-octree",
-  "scripts"
+  "reticulate-bevy",
+  "reticulate",
 ]
 resolver = "3"
 

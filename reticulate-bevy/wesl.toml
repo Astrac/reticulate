@@ -1,0 +1,2 @@
+edition = "2026_pre"
+root = "assets/shaders/grid.wgsl"

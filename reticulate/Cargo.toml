@@ -1,5 +1,5 @@
 [package]
-name = "linear-octree"
+name = "reticulate"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,8 +8,6 @@ edition = "2024"
 log = "0.4"
 spdlog-rs = { version = "0.5", features = ["log"] }
 # TODO: Make these optional under "test" feature
-proptest = "1.11"
 rstest = "0.26"
 rstest_reuse = "0.7.0"
 bitvec = "1.1.1"
-smallvec = "1.15.2"

@@ -1,0 +1,4 @@
+[custom_imports]
+# Map the virtual bevy path to your local cargo registry path
+# Note: Update the version number (e.g., bevy_render-0.14.0) to match your Cargo.toml
+"bevy_render::view" = "~/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render-0.19.0/src/view/view.wgsl"

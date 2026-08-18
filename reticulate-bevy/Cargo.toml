@@ -1,0 +1,19 @@
+[package]
+name = "reticulate-bevy"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { version = "0.19", features = [ "shader_format_wesl", "file_watcher", "free_camera", "debug", "dynamic_linking", "hotpatching", "bevy_dev_tools" ] }
+bevy_voxel_world = "0.17.0"
+noise = "0.9.0"
+bitfield-struct = "0.13.0"
+
+reticulate = { version = "0.1", path = "../reticulate" }
+
+# TODO: Make these optional under "log" feature
+log = "0.4"
+spdlog-rs = { version = "0.5", features = ["log"] }
+# TODO: Make these optional under "test" feature
+rstest = "0.26"
+rstest_reuse = "0.7.0"
