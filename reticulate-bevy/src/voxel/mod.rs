@@ -4,7 +4,7 @@ mod test_model;
 
 use bevy::light::CascadeShadowConfigBuilder;
 use bevy::prelude::*;
-use reticulate::{utils::DensePrintWalker, *};
+use reticulate::*;
 
 use crate::voxel::mesher::Mesher;
 
@@ -71,8 +71,6 @@ fn draw_mesh(
     //     ));
     // }
 
-    // let compressed = CompactOctree::from_fixed8(octree.clone());
-
     let mut octree: Fixed8Octree<()> = Fixed8Octree::new();
     test_model::test_scene(&mut octree);
     {
@@ -81,9 +79,6 @@ fn draw_mesh(
     }
 
     let mesh = mesher.build_mesh();
-
-    let mut print_walker = DensePrintWalker::default();
-    octree.walk_dense(&mut print_walker);
 
     commands.spawn((
         Mesh3d(meshes.add(mesh)),

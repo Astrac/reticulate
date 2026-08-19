@@ -1,8 +1,16 @@
-use reticulate::{Coords3D, Fixed8Octree};
+use reticulate::{CompactOctree, Coords3D, Fixed8Octree, Walk, utils::PrintWalker};
 
 pub fn test_scene(octree: &mut Fixed8Octree<()>) {
-    // add_2x2(octree);
-    add_nested_cubes(octree);
+    add_2x2(octree);
+    // add_nested_cubes(octree);
+
+    let compressed = CompactOctree::from_fixed8(&octree);
+    let mut print_walker = PrintWalker::default();
+    octree.walk(&mut print_walker);
+    println!("{compressed:?}");
+    compressed.walk(&mut print_walker);
+    // let mut print_walker = DensePrintWalker::default();
+    // octree.walk_dense(&mut print_walker);
 }
 
 pub fn add_nested_cubes(octree: &mut Fixed8Octree<()>) {

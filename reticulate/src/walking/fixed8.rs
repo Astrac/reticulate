@@ -6,7 +6,7 @@ use crate::{
     walking::{DenseWalk, DenseWalker},
 };
 
-impl<Data: Debug> Walk<Data> for Fixed8Octree<Data> {
+impl<Data> Walk<Data> for Fixed8Octree<Data> {
     fn walk(&self, walker: &mut impl Walker<Data>) {
         const MAX_DEPTH: usize = 6;
         let mut pending_branches = [0u8; MAX_DEPTH];

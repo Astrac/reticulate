@@ -1,110 +1,16 @@
-use crate::octree::{Fixed8Octree, Fixed8OctreeNode};
+use crate::{Morton3D, Walk, Walker, octree::Fixed8Octree};
 
-// TODO: Optimize Vec?
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct CompactOctree<Data> {
     pub nodes: Vec<CompactOctreeNode<Data>>,
 }
 
-// TODO: Rewrite this properly in terms of Walker
-#[allow(dead_code)]
-impl<Data: Clone + std::fmt::Debug + PartialEq> CompactOctree<Data> {
-    pub fn from_fixed8(source: Fixed8Octree<Data>) -> CompactOctree<Data> {
-        let nodes = source.nodes();
-        if nodes.is_empty() {
-            return CompactOctree { nodes: Vec::new() };
-        }
+impl<Data: Copy + Default + PartialEq> CompactOctree<Data> {
+    pub fn from_fixed8(octree: &Fixed8Octree<Data>) -> CompactOctree<Data> {
+        let mut walker = ToCompactWalker::default();
+        octree.walk(&mut walker);
 
-        // Action states for our explicit traversal stack
-        enum Action {
-            Process(usize),
-            Assemble { children_index: usize },
-        }
-
-        // Main traversal stack
-        let mut stack = vec![Action::Process(0)];
-
-        // Temporary storage for completed subtrees
-        // Each entry is a flat sequence of compact nodes representing a valid subtree
-        let mut subtrees: Vec<Vec<CompactOctreeNode<Data>>> = Vec::new();
-
-        while let Some(action) = stack.pop() {
-            match action {
-                Action::Process(index) => {
-                    match &nodes[index] {
-                        Fixed8OctreeNode::Leaf { data } => {
-                            if let Some(val) = data {
-                                subtrees.push(vec![CompactOctreeNode::Leaf(val.clone())]);
-                            } else {
-                                // Push an empty vector to signal an empty leaf slot
-                                subtrees.push(Vec::new());
-                            }
-                        }
-                        Fixed8OctreeNode::Branch { children_index, children_mask: _ } => {
-                            // Schedule the assembly step for after the children are processed
-                            stack.push(Action::Assemble {
-                                children_index: *children_index,
-                            });
-                            // Schedule all 8 children to be processed (LIFO order: 7 down to 0)
-                            for i in (0..8).rev() {
-                                stack.push(Action::Process(children_index + i));
-                            }
-                        }
-                    }
-                }
-                Action::Assemble { .. } => {
-                    // Pop the 8 processed children subtrees from the back of the accumulator
-                    let mut children = subtrees.split_off(subtrees.len() - 8);
-
-                    let mut mask = 0u8;
-                    let mut total_nodes = 0;
-
-                    // Calculate mask and count non-empty children
-                    for i in 0..8 {
-                        if !children[i].is_empty() {
-                            mask |= 1 << i;
-                            total_nodes += children[i].len();
-                        }
-                    }
-
-                    // Attempt coalescing: must have 8 valid children, and all must be identical leaves
-                    let mut coalesced = false;
-                    if mask == 0xFF && total_nodes == 8 {
-                        if let Some(CompactOctreeNode::Leaf(first_val)) = children[0].first() {
-                            let all_identical = children.iter().all(|child| match child.first() {
-                                Some(CompactOctreeNode::Leaf(val)) => val == first_val,
-                                _ => false,
-                            });
-
-                            if all_identical {
-                                subtrees.push(vec![CompactOctreeNode::Leaf(first_val.clone())]);
-                                coalesced = true;
-                            }
-                        }
-                    }
-
-                    if !coalesced {
-                        if mask == 0 {
-                            // All children were empty; push an empty slot to prune this branch
-                            subtrees.push(Vec::new());
-                        } else {
-                            // Build the uncoalesced branch flat sequence
-                            let mut branch_layout = Vec::with_capacity(1 + total_nodes);
-                            branch_layout.push(CompactOctreeNode::Branch(mask));
-                            for child in children.iter_mut() {
-                                branch_layout.append(child);
-                            }
-                            subtrees.push(branch_layout);
-                        }
-                    }
-                }
-            }
-        }
-
-        // The final remaining subtree item is our fully built, flattened tree layout
-        CompactOctree {
-            nodes: subtrees.pop().unwrap_or_default(),
-        }
+        walker.compact
     }
 }
 
@@ -113,4 +19,74 @@ impl<Data: Clone + std::fmt::Debug + PartialEq> CompactOctree<Data> {
 pub enum CompactOctreeNode<Data> {
     Branch(u8),
     Leaf(Data),
+}
+
+enum UniformState<Data> {
+    Unset,
+    Uniform(Data),
+    NonUniform,
+}
+
+struct Frame<Data> {
+    start: usize,
+    seen_mask: u8,
+    state: UniformState<Data>,
+}
+
+#[derive(Default)]
+pub struct ToCompactWalker<Data> {
+    pub compact: CompactOctree<Data>,
+    stack: Vec<Frame<Data>>,
+}
+
+impl<Data: Copy + PartialEq> ToCompactWalker<Data> {
+    fn note_child(&mut self, octant: u8, data: Option<Data>) {
+        if let Some(frame) = self.stack.last_mut() {
+            frame.seen_mask |= 1 << octant;
+            frame.state = match (&frame.state, data) {
+                (UniformState::NonUniform, _) | (_, None) => UniformState::NonUniform,
+                (UniformState::Unset, Some(d)) => UniformState::Uniform(d),
+                (UniformState::Uniform(prev), Some(d)) if *prev == d => UniformState::Uniform(d),
+                (UniformState::Uniform(_), Some(_)) => UniformState::NonUniform,
+            };
+        }
+    }
+}
+
+impl<Data: Copy + PartialEq> Walker<Data> for ToCompactWalker<Data> {
+    fn on_branch_start(&mut self, _depth: u8, _morton: Morton3D, _children_mask: u8) {
+        let start = self.compact.nodes.len();
+        self.compact.nodes.push(CompactOctreeNode::Branch(0));
+        self.stack.push(Frame {
+            start,
+            seen_mask: 0,
+            state: UniformState::Unset,
+        });
+    }
+
+    fn on_branch_end(&mut self, _depth: u8, morton: Morton3D) {
+        let frame = self
+            .stack
+            .pop()
+            .expect("on_branch_end without matching on_branch_start");
+
+        let collapse = match frame.state {
+            UniformState::Uniform(data) if frame.seen_mask == 0xFF => Some(data),
+            _ => None,
+        };
+
+        if let Some(data) = collapse {
+            self.compact.nodes.truncate(frame.start);
+            self.compact.nodes.push(CompactOctreeNode::Leaf(data));
+            self.note_child(morton.octant(), Some(data));
+        } else {
+            self.compact.nodes[frame.start] = CompactOctreeNode::Branch(frame.seen_mask);
+            self.note_child(morton.octant(), None);
+        }
+    }
+
+    fn on_leaf(&mut self, _depth: u8, morton: Morton3D, data: &Data) {
+        self.compact.nodes.push(CompactOctreeNode::Leaf(*data));
+        self.note_child(morton.octant(), Some(*data));
+    }
 }

@@ -1,6 +1,7 @@
 use crate::{axis, coords::Coords3D, morton_2d::Morton2D, utils::bitmasks::*};
 
 // It might be a good idea to left-align it on the u32 inestead of using lsb
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Morton3D(u32);
 
@@ -15,8 +16,14 @@ impl Morton3D {
         (self.0 & 0b111) as u8
     }
 
-    pub fn mask(&mut self, mask: u32) {
-        self.0 = self.0 & mask;
+    #[inline(always)]
+    pub const fn parent(&self) -> Morton3D {
+        Morton3D(self.0)
+    }
+
+    #[inline(always)]
+    pub const fn child_octant(&self, octant: u8) -> Morton3D {
+        Morton3D((self.0 << 3) | (octant as u32))
     }
 
     pub fn drop_axis(&self, axis: axis::Axis) -> u32 {
