@@ -71,8 +71,7 @@ fn draw_mesh(
     //     ));
     // }
 
-    let mut octree: Fixed8Octree<()> = Fixed8Octree::new();
-    test_model::test_scene(&mut octree);
+    let octree = test_model::test_scene();
     {
         let mut walker = FaceWalker::new(mesher.on_mesh_face_handler());
         octree.walk_dense(&mut walker);

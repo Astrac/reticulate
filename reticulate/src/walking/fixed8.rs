@@ -34,6 +34,7 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
                         // TODO: Error/warning
                     }
 
+                    current_branch_mask = 0b11111111_u8;
                     current_morton = node_morton;
                     jumps[depth] = *children_index;
 
