@@ -4,13 +4,15 @@ pub mod meshing;
 pub mod utils;
 
 mod coords;
+mod depth;
 mod morton_2d;
 mod morton_3d;
 mod octree;
 mod walking;
 
 pub use coords::{Coords2D, Coords3D};
-pub use meshing::FaceWalker;
+pub use depth::Depth;
+pub use meshing::{FaceWalker, MeshFace};
 pub use morton_2d::Morton2D;
 pub use morton_3d::Morton3D;
 pub use octree::{CompactOctree, Fixed8Octree};

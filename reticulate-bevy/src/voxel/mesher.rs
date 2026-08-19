@@ -3,32 +3,32 @@ use bevy::{
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
-use reticulate::{Coords3D, Morton3D, face::Face};
+use reticulate::{Coords3D, MeshFace, axis::*, face::Face};
 
 const VERTICES: [Vec3; 8] = [
-    Vec3::new(0.5, 0.5, 0.5),
-    Vec3::new(-0.5, 0.5, 0.5),
-    Vec3::new(0.5, -0.5, 0.5),
-    Vec3::new(-0.5, -0.5, 0.5),
-    Vec3::new(0.5, 0.5, -0.5),
-    Vec3::new(-0.5, 0.5, -0.5),
-    Vec3::new(0.5, -0.5, -0.5),
-    Vec3::new(-0.5, -0.5, -0.5),
+    Vec3::new(0.0, 0.0, 0.0),
+    Vec3::new(1.0, 0.0, 0.0),
+    Vec3::new(0.0, 1.0, 0.0),
+    Vec3::new(1.0, 1.0, 0.0),
+    Vec3::new(0.0, 0.0, 1.0),
+    Vec3::new(1.0, 0.0, 1.0),
+    Vec3::new(0.0, 1.0, 1.0),
+    Vec3::new(1.0, 1.0, 1.0),
 ];
 
 const FACES: [(Vec3, [usize; 4]); 6] = [
-    (Vec3::new(1.0, 0.0, 0.0), [0, 2, 4, 6]),  // +X
-    (Vec3::new(0.0, 1.0, 0.0), [0, 1, 4, 5]),  // +Y
-    (Vec3::new(0.0, 0.0, 1.0), [0, 1, 2, 3]),  // +Z
-    (Vec3::new(-1.0, 0.0, 0.0), [1, 3, 5, 7]), // -X
-    (Vec3::new(0.0, -1.0, 0.0), [2, 3, 6, 7]), // -Y
-    (Vec3::new(0.0, 0.0, -1.0), [4, 5, 6, 7]), // -Z
+    (Vec3::new(1.0, 0.0, 0.0), [0, 2, 4, 6]),
+    (Vec3::new(0.0, 1.0, 0.0), [4, 5, 0, 1]),
+    (Vec3::new(0.0, 0.0, 1.0), [0, 1, 2, 3]),
+    (Vec3::new(-1.0, 0.0, 0.0), [0, 4, 2, 6]),
+    (Vec3::new(0.0, -1.0, 0.0), [4, 0, 5, 1]),
+    (Vec3::new(0.0, 0.0, -1.0), [0, 2, 1, 3]),
 ];
 
 #[inline(always)]
 const fn face_index(id: Face) -> usize {
     let mask = id.face_mask() as u32;
-    let sign_offset = ((mask & 0b1000) >> 1) - ((mask & 0b1000) >> 3);
+    let sign_offset = ((mask & 0b1000) >> 2) | ((mask & 0b1000) >> 3);
     (mask.trailing_zeros() + sign_offset) as usize
 }
 
@@ -52,19 +52,54 @@ impl Mesher {
         }
     }
 
-    pub fn on_face_handler(&mut self) -> impl FnMut(Morton3D, u8, Face) {
-        |mut morton: Morton3D, depth: u8, face_id: Face| {
-            let mask = (1u32 << ((depth as u32) * 3)) - 1;
-            morton.mask(mask);
-            let prescale_coords: Coords3D = morton.into();
-            let scale = 64.0 / f32::powi(2.0, depth as i32);
-            let center = Vec3::new(
-                prescale_coords.x as f32,
-                prescale_coords.y as f32,
-                prescale_coords.z as f32,
-            ) * scale;
+    pub fn on_mesh_face_handler(&mut self) -> impl FnMut(MeshFace) {
+        |mesh_face: MeshFace| {
+            let start_index = self.positions.len() as u32;
+            let (normal, vertex_indices) = FACES[face_index(mesh_face.face)];
+            let width = mesh_face.width as f32;
+            let height = mesh_face.height as f32;
+            let Coords3D {
+                x: fx,
+                y: fy,
+                z: fz,
+            } = mesh_face.coords;
 
-            self.add_face(center, scale, face_id);
+            let scale = match mesh_face.face.axis() {
+                AXIS_X => Vec3::new(1.0, width, height),
+                AXIS_Y => Vec3::new(width, 1.0, height),
+                AXIS_Z => Vec3::new(width, height, 1.0),
+                _ => unreachable!(),
+            };
+
+            for vertex_index in vertex_indices {
+                let position =
+                    Vec3::new(fx as f32, fy as f32, fz as f32) + (VERTICES[vertex_index] * scale);
+                self.positions.push(position);
+                self.normals.push(normal);
+            }
+
+            println!(
+                "V_IDXS: {vertex_indices:?} SCALE: {scale} VS: {:?}",
+                self.positions[(start_index as usize)..]
+                    .iter()
+                    .collect::<Vec<_>>()
+            );
+
+            self.indices.extend_from_slice(&[
+                start_index + 0,
+                start_index + 1,
+                start_index + 3,
+                start_index + 0,
+                start_index + 3,
+                start_index + 2,
+            ]);
+
+            self.colors.extend_from_slice(&[
+                Vec4::new(1.0, 0.0, 0.0, 1.0),
+                Vec4::new(0.0, 1.0, 0.0, 1.0),
+                Vec4::new(0.0, 0.0, 1.0, 1.0),
+                Vec4::new(0.0, 1.0, 1.0, 1.0),
+            ]);
         }
     }
 
@@ -85,32 +120,5 @@ impl Mesher {
         self.indices.clear();
 
         mesh
-    }
-
-    fn add_face(&mut self, center: Vec3, scale: f32, face_id: Face) {
-        let (normal, vertex_indices) = FACES[face_index(face_id)];
-        let start_index = self.positions.len() as u32;
-
-        for vertex_index in vertex_indices {
-            self.positions
-                .push(center + (VERTICES[vertex_index] * scale) + (0.5 * scale));
-            self.normals.push(normal);
-        }
-
-        self.indices.extend_from_slice(&[
-            start_index + 0,
-            start_index + 1,
-            start_index + 2,
-            start_index + 1,
-            start_index + 2,
-            start_index + 3,
-        ]);
-
-        self.colors.extend_from_slice(&[
-            Vec4::new(1.0, 0.0, 0.0, 1.0),
-            Vec4::new(0.0, 1.0, 0.0, 1.0),
-            Vec4::new(0.0, 0.0, 1.0, 1.0),
-            Vec4::new(0.0, 1.0, 1.0, 1.0),
-        ]);
     }
 }

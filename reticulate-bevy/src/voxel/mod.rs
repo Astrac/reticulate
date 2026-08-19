@@ -1,7 +1,6 @@
 mod mesher;
+#[allow(dead_code)]
 mod test_model;
-
-use std::f32::consts::PI;
 
 use bevy::light::CascadeShadowConfigBuilder;
 use bevy::prelude::*;
@@ -36,48 +35,48 @@ fn draw_mesh(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let plane_mesh = meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(32.0)));
-    let plane_mat = materials.add(StandardMaterial {
-        base_color: Color::xyza(0.5, 0.5, 0.5, 0.03),
-        cull_mode: None,
-        double_sided: true,
-        alpha_mode: AlphaMode::Blend,
-        ..default()
-    });
+    // let plane_mesh = meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(32.0)));
+    // let plane_mat = materials.add(StandardMaterial {
+    //     base_color: Color::xyza(0.5, 0.5, 0.5, 0.03),
+    //     cull_mode: None,
+    //     double_sided: true,
+    //     alpha_mode: AlphaMode::Blend,
+    //     ..default()
+    // });
 
-    for x in 0..65 {
-        commands.spawn((
-            Mesh3d(plane_mesh.clone()),
-            MeshMaterial3d(plane_mat.clone()),
-            ChunkMesh,
-            Transform::from_rotation(Quat::from_rotation_z(PI / 2.0))
-                .with_translation(Vec3::new(x as f32, 32.0, 32.0)),
-        ));
-    }
-    for y in 0..65 {
-        commands.spawn((
-            Mesh3d(plane_mesh.clone()),
-            MeshMaterial3d(plane_mat.clone()),
-            ChunkMesh,
-            Transform::from_translation(Vec3::new(32.0, y as f32, 32.0)),
-        ));
-    }
-    for z in 0..65 {
-        commands.spawn((
-            Mesh3d(plane_mesh.clone()),
-            MeshMaterial3d(plane_mat.clone()),
-            ChunkMesh,
-            Transform::from_rotation(Quat::from_rotation_x(PI / 2.0))
-                .with_translation(Vec3::new(32.0, 32.0, z as f32)),
-        ));
-    }
+    // for x in 0..65 {
+    //     commands.spawn((
+    //         Mesh3d(plane_mesh.clone()),
+    //         MeshMaterial3d(plane_mat.clone()),
+    //         ChunkMesh,
+    //         Transform::from_rotation(Quat::from_rotation_z(PI / 2.0))
+    //             .with_translation(Vec3::new(x as f32, 32.0, 32.0)),
+    //     ));
+    // }
+    // for y in 0..65 {
+    //     commands.spawn((
+    //         Mesh3d(plane_mesh.clone()),
+    //         MeshMaterial3d(plane_mat.clone()),
+    //         ChunkMesh,
+    //         Transform::from_translation(Vec3::new(32.0, y as f32, 32.0)),
+    //     ));
+    // }
+    // for z in 0..65 {
+    //     commands.spawn((
+    //         Mesh3d(plane_mesh.clone()),
+    //         MeshMaterial3d(plane_mat.clone()),
+    //         ChunkMesh,
+    //         Transform::from_rotation(Quat::from_rotation_x(PI / 2.0))
+    //             .with_translation(Vec3::new(32.0, 32.0, z as f32)),
+    //     ));
+    // }
 
     // let compressed = CompactOctree::from_fixed8(octree.clone());
 
     let mut octree: Fixed8Octree<()> = Fixed8Octree::new();
-    test_model::add_nested_cubes(&mut octree);
+    test_model::test_scene(&mut octree);
     {
-        let mut walker = FaceWalker::new(mesher.on_face_handler());
+        let mut walker = FaceWalker::new(mesher.on_mesh_face_handler());
         octree.walk_dense(&mut walker);
     }
 

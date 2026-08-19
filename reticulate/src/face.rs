@@ -2,7 +2,7 @@ use crate::axis::Axis;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Default, Debug, PartialEq)]
-pub struct Face(pub(crate) u8);
+pub struct Face(pub u8);
 
 impl Face {
     #[inline(always)]

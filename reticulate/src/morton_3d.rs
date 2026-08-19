@@ -5,7 +5,8 @@ use crate::{axis, coords::Coords3D, morton_2d::Morton2D, utils::bitmasks::*};
 pub struct Morton3D(u32);
 
 impl Morton3D {
-    pub fn as_u32(&self) -> u32 {
+    #[inline(always)]
+    pub const fn as_u32(&self) -> u32 {
         self.0
     }
 
@@ -41,16 +42,6 @@ impl Morton3D {
 
     pub fn drop_axis_2(&self, axis: axis::Axis) -> Morton2D {
         Morton2D::from(self.drop_axis(axis))
-    }
-}
-
-impl From<Morton3D> for Coords3D {
-    fn from(value: Morton3D) -> Self {
-        Coords3D {
-            x: take_one_every_3_bits(value.0) as u8,
-            y: take_one_every_3_bits(value.0 >> 1) as u8,
-            z: take_one_every_3_bits(value.0 >> 2) as u8,
-        }
     }
 }
 
