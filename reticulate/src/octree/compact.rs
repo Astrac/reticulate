@@ -33,6 +33,7 @@ struct Frame<Data> {
     state: UniformState<Data>,
 }
 
+// TODO -  Remove Vec, use stack-array
 #[derive(Default)]
 pub struct ToCompactWalker<Data> {
     pub compact: CompactOctree<Data>,
@@ -82,6 +83,10 @@ impl<Data: Copy + PartialEq> Walker<Data> for ToCompactWalker<Data> {
         } else {
             self.compact.nodes[frame.start] = CompactOctreeNode::Branch(frame.seen_mask);
             self.note_child(morton.octant(), None);
+
+            if frame.seen_mask == 0 {
+                self.compact.nodes.truncate(frame.start);
+            }
         }
     }
 

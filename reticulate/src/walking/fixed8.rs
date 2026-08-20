@@ -14,7 +14,7 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
         let mut depth: usize = 0;
         let mut current_branch_mask = 0b11111111_u8;
         let mut current_morton = 0u32;
-        let mut done = false;
+        let mut done = self.nodes.is_empty();
 
         while !done {
             let octant = current_branch_mask.trailing_zeros() as u8;
