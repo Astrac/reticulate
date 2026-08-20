@@ -18,7 +18,7 @@ impl Morton3D {
 
     #[inline(always)]
     pub const fn parent(&self) -> Morton3D {
-        Morton3D(self.0)
+        Morton3D(self.0 >> 3)
     }
 
     #[inline(always)]

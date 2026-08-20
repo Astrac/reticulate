@@ -1,4 +1,4 @@
-use crate::{Coords2D, Coords3D, Depth, Morton2D, Morton3D, axis::*, face::Face};
+use crate::{Coords2D, Coords3D, Depth, Morton2D, Morton3D, axis::*, face::*};
 
 #[derive(Clone, Copy, Debug)]
 pub struct MeshFace {
@@ -32,22 +32,17 @@ impl MeshFace {
         let coords_2d = Coords2D::from(morton_2d);
         let mut coords = Coords3D::from_morton(morton_3d, depth_3d);
 
+        // if face == FACE_Z_P {
+        //     println!(
+        //         "{face:?} {:?} {coords:?} {depth_3d:?} {morton_2d:?} {face_size} {face_depth} {coords_2d:?}",
+        //         Coords3D::from_morton_unscaled(morton_3d),
+        //     );
+        // }
+
         let (dx, dy, dz) = match face.axis() {
-            AXIS_X => (
-                0,
-                (coords_2d.u << face_depth) as i32,
-                (coords_2d.v << face_depth) as i32,
-            ),
-            AXIS_Y => (
-                (coords_2d.u << face_depth) as i32,
-                0,
-                (coords_2d.v << face_depth) as i32,
-            ),
-            AXIS_Z => (
-                (coords_2d.u << face_depth) as i32,
-                (coords_2d.v << face_depth) as i32,
-                0,
-            ),
+            AXIS_X => (0, coords_2d.u, coords_2d.v),
+            AXIS_Y => (coords_2d.u, 0, coords_2d.v),
+            AXIS_Z => (coords_2d.u, coords_2d.v, 0),
             _ => unreachable!(),
         };
 

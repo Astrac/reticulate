@@ -1,10 +1,23 @@
-use std::ops::{BitAnd, BitOr};
+use std::{
+    fmt::Debug,
+    ops::{BitAnd, BitOr},
+};
 
 use crate::face::Face;
 
 #[repr(transparent)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Axis(pub u8);
+
+const AXIS_NAMES: [&'static str; 3] = ["X", "Y", "Z"];
+
+impl Debug for Axis {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Axis")
+            .field(&AXIS_NAMES[self.as_index()])
+            .finish()
+    }
+}
 
 impl Axis {
     #[inline(always)]

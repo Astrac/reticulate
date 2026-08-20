@@ -3,7 +3,7 @@ use bevy::{
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
-use reticulate::{Coords3D, MeshFace, axis::*, face::Face};
+use reticulate::{Coords3D, MeshFace, axis::*, face::*};
 
 const VERTICES: [Vec3; 8] = [
     Vec3::new(0.0, 0.0, 0.0),
@@ -54,6 +54,9 @@ impl Mesher {
 
     pub fn on_mesh_face_handler(&mut self) -> impl FnMut(MeshFace) {
         |mesh_face: MeshFace| {
+            if mesh_face.face.axis() == AXIS_X {
+                println!("{mesh_face:?}");
+            }
             let start_index = self.positions.len() as u32;
             let (normal, vertex_indices) = FACES[face_index(mesh_face.face)];
             let width = mesh_face.width as f32;
@@ -77,13 +80,6 @@ impl Mesher {
                 self.positions.push(position);
                 self.normals.push(normal);
             }
-
-            println!(
-                "V_IDXS: {vertex_indices:?} SCALE: {scale} VS: {:?}",
-                self.positions[(start_index as usize)..]
-                    .iter()
-                    .collect::<Vec<_>>()
-            );
 
             self.indices.extend_from_slice(&[
                 start_index + 0,
