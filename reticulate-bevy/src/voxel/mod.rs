@@ -73,7 +73,7 @@ fn draw_mesh(
 
     let octree = test_model::test_scene();
     {
-        let mut walker = FaceWalker::new(mesher.on_mesh_face_handler());
+        let mut walker = SimpleFaceWalker::new(mesher.on_mesh_face_handler());
         octree.walk_dense(&mut walker);
     }
 
