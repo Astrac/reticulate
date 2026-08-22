@@ -5,33 +5,33 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Default, Debug, PartialEq)]
-enum BranchCoalescence {
+enum BranchCoalescence<Data> {
     #[default]
     Undecided,
     Void,
-    Solid,
+    Solid(Data),
     Subdivided,
 }
 
 #[derive(Clone, Copy, Default, Debug, PartialEq)]
-enum PendingWalk {
-    Solid,
+enum PendingWalk<Data> {
+    Solid(Data),
     #[default]
     Void,
 }
 
-pub struct CompatingFaceWalker<F> {
+pub struct CompatingFaceWalker<Data, F> {
     boundaries: DecisionBoundaries,
     on_face: F,
-    stack: [BranchCoalescence; 6],
-    pending_walks: [[PendingWalk; 8]; 6],
+    stack: [BranchCoalescence<Data>; 6],
+    pending_walks: [[PendingWalk<Data>; 8]; 6],
 }
 
-impl<F> CompatingFaceWalker<F>
+impl<Data, F> CompatingFaceWalker<Data, F>
 where
     F: FnMut(MeshFace),
 {
-    pub fn new(f: F) -> CompatingFaceWalker<F> {
+    pub fn new(f: F) -> CompatingFaceWalker<Data, F> {
         CompatingFaceWalker {
             on_face: f,
             boundaries: Default::default(),
@@ -80,7 +80,7 @@ where
         let octant = morton.octant();
         for i in 0..octant {
             match self.pending_walks[depth as usize][i as usize] {
-                PendingWalk::Solid => {
+                PendingWalk::Solid(_) => {
                     let morton = morton.parent().child_octant(i);
                     self.walk_on_solid(AXIS_X, morton, depth + 1);
                     self.walk_on_solid(AXIS_Y, morton, depth + 1);
@@ -97,7 +97,8 @@ where
     }
 }
 
-impl<Data: PartialEq + Copy, F> DenseWalker<Data> for CompatingFaceWalker<F>
+// TODO Remove Default
+impl<Data: PartialEq + Copy + Default, F> DenseWalker<Data> for CompatingFaceWalker<Data, F>
 where
     F: FnMut(MeshFace),
 {
@@ -121,28 +122,24 @@ where
         match self.stack[depth as usize] {
             BranchCoalescence::Undecided => unreachable!(),
             BranchCoalescence::Void => {
-                self.walk_on_void(AXIS_X, morton, depth);
-                self.walk_on_void(AXIS_Y, morton, depth);
-                self.walk_on_void(AXIS_Z, morton, depth);
+                <Self as DenseWalker<Data>>::on_empty(self, depth, morton);
             }
-            BranchCoalescence::Solid => {
-                self.walk_on_solid(AXIS_X, morton, depth);
-                self.walk_on_solid(AXIS_Y, morton, depth);
-                self.walk_on_solid(AXIS_Z, morton, depth);
+            BranchCoalescence::Solid(data) => {
+                self.on_leaf(depth, morton, &data);
             }
             BranchCoalescence::Subdivided => (),
         }
     }
 
-    fn on_leaf(&mut self, depth: u8, morton: Morton3D, _data: &Data) {
+    fn on_leaf(&mut self, depth: u8, morton: Morton3D, data: &Data) {
         let stack_idx = (depth - 1) as usize;
 
         if self.stack[stack_idx] == BranchCoalescence::Undecided {
-            self.stack[stack_idx] = BranchCoalescence::Solid;
+            self.stack[stack_idx] = BranchCoalescence::Solid(*data);
         }
 
-        if self.stack[stack_idx] == BranchCoalescence::Solid {
-            self.pending_walks[stack_idx][morton.octant() as usize] = PendingWalk::Solid;
+        if self.stack[stack_idx] == BranchCoalescence::Solid(*data) {
+            self.pending_walks[stack_idx][morton.octant() as usize] = PendingWalk::Solid(*data);
         }
 
         if self.stack[stack_idx] == BranchCoalescence::Void {
@@ -168,7 +165,7 @@ where
             self.pending_walks[stack_idx][morton.octant() as usize] = PendingWalk::Void;
         }
 
-        if self.stack[stack_idx] == BranchCoalescence::Solid {
+        if matches!(self.stack[stack_idx], BranchCoalescence::Solid(_)) {
             self.stack[stack_idx] = BranchCoalescence::Subdivided;
             self.emit_pending_walks(morton, depth - 1);
         }
