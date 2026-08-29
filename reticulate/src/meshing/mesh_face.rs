@@ -6,6 +6,7 @@ pub struct MeshFace {
     pub coords: Coords3D,
     pub width: usize,
     pub height: usize,
+    pub depth: Depth,
     pub subdivisions: u32,
 }
 
@@ -17,6 +18,7 @@ impl MeshFace {
             width: Default::default(),
             height: Default::default(),
             subdivisions: Default::default(),
+            depth: Default::default(),
         }
     }
 
@@ -53,6 +55,7 @@ impl MeshFace {
         MeshFace {
             face,
             coords,
+            depth: depth_3d,
             width: side_length as usize,
             height: side_length as usize,
             subdivisions: 0,

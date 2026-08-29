@@ -20,7 +20,7 @@ where
     }
 
     fn walk_on_solid(&mut self, axis: Axis, morton: Morton3D, depth: u8) {
-        let deciding = self.boundaries.flip_deciding_face(axis, morton, depth);
+        let deciding = self.boundaries.flip(axis, morton, depth);
 
         harvest_faces(deciding, depth, &mut |local_face_morton, face_size| {
             let mesh_face = MeshFace::from_morton_back_projection(
@@ -34,11 +34,11 @@ where
             (self.on_face)(mesh_face);
         });
 
-        self.boundaries.fill_deciding_face(axis, morton, depth);
+        self.boundaries.fill(axis, morton, depth);
     }
 
     fn walk_on_void(&mut self, axis: Axis, morton: Morton3D, depth: u8) {
-        let deciding = self.boundaries.deciding_face_mut(axis, morton, depth);
+        let deciding = self.boundaries.face_mut(axis, morton, depth);
 
         harvest_faces(deciding, depth, &mut |local_face_morton, face_size| {
             let mesh_face = MeshFace::from_morton_back_projection(

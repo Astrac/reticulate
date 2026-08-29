@@ -22,7 +22,8 @@ impl Face {
         (self.0.trailing_zeros() as usize) + (3 * ((self.0 as usize) >> 3))
     }
 
-    pub fn axis(&self) -> Axis {
+    #[inline(always)]
+    pub const fn axis(&self) -> Axis {
         Axis(self.0 & 0b111)
     }
 }

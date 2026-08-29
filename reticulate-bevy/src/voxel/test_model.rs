@@ -7,11 +7,11 @@ pub fn test_scene() -> impl DenseWalk<()> {
     // add_2x2(&mut octree);
     // add_8x8(&mut octree);
     // add_nested_cubes(&mut octree);
-    // add_tunnel(&mut octree);
+    add_tunnel(&mut octree);
     // add_3d_ortho_labyrint(&mut octree);
     // add_gyroid(&mut octree);
     // add_diagonal_helix(&mut octree);
-    add_fractal_staircase(&mut octree);
+    // add_fractal_staircase(&mut octree);
 
     let compressed = CompactOctree::from_fixed8(&octree);
     let mut print_walker = PrintWalker::default();
@@ -39,7 +39,7 @@ pub fn add_tunnel(octree: &mut Fixed8Octree<()>) {
                     continue;
                 }
 
-                octree.update(Coords3D { x: x, y: y, z: z }, Some(()));
+                octree.update(Coords3D { x: x, y: y+1, z: z }, Some(()));
             }
         }
     }

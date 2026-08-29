@@ -20,19 +20,19 @@ enum PendingWalk<Data> {
     Void,
 }
 
-pub struct CompatingFaceWalker<Data, F> {
+pub struct CompactingFaceWalker<Data, F> {
     boundaries: DecisionBoundaries,
     on_face: F,
     stack: [BranchCoalescence<Data>; 6],
     pending_walks: [[PendingWalk<Data>; 8]; 6],
 }
 
-impl<Data, F> CompatingFaceWalker<Data, F>
+impl<Data, F> CompactingFaceWalker<Data, F>
 where
     F: FnMut(MeshFace),
 {
-    pub fn new(f: F) -> CompatingFaceWalker<Data, F> {
-        CompatingFaceWalker {
+    pub fn new(f: F) -> CompactingFaceWalker<Data, F> {
+        CompactingFaceWalker {
             on_face: f,
             boundaries: Default::default(),
             stack: Default::default(),
@@ -41,7 +41,7 @@ where
     }
 
     fn walk_on_solid(&mut self, axis: Axis, morton: Morton3D, depth: u8) {
-        let deciding = self.boundaries.flip_deciding_face(axis, morton, depth);
+        let deciding = self.boundaries.flip(axis, morton, depth);
 
         harvest_faces(deciding, depth, &mut |local_face_morton, face_size| {
             let mesh_face = MeshFace::from_morton_back_projection(
@@ -55,11 +55,11 @@ where
             (self.on_face)(mesh_face);
         });
 
-        self.boundaries.fill_deciding_face(axis, morton, depth);
+        self.boundaries.fill(axis, morton, depth);
     }
 
     fn walk_on_void(&mut self, axis: Axis, morton: Morton3D, depth: u8) {
-        let deciding = self.boundaries.deciding_face_mut(axis, morton, depth);
+        let deciding = self.boundaries.face_mut(axis, morton, depth);
 
         harvest_faces(deciding, depth, &mut |local_face_morton, face_size| {
             let mesh_face = MeshFace::from_morton_back_projection(
@@ -98,7 +98,7 @@ where
 }
 
 // TODO Remove Default
-impl<Data: PartialEq + Copy + Default, F> DenseWalker<Data> for CompatingFaceWalker<Data, F>
+impl<Data: PartialEq + Copy + Default, F> DenseWalker<Data> for CompactingFaceWalker<Data, F>
 where
     F: FnMut(MeshFace),
 {

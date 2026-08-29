@@ -39,6 +39,11 @@ impl Axis {
     pub const fn as_negative_face(&self) -> Face {
         Face(self.0 | 0b1000)
     }
+
+    #[inline(always)]
+    pub const fn next(&self) -> Axis {
+        Axis(((self.0 << 1) | (self.0 >> 2)) & 0b111)
+    }
 }
 
 impl From<u8> for Axis {
