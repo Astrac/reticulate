@@ -40,14 +40,14 @@ where
         }
     }
 
-    fn walk_on_solid(&mut self, axis: Axis, morton: Morton3D, depth: u8) {
+    fn walk_on_solid(&mut self, axis: Axis, morton: Morton3D, depth: Depth) {
         let deciding = self.boundaries.flip(axis, morton, depth);
 
         harvest_faces(deciding, depth, &mut |local_face_morton, face_size| {
             let mesh_face = MeshFace::from_morton_back_projection(
                 axis.as_negative_face(),
                 morton,
-                Depth(depth),
+                depth,
                 local_face_morton,
                 face_size,
             );
@@ -58,14 +58,14 @@ where
         self.boundaries.fill(axis, morton, depth);
     }
 
-    fn walk_on_void(&mut self, axis: Axis, morton: Morton3D, depth: u8) {
+    fn walk_on_void(&mut self, axis: Axis, morton: Morton3D, depth: Depth) {
         let deciding = self.boundaries.face_mut(axis, morton, depth);
 
         harvest_faces(deciding, depth, &mut |local_face_morton, face_size| {
             let mesh_face = MeshFace::from_morton_back_projection(
                 axis.as_positive_face(),
                 morton,
-                Depth(depth),
+                depth,
                 local_face_morton,
                 face_size,
             );
@@ -76,10 +76,10 @@ where
         deciding.fill(false);
     }
 
-    fn emit_pending_walks(&mut self, morton: Morton3D, depth: u8) {
+    fn emit_pending_walks(&mut self, morton: Morton3D, depth: Depth) {
         let octant = morton.octant();
         for i in 0..octant {
-            match self.pending_walks[depth as usize][i as usize] {
+            match self.pending_walks[depth.as_usize()][i as usize] {
                 PendingWalk::Solid(_) => {
                     let morton = morton.parent().child_octant(i);
                     self.walk_on_solid(AXIS_X, morton, depth + 1);
@@ -102,24 +102,24 @@ impl<Data: PartialEq + Copy + Default, F> DenseWalker<Data> for CompactingFaceWa
 where
     F: FnMut(MeshFace),
 {
-    fn on_branch_start(&mut self, depth: u8, morton: Morton3D, _children_mask: u8) {
-        self.stack[depth as usize] = BranchCoalescence::Undecided;
+    fn on_branch_start(&mut self, depth: Depth, morton: Morton3D, _children_mask: u8) {
+        self.stack[depth.as_usize()] = BranchCoalescence::Undecided;
 
-        if depth > 0 {
-            let parent_idx = (depth - 1) as usize;
+        if depth > Depth(0) {
+            let parent_idx = (depth - 1).as_usize();
             if self.stack[parent_idx] == BranchCoalescence::Undecided {
                 self.stack[parent_idx] = BranchCoalescence::Subdivided;
             }
 
             if self.stack[parent_idx] != BranchCoalescence::Subdivided {
                 self.stack[parent_idx] = BranchCoalescence::Subdivided;
-                self.emit_pending_walks(morton, parent_idx as u8);
+                self.emit_pending_walks(morton, parent_idx.into());
             }
         }
     }
 
-    fn on_branch_end(&mut self, depth: u8, morton: Morton3D) {
-        match self.stack[depth as usize] {
+    fn on_branch_end(&mut self, depth: Depth, morton: Morton3D) {
+        match self.stack[depth.as_usize()] {
             BranchCoalescence::Undecided => unreachable!(),
             BranchCoalescence::Void => {
                 <Self as DenseWalker<Data>>::on_empty(self, depth, morton);
@@ -131,8 +131,8 @@ where
         }
     }
 
-    fn on_leaf(&mut self, depth: u8, morton: Morton3D, data: &Data) {
-        let stack_idx = (depth - 1) as usize;
+    fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &Data) {
+        let stack_idx = (depth - 1).as_usize();
 
         if self.stack[stack_idx] == BranchCoalescence::Undecided {
             self.stack[stack_idx] = BranchCoalescence::Solid(*data);
@@ -154,8 +154,8 @@ where
         }
     }
 
-    fn on_empty(&mut self, depth: u8, morton: Morton3D) {
-        let stack_idx = (depth - 1) as usize;
+    fn on_empty(&mut self, depth: Depth, morton: Morton3D) {
+        let stack_idx = (depth - 1).as_usize();
 
         if self.stack[stack_idx] == BranchCoalescence::Undecided {
             self.stack[stack_idx] = BranchCoalescence::Void;

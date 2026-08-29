@@ -2,15 +2,14 @@ use std::fmt::Debug;
 
 use crate::{
     Fixed8Octree, Walk, Walker,
-    octree::Fixed8OctreeNode,
+    octree::{Fixed8OctreeNode, TREE_DEPTH},
     walking::{DenseWalk, DenseWalker},
 };
 
 impl<Data> Walk<Data> for Fixed8Octree<Data> {
     fn walk(&self, walker: &mut impl Walker<Data>) {
-        const MAX_DEPTH: usize = 6;
-        let mut pending_branches = [0u8; MAX_DEPTH];
-        let mut jumps = [0usize; MAX_DEPTH + 1];
+        let mut pending_branches = [0u8; TREE_DEPTH];
+        let mut jumps = [0usize; TREE_DEPTH + 1];
         let mut depth: usize = 0;
         let mut current_branch_mask = 0b11111111_u8;
         let mut current_morton = 0u32;
@@ -26,7 +25,7 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
                     children_index,
                     children_mask: _,
                 } => {
-                    if depth < MAX_DEPTH {
+                    if depth < TREE_DEPTH {
                         pending_branches[depth] = current_branch_mask;
                         jumps[depth] += 1;
                         depth += 1;
@@ -39,7 +38,7 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
                     jumps[depth] = *children_index;
 
                     walker.on_branch_start(
-                        (depth - 1) as u8,
+                        (depth - 1).into(),
                         node_morton.into(),
                         current_branch_mask,
                     );
@@ -48,7 +47,7 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
                     current_branch_mask &= current_branch_mask - 1;
 
                     if let Some(data) = data {
-                        walker.on_leaf(depth as u8, node_morton.into(), data);
+                        walker.on_leaf(depth.into(), node_morton.into(), data);
                     }
 
                     if depth != 0 {
@@ -72,7 +71,7 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
                     done = true;
                 }
 
-                walker.on_branch_end(depth as u8, branch_morton.into());
+                walker.on_branch_end(depth.into(), branch_morton.into());
             }
         }
     }
@@ -80,9 +79,8 @@ impl<Data> Walk<Data> for Fixed8Octree<Data> {
 
 impl<Data: Debug> DenseWalk<Data> for Fixed8Octree<Data> {
     fn walk_dense(&self, walker: &mut impl DenseWalker<Data>) {
-        const MAX_DEPTH: usize = 6;
-        let mut pending_branches = [0u8; MAX_DEPTH];
-        let mut jumps = [0usize; MAX_DEPTH + 1];
+        let mut pending_branches = [0u8; TREE_DEPTH];
+        let mut jumps = [0usize; TREE_DEPTH + 1];
         let mut depth: usize = 0;
         let mut current_branch_mask = 0b11111111_u8;
         let mut current_morton = 0u32;
@@ -98,7 +96,7 @@ impl<Data: Debug> DenseWalk<Data> for Fixed8Octree<Data> {
                     children_index,
                     children_mask: _,
                 } => {
-                    if depth < MAX_DEPTH {
+                    if depth < TREE_DEPTH {
                         pending_branches[depth] = current_branch_mask;
                         jumps[depth] += 1;
                         depth += 1;
@@ -111,7 +109,7 @@ impl<Data: Debug> DenseWalk<Data> for Fixed8Octree<Data> {
                     jumps[depth] = *children_index;
 
                     walker.on_branch_start(
-                        (depth - 1) as u8,
+                        (depth - 1).into(),
                         node_morton.into(),
                         current_branch_mask,
                     );
@@ -120,9 +118,9 @@ impl<Data: Debug> DenseWalk<Data> for Fixed8Octree<Data> {
                     current_branch_mask &= current_branch_mask - 1;
 
                     if let Some(data) = data {
-                        walker.on_leaf(depth as u8, node_morton.into(), data);
+                        walker.on_leaf(depth.into(), node_morton.into(), data);
                     } else {
-                        walker.on_empty(depth as u8, node_morton.into());
+                        walker.on_empty(depth.into(), node_morton.into());
                     }
 
                     if depth != 0 {
@@ -146,7 +144,7 @@ impl<Data: Debug> DenseWalk<Data> for Fixed8Octree<Data> {
                     done = true;
                 }
 
-                walker.on_branch_end(depth as u8, branch_morton.into());
+                walker.on_branch_end(depth.into(), branch_morton.into());
             }
         }
     }

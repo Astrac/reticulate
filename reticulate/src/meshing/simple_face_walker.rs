@@ -1,5 +1,6 @@
 use crate::{
-    DenseWalker, Depth, MeshFace, Morton3D, axis::*,
+    DenseWalker, Depth, MeshFace, Morton3D,
+    axis::*,
     meshing::{decision_boundaries::DecisionBoundaries, harvest::harvest_faces},
 };
 
@@ -19,14 +20,14 @@ where
         }
     }
 
-    fn walk_on_solid(&mut self, axis: Axis, morton: Morton3D, depth: u8) {
+    fn walk_on_solid(&mut self, axis: Axis, morton: Morton3D, depth: Depth) {
         let deciding = self.boundaries.flip(axis, morton, depth);
 
         harvest_faces(deciding, depth, &mut |local_face_morton, face_size| {
             let mesh_face = MeshFace::from_morton_back_projection(
                 axis.as_negative_face(),
                 morton,
-                Depth(depth),
+                depth,
                 local_face_morton,
                 face_size,
             );
@@ -37,14 +38,14 @@ where
         self.boundaries.fill(axis, morton, depth);
     }
 
-    fn walk_on_void(&mut self, axis: Axis, morton: Morton3D, depth: u8) {
+    fn walk_on_void(&mut self, axis: Axis, morton: Morton3D, depth: Depth) {
         let deciding = self.boundaries.face_mut(axis, morton, depth);
 
         harvest_faces(deciding, depth, &mut |local_face_morton, face_size| {
             let mesh_face = MeshFace::from_morton_back_projection(
                 axis.as_positive_face(),
                 morton,
-                Depth(depth),
+                depth,
                 local_face_morton,
                 face_size,
             );
@@ -60,19 +61,19 @@ impl<Data: PartialEq + Copy, F> DenseWalker<Data> for SimpleFaceWalker<F>
 where
     F: FnMut(MeshFace),
 {
-    fn on_branch_start(&mut self, _depth: u8, _morton: Morton3D, _children_mask: u8) {}
+    fn on_branch_start(&mut self, _depth: Depth, _morton: Morton3D, _children_mask: u8) {}
 
-    fn on_branch_end(&mut self, _depth: u8, _morton: Morton3D) {
+    fn on_branch_end(&mut self, _depth: Depth, _morton: Morton3D) {
         // TODO: Harvest outermost+ faces
     }
 
-    fn on_leaf(&mut self, depth: u8, morton: Morton3D, _data: &Data) {
+    fn on_leaf(&mut self, depth: Depth, morton: Morton3D, _data: &Data) {
         self.walk_on_solid(AXIS_X, morton, depth);
         self.walk_on_solid(AXIS_Y, morton, depth);
         self.walk_on_solid(AXIS_Z, morton, depth);
     }
 
-    fn on_empty(&mut self, depth: u8, morton: Morton3D) {
+    fn on_empty(&mut self, depth: Depth, morton: Morton3D) {
         self.walk_on_void(AXIS_X, morton, depth);
         self.walk_on_void(AXIS_Y, morton, depth);
         self.walk_on_void(AXIS_Z, morton, depth);

@@ -1,4 +1,4 @@
-use crate::{face::*, morton_3d::Morton3D, walking::Walker};
+use crate::{Depth, face::*, morton_3d::Morton3D, walking::Walker};
 
 // TODO: publish this or strip it
 
@@ -16,13 +16,13 @@ impl<F> UnculledFaceWalker<F> {
 
 impl<Data, F> Walker<Data> for UnculledFaceWalker<F>
 where
-    F: FnMut(Morton3D, u8, Face),
+    F: FnMut(Morton3D, Depth, Face),
 {
-    fn on_branch_start(&mut self, _depth: u8, _morton: Morton3D, _children_mask: u8) {}
+    fn on_branch_start(&mut self, _depth: Depth, _morton: Morton3D, _children_mask: u8) {}
 
-    fn on_branch_end(&mut self, _depth: u8, _morton: Morton3D) {}
+    fn on_branch_end(&mut self, _depth: Depth, _morton: Morton3D) {}
 
-    fn on_leaf(&mut self, depth: u8, morton: Morton3D, _data: &Data) {
+    fn on_leaf(&mut self, depth: Depth, morton: Morton3D, _data: &Data) {
         (self.on_face)(morton, depth, FACE_X_N);
         (self.on_face)(morton, depth, FACE_X_P);
         (self.on_face)(morton, depth, FACE_Y_N);

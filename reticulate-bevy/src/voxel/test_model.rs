@@ -84,9 +84,9 @@ pub fn add_2x2(octree: &mut Fixed8Octree<()>) {
 }
 
 pub fn add_3d_ortho_labyrint(octree: &mut Fixed8Octree<()>) {
-    for z in 0..64 {
-        for y in 0..64 {
-            for x in 0..64 {
+    for z in 0..32 {
+        for y in 0..32 {
+            for x in 0..32 {
                 let mut is_solid = false;
 
                 if y % 4 == 0 && z % 4 == 0 {
@@ -132,7 +132,7 @@ fn add_diagonal_helix(octree: &mut Fixed8Octree<()>) {
         let ry = (cy + offset_y).round() as i32;
         let rz = (cz + offset_z).round() as i32;
 
-        if rx >= 0 && rx < 64 && ry >= 0 && ry < 64 && rz >= 0 && rz < 64 {
+        if rx >= 0 && rx < 32 && ry >= 0 && ry < 32 && rz >= 0 && rz < 32 {
             let x = rx as u8;
             let y = ry as u8;
             let z = rz as u8;
@@ -146,17 +146,17 @@ fn add_gyroid(octree: &mut Fixed8Octree<()>) {
     let period_wavelength = 16.0;
     let k = (2.0 * std::f64::consts::PI) / period_wavelength;
 
-    for z in 0..64 {
+    for z in 0..32 {
         let z_f = z as f64 * k;
         let sin_z = z_f.sin();
         let cos_z = z_f.cos();
 
-        for y in 0..64 {
+        for y in 0..32 {
             let y_f = y as f64 * k;
             let sin_y = y_f.sin();
             let cos_y = y_f.cos();
 
-            for x in 0..64 {
+            for x in 0..32 {
                 let x_f = x as f64 * k;
                 let sin_x = x_f.sin();
                 let cos_x = x_f.cos();

@@ -1,4 +1,4 @@
-use crate::{Morton3D, Walk, Walker, octree::Fixed8Octree};
+use crate::{Depth, Morton3D, Walk, Walker, octree::Fixed8Octree};
 
 #[derive(Clone, Debug, Default)]
 pub struct CompactOctree<Data> {
@@ -55,7 +55,7 @@ impl<Data: Copy + PartialEq> ToCompactWalker<Data> {
 }
 
 impl<Data: Copy + PartialEq> Walker<Data> for ToCompactWalker<Data> {
-    fn on_branch_start(&mut self, _depth: u8, _morton: Morton3D, _children_mask: u8) {
+    fn on_branch_start(&mut self, _depth: Depth, _morton: Morton3D, _children_mask: u8) {
         let start = self.compact.nodes.len();
         self.compact.nodes.push(CompactOctreeNode::Branch(0));
         self.stack.push(Frame {
@@ -65,7 +65,7 @@ impl<Data: Copy + PartialEq> Walker<Data> for ToCompactWalker<Data> {
         });
     }
 
-    fn on_branch_end(&mut self, _depth: u8, morton: Morton3D) {
+    fn on_branch_end(&mut self, _depth: Depth, morton: Morton3D) {
         let frame = self
             .stack
             .pop()
@@ -90,7 +90,7 @@ impl<Data: Copy + PartialEq> Walker<Data> for ToCompactWalker<Data> {
         }
     }
 
-    fn on_leaf(&mut self, _depth: u8, morton: Morton3D, data: &Data) {
+    fn on_leaf(&mut self, _depth: Depth, morton: Morton3D, data: &Data) {
         self.compact.nodes.push(CompactOctreeNode::Leaf(*data));
         self.note_child(morton.octant(), Some(*data));
     }

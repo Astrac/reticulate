@@ -1,4 +1,4 @@
-use crate::{Morton3D, depth::Depth, utils::bitmasks::take_one_every_3_bits};
+use crate::{Morton3D, depth::Depth, octree::TREE_DEPTH, utils::bitmasks::take_one_every_3_bits};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Coords3D {
@@ -11,7 +11,7 @@ impl Coords3D {
     #[inline(always)]
     pub const fn from_morton(value: Morton3D, depth: Depth) -> Self {
         let morton = value.as_u32();
-        let depth_shift = (6 - depth.0) * 3;
+        let depth_shift = (TREE_DEPTH as u8 - depth.0) * 3;
         Coords3D {
             x: take_one_every_3_bits(morton << depth_shift) as u8,
             y: take_one_every_3_bits(morton << depth_shift >> 1) as u8,

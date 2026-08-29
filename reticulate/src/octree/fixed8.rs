@@ -1,14 +1,11 @@
-use crate::{coords::Coords3D, morton_3d::Morton3D};
+use crate::{coords::Coords3D, morton_3d::Morton3D, octree::TREE_DEPTH};
 
 #[derive(Clone, Debug)]
 pub struct Fixed8Octree<Data> {
     pub nodes: Vec<Fixed8OctreeNode<Data>>,
 }
 
-const TREE_DEPTH: u8 = 6;
-
-// TODO Drop Debug for Data
-impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
+impl<Data: Clone + PartialEq> Fixed8Octree<Data> {
     pub fn new() -> Fixed8Octree<Data> {
         Fixed8Octree {
             nodes: vec![Fixed8OctreeNode::leaf(None)],
@@ -31,11 +28,6 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
         for depth in 0..TREE_DEPTH {
             let shift = (TREE_DEPTH - depth - 1) * 3;
             let octant = ((morton_code.as_u32() >> shift) & 0b111) as usize;
-
-            log::trace!(
-                "Evaluating: depth = {depth}; index = {current_index}; octant: {octant} -> {:?}",
-                self.nodes[current_index]
-            );
 
             match &self.nodes[current_index] {
                 Fixed8OctreeNode::Branch {
@@ -81,11 +73,6 @@ impl<Data: Clone + PartialEq + std::fmt::Debug> Fixed8Octree<Data> {
         for depth in 0..TREE_DEPTH {
             let shift = (TREE_DEPTH - depth - 1) * 3;
             let octant = ((morton_code.as_u32() >> shift) & 0b111) as usize;
-
-            log::trace!(
-                "Evaluating update: depth = {depth}; index = {current_index}; octant: {octant}; current_node: {:?}",
-                self.nodes[current_index]
-            );
 
             if let Fixed8OctreeNode::Leaf {
                 data: ref leaf_data,

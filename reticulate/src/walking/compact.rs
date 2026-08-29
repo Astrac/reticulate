@@ -1,9 +1,11 @@
-use crate::{CompactOctree, DenseWalk, DenseWalker, Walk, Walker, octree::CompactOctreeNode};
+use crate::{
+    CompactOctree, DenseWalk, DenseWalker, Walk, Walker,
+    octree::{CompactOctreeNode, TREE_DEPTH},
+};
 
 impl<Data> Walk<Data> for CompactOctree<Data> {
     fn walk(&self, walker: &mut impl Walker<Data>) {
-        const MAX_DEPTH: usize = 6;
-        let mut pending_branches = [0u8; MAX_DEPTH];
+        let mut pending_branches = [0u8; TREE_DEPTH];
         let mut depth: usize = 0;
 
         let mut current_branch_mask = 1u8;
@@ -15,7 +17,7 @@ impl<Data> Walk<Data> for CompactOctree<Data> {
 
             match node {
                 CompactOctreeNode::Branch(mask) => {
-                    if depth < MAX_DEPTH {
+                    if depth < TREE_DEPTH {
                         pending_branches[depth] = current_branch_mask;
                         depth += 1;
                     } else {
@@ -25,12 +27,12 @@ impl<Data> Walk<Data> for CompactOctree<Data> {
                     current_branch_mask = *mask;
                     current_morton = node_morton;
 
-                    walker.on_branch_start((depth - 1) as u8, node_morton.into(), *mask);
+                    walker.on_branch_start((depth - 1).into(), node_morton.into(), *mask);
                 }
                 CompactOctreeNode::Leaf(data) => {
                     current_branch_mask &= current_branch_mask - 1;
 
-                    walker.on_leaf(depth as u8, node_morton.into(), data);
+                    walker.on_leaf(depth.into(), node_morton.into(), data);
                 }
             }
 
@@ -43,7 +45,7 @@ impl<Data> Walk<Data> for CompactOctree<Data> {
 
                 current_branch_mask = mask & (mask - 1);
 
-                walker.on_branch_end(depth as u8, branch_morton.into());
+                walker.on_branch_end(depth.into(), branch_morton.into());
             }
         }
     }
@@ -51,9 +53,8 @@ impl<Data> Walk<Data> for CompactOctree<Data> {
 
 impl<Data> DenseWalk<Data> for CompactOctree<Data> {
     fn walk_dense(&self, walker: &mut impl DenseWalker<Data>) {
-        const MAX_DEPTH: usize = 6;
-        let mut pending_branches = [0u8; MAX_DEPTH];
-        let mut pending_cursor = [0u8; MAX_DEPTH];
+        let mut pending_branches = [0u8; TREE_DEPTH];
+        let mut pending_cursor = [0u8; TREE_DEPTH];
         let mut depth: usize = 0;
         let mut current_branch_mask = 1u8;
         let mut current_morton = 0u32;
@@ -67,12 +68,12 @@ impl<Data> DenseWalk<Data> for CompactOctree<Data> {
             // was skipped in the mask, i.e. it's empty.
             for empty_octant in cursor..octant {
                 let empty_morton = (current_morton << 3) | empty_octant as u32;
-                walker.on_empty(depth as u8, empty_morton.into());
+                walker.on_empty(depth.into(), empty_morton.into());
             }
 
             match node {
                 CompactOctreeNode::Branch(mask) => {
-                    if depth < MAX_DEPTH {
+                    if depth < TREE_DEPTH {
                         pending_branches[depth] = current_branch_mask;
                         pending_cursor[depth] = octant + 1;
                         depth += 1;
@@ -82,12 +83,12 @@ impl<Data> DenseWalk<Data> for CompactOctree<Data> {
                     current_branch_mask = *mask;
                     current_morton = node_morton;
                     cursor = 0;
-                    walker.on_branch_start((depth - 1) as u8, node_morton.into(), *mask);
+                    walker.on_branch_start((depth - 1).into(), node_morton.into(), *mask);
                 }
                 CompactOctreeNode::Leaf(data) => {
                     current_branch_mask &= current_branch_mask - 1;
                     cursor = octant + 1;
-                    walker.on_leaf(depth as u8, node_morton.into(), data);
+                    walker.on_leaf(depth.into(), node_morton.into(), data);
                 }
             }
 
@@ -96,7 +97,7 @@ impl<Data> DenseWalk<Data> for CompactOctree<Data> {
                 // also empty and must be reported before closing the branch.
                 for empty_octant in cursor..8 {
                     let empty_morton = (current_morton << 3) | empty_octant as u32;
-                    walker.on_empty(depth as u8, empty_morton.into());
+                    walker.on_empty(depth.into(), empty_morton.into());
                 }
 
                 depth -= 1;
@@ -105,7 +106,7 @@ impl<Data> DenseWalk<Data> for CompactOctree<Data> {
                 current_morton >>= 3;
                 current_branch_mask = mask & (mask - 1);
                 cursor = pending_cursor[depth];
-                walker.on_branch_end(depth as u8, branch_morton.into());
+                walker.on_branch_end(depth.into(), branch_morton.into());
             }
         }
     }

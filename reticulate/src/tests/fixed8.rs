@@ -1,4 +1,4 @@
-use crate::{Coords3D, DenseWalk, DenseWalker, Fixed8Octree, Morton3D, Walk, Walker};
+use crate::{Coords3D, DenseWalk, DenseWalker, Depth, Fixed8Octree, Morton3D, Walk, Walker};
 
 struct TestWalker {
     events: Vec<WalkEvent>,
@@ -7,27 +7,27 @@ struct TestWalker {
 #[derive(Debug, Clone, PartialEq)]
 enum WalkEvent {
     BranchStart {
-        depth: u8,
+        depth: Depth,
         morton: Morton3D,
         mask: u8,
     },
     BranchEnd {
-        depth: u8,
+        depth: Depth,
         morton: Morton3D,
     },
     Leaf {
-        depth: u8,
+        depth: Depth,
         morton: Morton3D,
         data: String,
     },
     Empty {
-        depth: u8,
+        depth: Depth,
         morton: Morton3D,
     },
 }
 
 impl Walker<String> for TestWalker {
-    fn on_branch_start(&mut self, depth: u8, morton: Morton3D, children_mask: u8) {
+    fn on_branch_start(&mut self, depth: Depth, morton: Morton3D, children_mask: u8) {
         self.events.push(WalkEvent::BranchStart {
             depth,
             morton,
@@ -35,11 +35,11 @@ impl Walker<String> for TestWalker {
         });
     }
 
-    fn on_branch_end(&mut self, depth: u8, morton: Morton3D) {
+    fn on_branch_end(&mut self, depth: Depth, morton: Morton3D) {
         self.events.push(WalkEvent::BranchEnd { depth, morton });
     }
 
-    fn on_leaf(&mut self, depth: u8, morton: Morton3D, data: &String) {
+    fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &String) {
         self.events.push(WalkEvent::Leaf {
             depth,
             morton,
@@ -49,7 +49,7 @@ impl Walker<String> for TestWalker {
 }
 
 impl DenseWalker<String> for TestWalker {
-    fn on_branch_start(&mut self, depth: u8, morton: Morton3D, children_mask: u8) {
+    fn on_branch_start(&mut self, depth: Depth, morton: Morton3D, children_mask: u8) {
         self.events.push(WalkEvent::BranchStart {
             depth,
             morton,
@@ -57,11 +57,11 @@ impl DenseWalker<String> for TestWalker {
         });
     }
 
-    fn on_branch_end(&mut self, depth: u8, morton: Morton3D) {
+    fn on_branch_end(&mut self, depth: Depth, morton: Morton3D) {
         self.events.push(WalkEvent::BranchEnd { depth, morton });
     }
 
-    fn on_leaf(&mut self, depth: u8, morton: Morton3D, data: &String) {
+    fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &String) {
         self.events.push(WalkEvent::Leaf {
             depth,
             morton,
@@ -69,7 +69,7 @@ impl DenseWalker<String> for TestWalker {
         });
     }
 
-    fn on_empty(&mut self, depth: u8, morton: Morton3D) {
+    fn on_empty(&mut self, depth: Depth, morton: Morton3D) {
         self.events.push(WalkEvent::Empty { depth, morton });
     }
 }
