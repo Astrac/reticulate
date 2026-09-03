@@ -14,7 +14,7 @@ const AXIS_NAMES: [&'static str; 3] = ["X", "Y", "Z"];
 impl Debug for Axis {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("Axis")
-            .field(&AXIS_NAMES[self.as_index()])
+            .field(&AXIS_NAMES[self.as_usize()])
             .finish()
     }
 }
@@ -26,7 +26,7 @@ impl Axis {
     }
 
     #[inline(always)]
-    pub const fn as_index(&self) -> usize {
+    pub const fn as_usize(&self) -> usize {
         self.0.trailing_zeros() as usize
     }
 

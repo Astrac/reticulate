@@ -1,15 +1,28 @@
-use crate::{utils::bitmasks::*, coords::Coords2D};
+use crate::{coords::Coords2D, utils::bitmasks::*};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Morton2D(u32);
+pub struct Morton2D(pub u32);
 
 impl Morton2D {
-    pub fn as_u32(&self) -> u32 {
+    #[inline(always)]
+    pub const fn as_u32(&self) -> u32 {
         self.0
     }
 
-    pub(crate) fn as_usize(&self) -> usize {
+    #[inline(always)]
+    pub const fn as_usize(&self) -> usize {
         self.0 as usize
+    }
+
+    #[inline(always)]
+    pub const fn as_coords(&self) -> Coords2D {
+        let (u, v) = decode_morton(self.0);
+        Coords2D { u, v }
+    }
+
+    #[inline(always)]
+    pub const fn from_uv(u: u32, v: u32) -> Morton2D {
+        Morton2D(encode_morton(u, v))
     }
 }
 
@@ -32,8 +45,14 @@ impl From<u32> for Morton2D {
     }
 }
 
+impl From<usize> for Morton2D {
+    fn from(value: usize) -> Self {
+        Morton2D(value as u32)
+    }
+}
+
 #[inline(always)]
-fn encode_morton(x: u32, y: u32) -> u32 {
+const fn encode_morton(x: u32, y: u32) -> u32 {
     #[cfg(target_feature = "bmi2")]
     {
         return unsafe { encode_morton_32_bmi2(x, y) };
@@ -50,7 +69,7 @@ fn encode_morton(x: u32, y: u32) -> u32 {
 }
 
 #[inline(always)]
-fn decode_morton(code: u32) -> (u32, u32) {
+const fn decode_morton(code: u32) -> (u32, u32) {
     #[cfg(target_feature = "bmi2")]
     {
         return unsafe { decode_morton_bmi2(code) };

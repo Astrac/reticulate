@@ -5227,6 +5227,7 @@ name = "reticulate"
 version = "0.1.0"
 dependencies = [
  "bitvec",
+ "bytemuck",
  "log",
  "rstest",
  "rstest_reuse",

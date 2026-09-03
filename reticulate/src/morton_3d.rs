@@ -1,10 +1,18 @@
-use crate::{axis, coords::Coords3D, morton_2d::Morton2D, utils::bitmasks::*};
+use crate::{
+    Coords2D, Depth,
+    axis::{self, Axis},
+    coords::Coords3D,
+    morton_2d::Morton2D,
+    octree::TREE_DEPTH,
+    utils::bitmasks::*,
+};
 
 // It might be a good idea to left-align it on the u32 inestead of using lsb
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Morton3D(u32);
 
+// TODO - Cleanup repetitions!
 impl Morton3D {
     #[inline(always)]
     pub const fn as_u32(&self) -> u32 {
@@ -26,7 +34,64 @@ impl Morton3D {
         Morton3D((self.0 << 3) | (octant as u32))
     }
 
-    pub fn drop_axis(&self, axis: axis::Axis) -> u32 {
+    #[inline(always)]
+    pub const fn projected_axis_coords(&self, axis: Axis, depth: Depth) -> (Coords2D, usize) {
+        let morton_3d = self.0 << ((TREE_DEPTH - depth.as_usize()) * 3);
+        let (coord_1, coord_2, layer) = match axis {
+            axis::AXIS_X => (
+                take_one_every_3_bits(morton_3d >> 1),
+                take_one_every_3_bits(morton_3d >> 2),
+                take_one_every_3_bits(morton_3d),
+            ),
+            axis::AXIS_Y => (
+                take_one_every_3_bits(morton_3d),
+                take_one_every_3_bits(morton_3d >> 2),
+                take_one_every_3_bits(morton_3d >> 1),
+            ),
+            axis::AXIS_Z => (
+                take_one_every_3_bits(morton_3d),
+                take_one_every_3_bits(morton_3d >> 1),
+                take_one_every_3_bits(morton_3d >> 2),
+            ),
+            _ => unreachable!(),
+        };
+
+        (
+            Coords2D {
+                u: coord_1,
+                v: coord_2,
+            },
+            layer as usize,
+        )
+    }
+
+    #[inline(always)]
+    pub const fn projected_axis_morton(&self, axis: Axis, depth: Depth) -> (Morton2D, usize) {
+        let morton_3d = self.0 << ((TREE_DEPTH - depth.as_usize()) * 3);
+        let (u, v, layer) = match axis {
+            axis::AXIS_X => (
+                take_one_every_3_bits(morton_3d >> 1),
+                take_one_every_3_bits(morton_3d >> 2),
+                take_one_every_3_bits(morton_3d),
+            ),
+            axis::AXIS_Y => (
+                take_one_every_3_bits(morton_3d),
+                take_one_every_3_bits(morton_3d >> 2),
+                take_one_every_3_bits(morton_3d >> 1),
+            ),
+            axis::AXIS_Z => (
+                take_one_every_3_bits(morton_3d),
+                take_one_every_3_bits(morton_3d >> 1),
+                take_one_every_3_bits(morton_3d >> 2),
+            ),
+            _ => unreachable!(),
+        };
+
+        (Morton2D::from_uv(u, v), layer as usize)
+    }
+
+    #[inline(always)]
+    pub const fn drop_axis(&self, axis: Axis) -> Morton2D {
         let morton_3d = self.0;
         let (coord_1, coord_2) = match axis {
             axis::AXIS_X => (
@@ -44,11 +109,7 @@ impl Morton3D {
             _ => unreachable!(),
         };
 
-        interleave_zeroes(coord_1) | (interleave_zeroes(coord_2) << 1)
-    }
-
-    pub fn drop_axis_2(&self, axis: axis::Axis) -> Morton2D {
-        Morton2D::from(self.drop_axis(axis))
+        Morton2D(interleave_zeroes(coord_1) | (interleave_zeroes(coord_2) << 1))
     }
 }
 

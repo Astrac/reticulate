@@ -20,7 +20,7 @@ impl DecisionBoundaries {
         depth: Depth,
     ) -> &mut BitSlice<u64, Lsb0> {
         let face_size = BOUNDARY_PLANE_SIZE >> (depth.as_usize() * 2);
-        let morton_2d = morton.drop_axis_2(axis).as_usize() * face_size;
+        let morton_2d = morton.drop_axis(axis).as_usize() * face_size;
         &mut self.boundary_mut(axis)[morton_2d..morton_2d + face_size]
     }
 
@@ -36,7 +36,7 @@ impl DecisionBoundaries {
 
     #[inline(always)]
     fn boundary_mut(&mut self, axis: Axis) -> &mut BitSlice<u64, Lsb0> {
-        let idx = axis.as_index() * BOUNDARY_PLANE_SIZE;
+        let idx = axis.as_usize() * BOUNDARY_PLANE_SIZE;
         &mut self.masks_bitfield[idx..idx + BOUNDARY_PLANE_SIZE]
     }
 }

@@ -36,7 +36,15 @@ pub const fn interleave_two_zeroes(n: u8) -> u32 {
     (n | (n << 2)) & 0x249249
 }
 
-// TODO: Move to test suite
+#[inline(always)]
+pub const fn make_ones_mask(from: u8, to: u8) -> u32 {
+    let upper_bound = ((1u32 << to) << 1).wrapping_sub(1);
+    let lower_bound = (1u32 << from).wrapping_sub(1);
+
+    upper_bound & !lower_bound
+}
+
+// TODO - Move to test suite
 #[cfg(test)]
 mod tests {
     use super::*;

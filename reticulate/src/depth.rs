@@ -1,5 +1,7 @@
 use std::ops::{Add, Sub};
 
+use crate::meshing::bitfields::PLANE_SIDE;
+
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct Depth(pub u8);
@@ -8,6 +10,11 @@ impl Depth {
     #[inline(always)]
     pub const fn as_usize(&self) -> usize {
         self.0 as usize
+    }
+
+    #[inline(always)]
+    pub const fn as_face_size(&self) -> usize {
+        PLANE_SIDE >> (2 * self.0)
     }
 }
 

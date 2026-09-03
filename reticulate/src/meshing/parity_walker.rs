@@ -1,0 +1,74 @@
+use crate::{
+    DenseWalker, Depth, Morton3D,
+    axis::*,
+    meshing::bitfields::{Bitfields, MaterialId},
+};
+
+pub struct ParityWalker<'a, M> {
+    bitfields: Bitfields<'a>,
+    to_material: M,
+}
+
+impl<'a, M> ParityWalker<'a, M> {
+    pub fn new(bitfields: Bitfields<'a>, to_material: M) -> ParityWalker<'a, M> {
+        ParityWalker {
+            bitfields,
+            to_material,
+        }
+    }
+}
+
+impl<'a, M, Data> DenseWalker<Data> for ParityWalker<'a, M>
+where
+    M: Fn(&Data) -> MaterialId,
+{
+    fn on_branch_start(&mut self, _depth: Depth, _morton: Morton3D, _children_mask: u8) {}
+
+    fn on_branch_end(&mut self, _depth: Depth, _morton: Morton3D) {}
+
+    // TODO - Optimization opportunities:
+    //   * Use occlusion mask to skip fully occluded areas
+    //   * Same thing could be done XORing the materials
+    //     - How to actually get materials in the area?
+    //     - Remember: XORing twice the same value is a noop
+    fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &Data) {
+        let self_material = (self.to_material)(data);
+        let (morton_2d, x_coord) = morton.projected_axis_morton(AXIS_X, depth);
+        self.bitfields.material.iterate_materials(
+            AXIS_X,
+            morton_2d,
+            depth,
+            |material, coords, area| {
+                // TODO - Remove this conditional
+                if material != self_material {
+                    self.bitfields
+                        .parity
+                        .set_transition(AXIS_X, x_coord, coords, area);
+                }
+            },
+        );
+
+        self.bitfields
+            .material
+            .fill(AXIS_X, morton, depth, self_material);
+    }
+
+    fn on_empty(&mut self, depth: Depth, morton: Morton3D) {
+        let (morton_2d, layer) = morton.projected_axis_morton(AXIS_X, depth);
+        self.bitfields.material.iterate_materials(
+            AXIS_X,
+            morton_2d,
+            depth,
+            |material, coords, area| {
+                // TODO - Remove this conditional
+                if material != 0 {
+                    self.bitfields
+                        .parity
+                        .set_transition(AXIS_X, layer, coords, area);
+                }
+            },
+        );
+
+        self.bitfields.material.fill(AXIS_X, morton, depth, 0);
+    }
+}

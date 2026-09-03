@@ -2,6 +2,7 @@ mod compact;
 mod fixed8;
 mod morton;
 mod octree;
+mod strip_weaver;
 
 use spdlog::{Level, LevelFilter};
 

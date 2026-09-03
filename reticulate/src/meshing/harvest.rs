@@ -18,15 +18,16 @@ use crate::{Depth, Morton2D, meshing::decision_boundaries::BOUNDARY_PLANE_SIZE};
 ///
 /// The on_face callback is provided the size of any face found and its morton-2d
 /// index relative to the bitfield.
-pub fn harvest_faces<F>(bitfield: &BitSlice<u64>, depth: Depth, on_face: &mut F)
+pub fn harvest_faces<F>(bitfield: &BitSlice<u64>, depth: Depth, mut on_face: F)
 where
     F: FnMut(Morton2D, usize),
 {
-    let deciding_len = bitfield.len();
-    let mut current = bitfield.first_one().unwrap_or(deciding_len);
-    let mut ones_in_block = bitfield[current..].leading_ones();
+    let harvestable_bits = bitfield.len();
+    let mut current = bitfield.first_one().unwrap_or(harvestable_bits);
 
-    while current < deciding_len {
+    while current < harvestable_bits {
+        let ones_in_block = bitfield[current..].leading_ones();
+
         let face_size = (BOUNDARY_PLANE_SIZE >> (depth.as_usize() * 2))
             .min(biggest_power_of_4_dividing(current).unwrap_or(usize::MAX))
             .min(biggest_power_of_4_in(ones_in_block));
@@ -42,9 +43,7 @@ where
         current = bitfield[next..]
             .first_one()
             .map(|n| next + n)
-            .unwrap_or(deciding_len);
-
-        ones_in_block = bitfield[current..].leading_ones();
+            .unwrap_or(harvestable_bits);
     }
 }
 
@@ -81,7 +80,7 @@ mod tests {
         bits.set(7, true);
 
         let mut harvested = Vec::new();
-        harvest_faces(&bits, Depth(0), &mut |morton, face_size| {
+        harvest_faces(&bits, Depth(0), |morton, face_size| {
             harvested.push((morton.as_u32(), face_size));
         });
 
@@ -94,7 +93,7 @@ mod tests {
         bits[4..8].fill(true);
 
         let mut harvested = Vec::new();
-        harvest_faces(&bits, Depth(0), &mut |morton, face_size| {
+        harvest_faces(&bits, Depth(0), |morton, face_size| {
             harvested.push((morton.as_u32(), face_size));
         });
 
@@ -107,7 +106,7 @@ mod tests {
         bits[4..12].fill(true);
 
         let mut harvested = Vec::new();
-        harvest_faces(&bits, Depth(0), &mut |morton, face_size| {
+        harvest_faces(&bits, Depth(0), |morton, face_size| {
             harvested.push((morton.as_u32(), face_size));
         });
 
@@ -120,7 +119,7 @@ mod tests {
         bits[8..18].fill(true);
 
         let mut harvested = Vec::new();
-        harvest_faces(&bits, Depth(0), &mut |morton, face_size| {
+        harvest_faces(&bits, Depth(0), |morton, face_size| {
             harvested.push((morton.as_u32(), face_size));
         });
 
@@ -133,7 +132,7 @@ mod tests {
         bits[0..8].fill(true);
 
         let mut harvested = Vec::new();
-        harvest_faces(&bits, Depth(5), &mut |morton, face_size| {
+        harvest_faces(&bits, Depth(5), |morton, face_size| {
             harvested.push((morton.as_u32(), face_size));
         });
 
@@ -145,7 +144,7 @@ mod tests {
         let bits = bitvec![u64, Lsb0; 0; 64];
 
         let mut harvested = Vec::new();
-        harvest_faces(&bits, Depth(0), &mut |morton, face_size| {
+        harvest_faces(&bits, Depth(0), |morton, face_size| {
             harvested.push((morton.as_u32(), face_size));
         });
 
