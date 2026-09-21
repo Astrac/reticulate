@@ -10,12 +10,15 @@ fn init_on_boundary() {
     expected_vertices[0] = 5;
     expected_vertices[4] = 5;
 
+    let mut filled = [0; 32];
+    filled[5] = 0b1111;
+
     assert_eq!(strip_weaver.runs_count, 1);
     assert_eq!(strip_weaver.runs[0].start, 0);
     assert_eq!(strip_weaver.runs[0].end, 4);
     assert_eq!(strip_weaver.vertices, expected_vertices);
     assert_eq!(strip_weaver.fill_mask(), 0b1111);
-    assert_eq!(strip_weaver.vertex_mask(), 0b10001);
+    assert_eq!(strip_weaver.filled, filled);
 }
 
 #[test]
@@ -25,12 +28,15 @@ fn init_in_middle() {
     expected_vertices[4] = 5;
     expected_vertices[7] = 5;
 
+    let mut filled = [0; 32];
+    filled[5] = 0b1110000;
+
     assert_eq!(strip_weaver.runs_count, 1);
     assert_eq!(strip_weaver.runs[0].start, 4);
     assert_eq!(strip_weaver.runs[0].end, 7);
     assert_eq!(strip_weaver.vertices, expected_vertices);
     assert_eq!(strip_weaver.fill_mask(), 0b1110000);
-    assert_eq!(strip_weaver.vertex_mask(), 0b10010000);
+    assert_eq!(strip_weaver.filled, filled);
 }
 
 #[test]
@@ -128,14 +134,14 @@ fn weave_strip_growing() {
                 vertices: [(1, 2), (1, 1), (2, 1)]
             },
             StripTriangle {
-                vertices: [(1, 2), (2, 1), (4, 2)]
+                vertices: [(1, 2), (2, 1), (3, 1)]
             },
             StripTriangle {
-                vertices: [(4, 2), (2, 1), (3, 1)]
+                vertices: [(1, 2), (3, 1), (4, 1)]
             },
             StripTriangle {
-                vertices: [(4, 2), (3, 1), (4, 1)]
-            },
+                vertices: [(1, 2), (4, 1), (4, 2)]
+            }
         ]
     );
 }
@@ -168,10 +174,10 @@ fn weave_strip_around_hole() {
                 vertices: [(1, 3), (1, 0), (2, 2)]
             },
             StripTriangle {
-                vertices: [(1, 3), (2, 2), (4, 3)]
+                vertices: [(1, 3), (2, 2), (3, 2)]
             },
             StripTriangle {
-                vertices: [(4, 3), (2, 2), (3, 2)]
+                vertices: [(1, 3), (3, 2), (4, 3)]
             },
             StripTriangle {
                 vertices: [(4, 3), (3, 2), (4, 0)]
@@ -182,6 +188,41 @@ fn weave_strip_around_hole() {
 
 #[test]
 fn weave_strip_complex_shape() {
+    let grid = Grid::parse(&vec![
+        "........................",
+        ".....................xx.",
+        ".....................xxx",
+        ".....................x..",
+        ".....................x..",
+    ]);
+
+    assert_eq!(
+        grid.weave_triangles(),
+        vec![
+            StripTriangle {
+                vertices: [(2, 2), (2, 0), (3, 0)]
+            },
+            StripTriangle {
+                vertices: [(0, 3), (0, 2), (1, 3)]
+            },
+            StripTriangle {
+                vertices: [(1, 3), (0, 2), (2, 2)]
+            },
+            StripTriangle {
+                vertices: [(1, 4), (1, 3), (3, 4)]
+            },
+            StripTriangle {
+                vertices: [(3, 4), (1, 3), (2, 2)]
+            },
+            StripTriangle {
+                vertices: [(3, 4), (2, 2), (3, 0)]
+            }
+        ]
+    );
+}
+
+#[test]
+fn weave_strip_complex_shape_with_hole() {
     let grid = Grid::parse(&vec![
         "........................",
         "................xx......",
@@ -250,10 +291,10 @@ fn weave_strip_complex_shape() {
                 vertices: [(6, 6), (6, 4), (7, 5)]
             },
             StripTriangle {
-                vertices: [(6, 6), (7, 5), (8, 6)]
+                vertices: [(6, 6), (7, 5), (8, 5)]
             },
             StripTriangle {
-                vertices: [(8, 6), (7, 5), (8, 5)]
+                vertices: [(6, 6), (8, 5), (8, 6)]
             }
         ]
     );

@@ -5,10 +5,12 @@ pub const INACTIVE_VERTEX: u8 = 0xFF;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct StripWeaver {
+    pub bottom_edge: u32,
+    pub filled: [u32; 32],
+    pub present: u32,
     pub runs: [StripRun; 16],
     pub runs_count: usize,
     pub vertices: [u8; 32],
-    pub bottom_edge: u32,
 }
 
 impl StripWeaver {
@@ -23,11 +25,16 @@ impl StripWeaver {
         vertices[runs[0].start as usize] = seed_v as u8;
         vertices[runs[0].end as usize] = seed_v as u8;
 
+        let mut filled = [0; 32];
+        filled[seed_v as usize] = runs[0].as_fill_mask();
+
         StripWeaver {
+            bottom_edge,
+            filled,
+            present: (1 << runs[0].start) | (1 << runs[0].end),
             runs,
             runs_count: 1,
             vertices,
-            bottom_edge,
         }
     }
 
@@ -47,9 +54,10 @@ impl StripWeaver {
             self.set_new_vertices(top_row, vertices);
             self.bottom_edge = top_edge;
         }
+
+        self.filled[top_row] = self.fill_mask();
     }
 
-    #[inline(always)]
     fn make_triangles(
         &mut self,
         top_row: usize,
@@ -61,10 +69,9 @@ impl StripWeaver {
         let mut triangle = StripTriangle::default();
 
         for run_index in 0..self.runs_count {
-            let run = self.runs[run_index];
-            let run_mask = run.as_scan_mask();
+            let run_mask = self.runs[run_index].as_scan_mask();
             let mut relevant_top = top_vertices & run_mask;
-            let mut relevant_bottom = self.vertex_mask() & run_mask;
+            let mut relevant_bottom = self.present & run_mask;
 
             let Some(mut top_vertex) = relevant_top.lowest_one() else {
                 continue;
@@ -90,26 +97,34 @@ impl StripWeaver {
                     .map(|v| v as u8)
                     .unwrap_or(INACTIVE_VERTEX);
 
+                let down = next_bottom != INACTIVE_VERTEX
+                    && self.vertices[next_bottom as usize] < self.vertices[bottom_vertex as usize];
+
                 if next_bottom == INACTIVE_VERTEX && next_top == INACTIVE_VERTEX {
                     break;
-                } else if next_top < next_bottom
-                    || next_bottom == INACTIVE_VERTEX
-                    || (bottom_vertex > top_vertex && top_vertex != INACTIVE_VERTEX as u32)
-                {
+                } else if next_top != INACTIVE_VERTEX && (next_top < next_bottom || down) {
                     relevant_top -= relevant_top.isolate_lowest_one();
                     top_vertex = next_top as u32;
 
                     triangle.vertices[2] = (top_vertex as u8, top_row as u8);
                     on_triangle(triangle);
+                } else if down && bottom_vertex > top_vertex {
+                    break;
+                } else if !down && (next_bottom as u32) < top_vertex {
+                    relevant_bottom -= relevant_bottom.isolate_lowest_one();
+                    bottom_vertex = next_bottom as u32;
                 } else {
                     relevant_bottom -= relevant_bottom.isolate_lowest_one();
                     bottom_vertex = next_bottom as u32;
+                    self.present &= !(1 << bottom_vertex);
 
                     triangle.vertices[2] =
                         (bottom_vertex as u8, self.vertices[bottom_vertex as usize]);
                     on_triangle(triangle);
                 }
             }
+
+            self.present |= 1 << bottom_vertex;
         }
     }
 
@@ -129,12 +144,6 @@ impl StripWeaver {
             let new_run = StripRun::from_edge(edge, start);
             self.runs[found_runs] = new_run;
 
-            let mut current_vertex = new_run.start + 1;
-            while current_vertex < new_run.end {
-                self.vertices[current_vertex as usize] = 0xFF;
-                current_vertex += 1;
-            }
-
             blocks = blocks >> length;
             found_runs += 1;
         }
@@ -144,9 +153,10 @@ impl StripWeaver {
 
     #[inline(always)]
     const fn set_new_vertices(&mut self, row: usize, mut mask: u32) {
-        while let Some(next_vertex) = mask.lowest_one() {
+        self.present = (self.present & !mask) | (mask & self.scan_mask());
+        while let Some(x) = mask.lowest_one() {
             mask &= !mask.isolate_lowest_one();
-            self.vertices[next_vertex as usize] = row as u8;
+            self.vertices[x as usize] = row as u8;
         }
     }
 
@@ -172,18 +182,5 @@ impl StripWeaver {
         }
 
         mask
-    }
-
-    #[inline(always)]
-    pub const fn vertex_mask(&self) -> u32 {
-        let mut vertex_mask = 0u32;
-
-        let mut run_index = 0;
-        while run_index < GRID_SIDE {
-            vertex_mask |= ((self.vertices[run_index] != INACTIVE_VERTEX) as u32) << run_index;
-            run_index += 1;
-        }
-
-        vertex_mask
     }
 }

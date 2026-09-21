@@ -41,9 +41,9 @@ where
     fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &Data) {
         let material = (self.to_material)(data);
 
-        let (morton_2d, layer) = morton.projected_axis_morton(AXIS_X, depth);
-        let parity_layer = self.bitfields.parity.get_layer(AXIS_X, layer);
-        // self.bitfields.shape_finder.load_layer(parity_layer);
+        let (morton_2d, layer) = morton.projected_axis_morton(AXIS_Y, depth);
+        let edges_layer = self.bitfields.parity.get_layer(AXIS_X, layer);
+        let guards_layer = self.bitfields.parity.get_layer(AXIS_Z, layer);
 
         self.bitfields.material.iterate_materials(
             AXIS_X,
