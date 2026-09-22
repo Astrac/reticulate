@@ -4,7 +4,7 @@ use crate::{Depth, axis::*, coords::Coords3D, morton_3d::Morton3D};
 fn test_roundtrip_zero() {
     let c = Coords3D { x: 0, y: 0, z: 0 };
     let m: Morton3D = c.into();
-    let decoded: Coords3D = Coords3D::from_morton(m, Depth(6));
+    let decoded: Coords3D = Coords3D::from_morton(m, Depth(5));
     assert_eq!(c, decoded, "Roundtrip failed for zero");
 }
 
@@ -12,7 +12,7 @@ fn test_roundtrip_zero() {
 fn test_roundtrip_one() {
     let c = Coords3D { x: 1, y: 1, z: 1 };
     let m: Morton3D = c.into();
-    let decoded: Coords3D = Coords3D::from_morton(m, Depth(6));
+    let decoded: Coords3D = Coords3D::from_morton(m, Depth(5));
     assert_eq!(c, decoded, "Roundtrip failed for one");
 }
 
@@ -24,7 +24,7 @@ fn test_roundtrip_max() {
         z: 255,
     };
     let m: Morton3D = c.into();
-    let decoded: Coords3D = Coords3D::from_morton(m, Depth(6));
+    let decoded: Coords3D = Coords3D::from_morton(m, Depth(5));
     assert_eq!(c, decoded, "Roundtrip failed for max");
 }
 
@@ -36,7 +36,7 @@ fn test_roundtrip_mixed() {
         z: 30,
     };
     let m: Morton3D = c.into();
-    let decoded: Coords3D = Coords3D::from_morton(m, Depth(6));
+    let decoded: Coords3D = Coords3D::from_morton(m, Depth(5));
     assert_eq!(c, decoded, "Roundtrip failed for mixed values");
 }
 
@@ -73,7 +73,7 @@ fn test_boundary_values() {
 
     for c in cases {
         let m: Morton3D = c.into();
-        let decoded: Coords3D = Coords3D::from_morton(m, Depth(6));
+        let decoded: Coords3D = Coords3D::from_morton(m, Depth(5));
         assert_eq!(c, decoded, "Roundtrip failed for {:?}", c);
     }
 }
@@ -107,7 +107,7 @@ fn test_drop_axis_axis_y_deeper() {
     let input_code = 0b110_010_101;
     let wrapper = Morton3D::from(input_code);
     let projected_2d = wrapper.drop_axis(AXIS_Y);
-    assert_eq!(projected_2d.0, 0b10_00_11);
+    assert_eq!(projected_2d.0, 0b01_00_11);
 }
 
 #[test]

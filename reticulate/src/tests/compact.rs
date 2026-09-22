@@ -61,8 +61,6 @@ fn test_branch_compression_and_mask() {
 
     assert_eq!(compact.nodes.len(), 3);
 
-    println!("{compact:?}");
-
     match &compact.nodes[0] {
         CompactOctreeNode::Branch(mask) => assert_eq!(*mask, 9),
         _ => panic!("Expected a Branch node"),
@@ -132,6 +130,5 @@ fn test_empty_branch_pruned() {
     let tree = Fixed8Octree { nodes };
     let compact = CompactOctree::from_fixed8(&tree);
 
-    println!("{compact:?}");
     assert!(compact.nodes.is_empty());
 }

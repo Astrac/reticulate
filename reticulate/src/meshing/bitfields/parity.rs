@@ -1,6 +1,7 @@
 use crate::{Coords2D, axis::*, meshing::bitfields::PLANE_SIDE};
 
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct ParityMask<'a>(&'a mut [u32]);
 
 impl<'a> ParityMask<'a> {
@@ -21,6 +22,12 @@ impl<'a> ParityMask<'a> {
 /// face extension algorithm scans the rows and uses follow the edges of the material
 /// transition to reconstruct the surface. Indexing convention: the 1 represents
 /// the first bit in sequences of uniform blocks.
+///
+/// This is the indexing structure for each of the masks:
+///
+/// Mask[X]: Planes indexed by Y, edges by Z, bits by X
+/// Mask[Y]: Planes indexed by Z, edges by X, bits by Y
+/// Mask[Z]: Planes indexed by X, edges by Y, bits by Z
 #[repr(transparent)]
 pub struct Parity<'a> {
     pub masks: [ParityMask<'a>; 3],
@@ -36,11 +43,14 @@ impl<'a> Parity<'a> {
         area_size: usize,
     ) {
         let target = self.masks[axis.as_usize()].0.as_mut();
-        let side = area_size.ilog2() as usize;
+        let side = (area_size.ilog2() as usize).max(1);
         let axis_coord = axis_coord as u32;
         let bit = 1u32 << axis_coord;
         let u = area_coords.u as usize;
         let v = area_coords.v as usize;
+
+        // println!("SET_TRANSITION({axis:?}, {axis_coord}, {area_coords:?}, {area_size})");
+        // println!("              (u = {u}, v = {v}, side = {side}, bit = {bit:032b})");
 
         for u in u..u + side {
             for v in v..v + side {
@@ -50,7 +60,19 @@ impl<'a> Parity<'a> {
     }
 
     #[inline(always)]
-    pub fn get_layer(&self, axis: Axis, layer: usize) -> &[u32] {
-        self.masks[axis.as_usize()].get_layer(layer)
+    pub fn gather_guard(
+        &self,
+        axis: Axis,
+        v: usize,
+        u: usize,
+        axis_coord_start: usize,
+        axis_coord_end: usize,
+    ) -> u32 {
+        let mut guard = 0u32;
+        for axis_coord in axis_coord_start..axis_coord_end {
+            let word = self.masks[axis.as_usize()].get_layer(axis_coord)[v];
+            guard |= ((word >> u) & 1) << axis_coord;
+        }
+        guard
     }
 }

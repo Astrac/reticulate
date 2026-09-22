@@ -128,6 +128,8 @@ impl StripWeaver {
         }
     }
 
+    // TODO - fill_mask() here might not need to be recomputed if we
+    // carry the index of the last row
     #[inline(always)]
     fn set_new_runs(&mut self, edge: u32, guard: u32) {
         let mut blocks = self.fill_mask() ^ guard;

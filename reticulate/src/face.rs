@@ -18,7 +18,7 @@ impl Face {
     }
 
     #[inline(always)]
-    pub const fn as_index(&self) -> usize {
+    pub const fn as_usize(&self) -> usize {
         (self.0.trailing_zeros() as usize) + (3 * ((self.0 as usize) >> 3))
     }
 
@@ -31,7 +31,7 @@ impl Face {
 impl Debug for Face {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("Face")
-            .field(&FACE_NAMES[self.as_index()])
+            .field(&FACE_NAMES[self.as_usize()])
             .finish()
     }
 }

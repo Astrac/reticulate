@@ -36,57 +36,13 @@ impl Morton3D {
 
     #[inline(always)]
     pub const fn projected_axis_coords(&self, axis: Axis, depth: Depth) -> (Coords2D, usize) {
-        let morton_3d = self.0 << ((TREE_DEPTH - depth.as_usize()) * 3);
-        let (coord_1, coord_2, layer) = match axis {
-            axis::AXIS_X => (
-                take_one_every_3_bits(morton_3d >> 1),
-                take_one_every_3_bits(morton_3d >> 2),
-                take_one_every_3_bits(morton_3d),
-            ),
-            axis::AXIS_Y => (
-                take_one_every_3_bits(morton_3d),
-                take_one_every_3_bits(morton_3d >> 2),
-                take_one_every_3_bits(morton_3d >> 1),
-            ),
-            axis::AXIS_Z => (
-                take_one_every_3_bits(morton_3d),
-                take_one_every_3_bits(morton_3d >> 1),
-                take_one_every_3_bits(morton_3d >> 2),
-            ),
-            _ => unreachable!(),
-        };
-
-        (
-            Coords2D {
-                u: coord_1,
-                v: coord_2,
-            },
-            layer as usize,
-        )
+        let ((u, v), layer) = self.projected_axis_uv(axis, depth);
+        (Coords2D { u, v }, layer as usize)
     }
 
     #[inline(always)]
     pub const fn projected_axis_morton(&self, axis: Axis, depth: Depth) -> (Morton2D, usize) {
-        let morton_3d = self.0 << ((TREE_DEPTH - depth.as_usize()) * 3);
-        let (u, v, layer) = match axis {
-            axis::AXIS_X => (
-                take_one_every_3_bits(morton_3d >> 1),
-                take_one_every_3_bits(morton_3d >> 2),
-                take_one_every_3_bits(morton_3d),
-            ),
-            axis::AXIS_Y => (
-                take_one_every_3_bits(morton_3d),
-                take_one_every_3_bits(morton_3d >> 2),
-                take_one_every_3_bits(morton_3d >> 1),
-            ),
-            axis::AXIS_Z => (
-                take_one_every_3_bits(morton_3d),
-                take_one_every_3_bits(morton_3d >> 1),
-                take_one_every_3_bits(morton_3d >> 2),
-            ),
-            _ => unreachable!(),
-        };
-
+        let ((u, v), layer) = self.projected_axis_uv(axis, depth);
         (Morton2D::from_uv(u, v), layer as usize)
     }
 
@@ -99,8 +55,8 @@ impl Morton3D {
                 take_one_every_3_bits(morton_3d >> 2),
             ),
             axis::AXIS_Y => (
-                take_one_every_3_bits(morton_3d),
                 take_one_every_3_bits(morton_3d >> 2),
+                take_one_every_3_bits(morton_3d),
             ),
             axis::AXIS_Z => (
                 take_one_every_3_bits(morton_3d),
@@ -110,6 +66,30 @@ impl Morton3D {
         };
 
         Morton2D(interleave_zeroes(coord_1) | (interleave_zeroes(coord_2) << 1))
+    }
+
+    const fn projected_axis_uv(&self, axis: Axis, depth: Depth) -> ((u32, u32), usize) {
+        let morton_3d = self.0 << ((TREE_DEPTH - depth.as_usize()) * 3);
+        let (u, v, layer) = match axis {
+            axis::AXIS_X => (
+                take_one_every_3_bits(morton_3d >> 1),
+                take_one_every_3_bits(morton_3d >> 2),
+                take_one_every_3_bits(morton_3d),
+            ),
+            axis::AXIS_Y => (
+                take_one_every_3_bits(morton_3d >> 2),
+                take_one_every_3_bits(morton_3d),
+                take_one_every_3_bits(morton_3d >> 1),
+            ),
+            axis::AXIS_Z => (
+                take_one_every_3_bits(morton_3d),
+                take_one_every_3_bits(morton_3d >> 1),
+                take_one_every_3_bits(morton_3d >> 2),
+            ),
+            _ => unreachable!(),
+        };
+
+        ((u, v), layer as usize)
     }
 }
 
@@ -129,7 +109,7 @@ impl From<u32> for Morton3D {
     }
 }
 
-// TODO: Add this for supported architectures
+// TODO - Add this for supported architectures
 // use std::arch::x86_64::_pext_u32;
 //
 // pub fn drop_axis(&self, axis: Axis) -> u32 {

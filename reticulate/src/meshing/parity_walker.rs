@@ -35,7 +35,6 @@ impl<'a, M> ParityWalker<'a, M> {
             morton_2d,
             depth,
             |existing_material, coords, area| {
-                // TODO - Remove this conditional
                 if existing_material != material {
                     self.bitfields
                         .parity
@@ -69,20 +68,3 @@ where
         self.register_material_at(AXIS_Z, morton, depth, 0);
     }
 }
-
-// let (morton_2d, layer) = morton.projected_axis_morton(AXIS_X, depth);
-// self.bitfields.material.iterate_materials(
-//     AXIS_X,
-//     morton_2d,
-//     depth,
-//     |material, coords, area| {
-//         // TODO - Remove this conditional
-//         if material != 0 {
-//             self.bitfields
-//                 .parity
-//                 .set_transition(AXIS_X, layer, coords, area);
-//         }
-//     },
-// );
-//
-// self.bitfields.material.fill(AXIS_X, morton, depth, 0);

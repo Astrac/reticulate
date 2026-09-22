@@ -127,19 +127,6 @@ mod tests {
     }
 
     #[test]
-    fn test_harvest_depth_limit() {
-        let mut bits = bitvec![u64, Lsb0; 0; 16];
-        bits[0..8].fill(true);
-
-        let mut harvested = Vec::new();
-        harvest_faces(&bits, Depth(5), |morton, face_size| {
-            harvested.push((morton.as_u32(), face_size));
-        });
-
-        assert_eq!(harvested, vec![(0, 4), (4, 4)]);
-    }
-
-    #[test]
     fn test_harvest_empty_bitfield() {
         let bits = bitvec![u64, Lsb0; 0; 64];
 

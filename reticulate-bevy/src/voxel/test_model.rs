@@ -1,24 +1,29 @@
-use reticulate::{CompactOctree, Coords3D, DenseWalk, Fixed8Octree, Morton3D, Walk, utils::*};
+use reticulate::{CompactOctree, Coords3D, DenseWalk, Fixed8Octree, Morton3D};
 
 pub fn test_scene() -> impl DenseWalk<()> {
     let mut octree: Fixed8Octree<()> = Fixed8Octree::new();
 
-    // add_2x2_with_hole(&mut octree);
+    add_single_cube(&mut octree);
     // add_2x2(&mut octree);
     // add_8x8(&mut octree);
+    // add_2x2_with_hole(&mut octree);
     // add_nested_cubes(&mut octree);
-    add_tunnel(&mut octree);
+    // add_tunnel(&mut octree);
     // add_3d_ortho_labyrint(&mut octree);
     // add_gyroid(&mut octree);
     // add_diagonal_helix(&mut octree);
     // add_fractal_staircase(&mut octree);
 
     let compressed = CompactOctree::from_fixed8(&octree);
-    let mut print_walker = PrintWalker::default();
-    compressed.walk(&mut print_walker);
+    // let mut print_walker = PrintWalker::default();
+    // compressed.walk(&mut print_walker);
 
     compressed
     // octree
+}
+
+fn add_single_cube(octree: &mut Fixed8Octree<()>) {
+    octree.update(Coords3D { x: 0, y: 0, z: 0 }, Some(()));
 }
 
 pub fn add_8x8(octree: &mut Fixed8Octree<()>) {
@@ -39,7 +44,14 @@ pub fn add_tunnel(octree: &mut Fixed8Octree<()>) {
                     continue;
                 }
 
-                octree.update(Coords3D { x: x, y: y+1, z: z }, Some(()));
+                octree.update(
+                    Coords3D {
+                        x: x,
+                        y: y + 1,
+                        z: z,
+                    },
+                    Some(()),
+                );
             }
         }
     }

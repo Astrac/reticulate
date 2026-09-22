@@ -26,6 +26,8 @@ impl<'a> Material<'a> {
         let plane_size = PLANE_AREA >> (depth.as_usize() << 1);
         let final_index = index + plane_size;
 
+        // println!("ITERATE: {axis:?}, {index}, {plane_size}");
+
         let mut current_offset = index;
         let mut current_grid = quadtree_alignment(current_offset);
 
@@ -52,6 +54,8 @@ impl<'a> Material<'a> {
         let plane_bits = &mut self.cells[axis.as_usize()][index..index + plane_size];
         let material_splat64 = splat64(material);
 
+        // println!("FILL: {axis:?}, {index}, {plane_size} => {material}");
+
         match plane_bits.domain_mut() {
             bitvec::domain::Domain::Enclave(mut v) => {
                 v.store_value(material_splat64);
@@ -70,6 +74,11 @@ impl<'a> Material<'a> {
                 });
             }
         };
+    }
+
+    #[inline(always)]
+    pub fn clear_material_planes(&mut self) {
+        self.cells.iter_mut().for_each(|c| c.fill(false));
     }
 
     #[inline(always)]

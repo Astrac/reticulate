@@ -34,6 +34,6 @@ impl<'a> Occlusion<'a> {
 
     pub fn is_pending(&self, axis: Axis, axis_coord: usize, uv: Coords2D) -> bool {
         let index = axis_coord * PLANE_AREA + uv.v as usize * PLANE_SIDE + uv.u as usize;
-        self.masks[axis.as_usize()][index]
+        !self.masks[axis.as_usize()][index]
     }
 }

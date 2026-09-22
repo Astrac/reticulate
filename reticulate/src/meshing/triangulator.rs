@@ -8,14 +8,20 @@ use crate::{
     },
 };
 
-#[derive(Default)]
-pub struct Mesher<F> {
+pub struct Triangulator<F> {
     storage: BitfieldsStorage,
     on_triangle: F,
 }
 
-impl<F: FnMut(Triangle)> Mesher<F> {
-    pub fn mesh<Data, M>(&mut self, tree: impl DenseWalk<Data>, to_material: M)
+impl<F: FnMut(Triangle)> Triangulator<F> {
+    pub fn new(on_triangle: F) -> Triangulator<F> {
+        Triangulator {
+            storage: BitfieldsStorage::default(),
+            on_triangle,
+        }
+    }
+
+    pub fn triangulate<Data, M>(&mut self, tree: impl DenseWalk<Data>, to_material: M)
     where
         Data: Copy + PartialEq,
         M: Copy + Fn(&Data) -> MaterialId,
@@ -25,8 +31,10 @@ impl<F: FnMut(Triangle)> Mesher<F> {
         let mut parity_walker = ParityWalker::new(bitfields, to_material);
         tree.walk_dense(&mut parity_walker);
 
-        let bitfields = Bitfields::from_storage(&mut self.storage);
-        let mut shape_walker = ShapeWalker::new(bitfields, to_material, &self.on_triangle);
+        let mut bitfields = Bitfields::from_storage(&mut self.storage);
+        bitfields.material.clear_material_planes();
+
+        let mut shape_walker = ShapeWalker::new(bitfields, to_material, &mut self.on_triangle);
         tree.walk_dense(&mut shape_walker);
     }
 }

@@ -44,6 +44,28 @@ pub const fn make_ones_mask(from: u8, to: u8) -> u32 {
     upper_bound & !lower_bound
 }
 
+#[inline(always)]
+pub const fn transpose32(mut a: [u32; 32]) -> [u32; 32] {
+    let mut j = 16u32;
+    let mut m: u32 = 0x0000_FFFF;
+    while j != 0 {
+        let mut k = 0;
+        while k < 32 {
+            let mut i = k;
+            while i < (k + j as usize) {
+                let t = (a[i] ^ (a[i + j as usize] >> j)) & m;
+                a[i] ^= t;
+                a[i + j as usize] ^= t << j;
+                i += 1;
+            }
+            k += (j << 1) as usize;
+        }
+        j >>= 1;
+        m ^= m << j;
+    }
+    a
+}
+
 // TODO - Move to test suite
 #[cfg(test)]
 mod tests {
