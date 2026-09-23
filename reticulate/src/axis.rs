@@ -5,6 +5,7 @@ use std::{
 
 use crate::face::Face;
 
+// TODO - Make an enum
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq)]
 pub struct Axis(pub u8);

@@ -31,25 +31,31 @@ where
         }
     }
 
-    fn emit_shapes(&mut self, face: Face, morton: Morton3D, depth: Depth) {
+    fn emit_shapes(
+        &mut self,
+        face: Face,
+        morton: Morton3D,
+        depth: Depth,
+        current_material: MaterialId,
+    ) {
         let axis = face.axis();
         let axis_u = axis.next();
         let axis_v = axis_u.next();
         let (morton, axis_coord) = morton.projected_axis_morton(axis, depth);
 
-        self.bitfields.material.iterate_materials(
-            axis,
-            morton,
-            depth,
-            |material, coords, _| {
+        self.bitfields
+            .material
+            .iterate_materials(axis, morton, depth, |material, coords, _| {
                 if self
                     .bitfields
                     .occlusion
                     .is_pending(axis, axis_coord, coords)
+                    && current_material != material
                 {
+                    let layer = axis_coord - (1 >> current_material.min(1));
                     let edges_layer =
-                        self.bitfields.parity.masks[axis_v.as_usize()].get_layer(axis_coord);
-                    println!("EDGES: {edges_layer:?} - MAT: {material}");
+                        self.bitfields.parity.masks[axis_v.as_usize()].get_layer(layer);
+
                     let bottom_edge = edges_layer[coords.u as usize];
                     let mut strip_weaver =
                         StripWeaver::from_bottom_edge(bottom_edge, coords.u, coords.v);
@@ -63,7 +69,7 @@ where
                                 let run = strip_weaver.runs[i];
                                 g |= self.bitfields.parity.gather_guard(
                                     axis_u,
-                                    axis_coord,
+                                    layer,
                                     row,
                                     run.start as usize,
                                     run.end as usize,
@@ -79,7 +85,7 @@ where
                                 face,
                                 axis_coord as u8,
                                 t,
-                                material,
+                                material.max(current_material),
                             ))
                         });
                     }
@@ -88,8 +94,7 @@ where
                         .occlusion
                         .mark_done(axis, axis_coord, &strip_weaver.filled);
                 }
-            },
-        );
+            });
     }
 }
 
@@ -104,9 +109,9 @@ where
     fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &Data) {
         let material = (self.to_material)(data);
 
-        self.emit_shapes(FACE_X_N, morton, depth);
-        self.emit_shapes(FACE_Y_N, morton, depth);
-        self.emit_shapes(FACE_Z_N, morton, depth);
+        self.emit_shapes(FACE_X_N, morton, depth, material);
+        self.emit_shapes(FACE_Y_N, morton, depth, material);
+        self.emit_shapes(FACE_Z_N, morton, depth, material);
 
         self.bitfields
             .material
@@ -122,9 +127,9 @@ where
     fn on_empty(&mut self, depth: Depth, morton: Morton3D) {
         let material = 0;
 
-        // self.emit_shapes(FACE_X_P, morton, depth);
-        // self.emit_shapes(FACE_Y_P, morton, depth);
-        // self.emit_shapes(FACE_Z_P, morton, depth);
+        self.emit_shapes(FACE_X_P, morton, depth, 0);
+        self.emit_shapes(FACE_Y_P, morton, depth, 0);
+        self.emit_shapes(FACE_Z_P, morton, depth, 0);
 
         self.bitfields
             .material
