@@ -43,7 +43,7 @@ impl<'a> Parity<'a> {
         area_size: usize,
     ) {
         let target = self.masks[axis.as_usize()].0.as_mut();
-        let side = (area_size.ilog2() as usize).max(1);
+        let side = area_size.isqrt();
         let axis_coord = axis_coord as u32;
         let bit = 1u32 << axis_coord;
         let u = area_coords.u as usize;

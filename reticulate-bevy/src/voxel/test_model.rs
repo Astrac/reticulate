@@ -4,9 +4,10 @@ pub fn test_scene() -> impl DenseWalk<()> {
     let mut octree: Fixed8Octree<()> = Fixed8Octree::new();
 
     // add_single_cube(&mut octree);
-    add_2x2(&mut octree);
+    // add_2x2(&mut octree);
     // add_8x8(&mut octree);
-    // add_2x2_with_hole(&mut octree);
+    // add_8x8_with_missing_corner(&mut octree);
+    add_2x2_with_hole(&mut octree);
     // add_nested_cubes(&mut octree);
     // add_tunnel(&mut octree);
     // add_3d_ortho_labyrint(&mut octree);
@@ -30,6 +31,20 @@ pub fn add_8x8(octree: &mut Fixed8Octree<()>) {
     for x in 0..8 {
         for y in 0..8 {
             for z in 0..8 {
+                octree.update(Coords3D { x: x, y: y, z: z }, Some(()));
+            }
+        }
+    }
+}
+
+pub fn add_8x8_with_missing_corner(octree: &mut Fixed8Octree<()>) {
+    for x in 0..8 {
+        for y in 0..8 {
+            for z in 0..8 {
+                if x == 0 && y == 0 && z == 0 {
+                    continue;
+                }
+
                 octree.update(Coords3D { x: x, y: y, z: z }, Some(()));
             }
         }
@@ -75,7 +90,7 @@ pub fn add_2x2_with_hole(octree: &mut Fixed8Octree<()>) {
     for x in 0..2 {
         for y in 0..2 {
             for z in 0..2 {
-                if x == 0 && y == 0 && z == 0 {
+                if x == 1 && y == 1 && z == 1 {
                     continue;
                 }
 
