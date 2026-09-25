@@ -3,6 +3,8 @@ mod print_walker;
 
 pub mod bitmasks;
 
+use std::ops::Range;
+
 pub use dense_print_walker::DensePrintWalker;
 pub use print_walker::PrintWalker;
 
@@ -11,15 +13,15 @@ use crate::{
     meshing::bitfields::{Material, MaterialId, Parity},
 };
 
-pub fn print_bitfield(bits: &[u32]) {
+pub fn print_bitfield_slice(bits: &[u32]) {
     println!("{}", "-".repeat(32));
     print_bits(bits);
     println!("{}", "-".repeat(32));
 }
 
-pub fn print_parity(parity: &Parity<'_>) {
-    for axis in [AXIS_X /*, AXIS_Y, AXIS_Z*/] {
-        for layer in 0..3 {
+pub fn print_parity(parity: &Parity<'_>, axes: &[Axis], layers: Range<usize>) {
+    for axis in axes {
+        for layer in layers.clone() {
             println!("-- {}{layer:02} {}", axis.name(), "-".repeat(25));
             print_bits(parity.masks[axis.as_usize()].get_layer(layer));
             println!("{}", "-".repeat(32));
@@ -27,8 +29,8 @@ pub fn print_parity(parity: &Parity<'_>) {
     }
 }
 
-pub fn print_materials(materials: &Material<'_>) {
-    for axis in [AXIS_X /*, AXIS_Y, AXIS_Z*/] {
+pub fn print_materials(materials: &Material<'_>, axes: &[Axis]) {
+    for axis in axes {
         let data = &mut materials.cells[axis.as_usize()].domain().flat_map(|x| {
             bytemuck::cast::<_, [MaterialId; 8 / size_of::<MaterialId>()]>(x.to_le_bytes())
         });

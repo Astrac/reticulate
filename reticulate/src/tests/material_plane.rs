@@ -3,15 +3,20 @@ use bitvec::prelude::*;
 use crate::{
     Coords2D, Depth, Morton2D, Morton3D,
     axis::*,
-    meshing::bitfields::{MATERIAL_BITS, Material, MaterialId, PLANE_AREA, PLANE_SIDE},
+    meshing::bitfields::{MATERIAL_BITS, Material, PLANE_AREA},
     octree::TREE_DEPTH,
-    utils::print_materials,
 };
-
-const LEAF: usize = size_of::<MaterialId>();
 
 fn depth_area(d: usize) -> usize {
     PLANE_AREA >> (d << 1)
+}
+
+fn coords(cell: usize) -> Coords2D {
+    Morton2D::from(cell).as_coords()
+}
+
+fn is_power_of_four(n: usize) -> bool {
+    n.is_power_of_two() && n.trailing_zeros() % 2 == 0
 }
 
 struct Planes {
@@ -21,7 +26,7 @@ struct Planes {
 impl Planes {
     fn new() -> Self {
         Self {
-            bits: Default::default(),
+            bits: core::array::from_fn(|_| BitArray::ZERO),
         }
     }
 
@@ -44,7 +49,7 @@ impl Planes {
         self.bits[axis.as_usize()].as_mut_bitslice()
     }
 
-    fn with_background(background: MaterialId) -> Self {
+    fn with_background(background: u16) -> Self {
         let mut p = Self::new();
         for axis in AXES {
             write_run(p.plane_mut(axis), 0, PLANE_AREA, background);
@@ -53,30 +58,25 @@ impl Planes {
     }
 }
 
-fn read_leaf(plane: &BitSlice<u64, Lsb0>, offset: usize) -> MaterialId {
-    let offset = offset * MATERIAL_BITS;
-    plane[offset..offset + MATERIAL_BITS].load_le::<MaterialId>()
+fn read_cell(plane: &BitSlice<u64, Lsb0>, cell: usize) -> u16 {
+    let bit = cell * MATERIAL_BITS;
+    plane[bit..bit + MATERIAL_BITS].load_le::<u16>()
 }
 
 fn write_run(plane: &mut BitSlice<u64, Lsb0>, start: usize, len: usize, material: u16) {
-    let len = len * MATERIAL_BITS;
-    let start = start * MATERIAL_BITS;
-    let step = MATERIAL_BITS;
-    for leaf in (start..start + len).step_by(step) {
-        plane[leaf..leaf + step].store_le::<u16>(material);
+    let bit_start = start * MATERIAL_BITS;
+    let bit_len = len * MATERIAL_BITS;
+    for bit in (bit_start..bit_start + bit_len).step_by(MATERIAL_BITS) {
+        plane[bit..bit + MATERIAL_BITS].store_le::<u16>(material);
     }
 }
 
 fn is_uniform(plane: &BitSlice<u64, Lsb0>, start: usize, len: usize) -> bool {
-    let start = start * MATERIAL_BITS;
-    let len = len * MATERIAL_BITS;
-    let first = read_leaf(plane, start);
-    (start..start + len)
-        .step_by(LEAF)
-        .all(|o| read_leaf(plane, o) == first)
+    let first = read_cell(plane, start);
+    (start..start + len).all(|c| read_cell(plane, c) == first)
 }
 
-type Run = (MaterialId, Coords2D, usize);
+type Run = (u16, Coords2D, usize);
 
 fn reference_runs(plane: &BitSlice<u64, Lsb0>, start: usize, len: usize) -> Vec<Run> {
     let end = start + len;
@@ -95,13 +95,8 @@ fn reference_runs(plane: &BitSlice<u64, Lsb0>, start: usize, len: usize) -> Vec<
         let size = *sizes
             .iter()
             .find(|&&s| offset % s == 0 && offset + s <= end && is_uniform(plane, offset, s))
-            .expect("a single leaf is always uniform");
-
-        runs.push((
-            read_leaf(plane, offset),
-            Morton2D::from(offset).as_coords(),
-            size,
-        ));
+            .expect("a single cell is always uniform");
+        runs.push((read_cell(plane, offset), coords(offset), size));
         offset += size;
     }
     runs
@@ -118,23 +113,15 @@ fn collect_runs(planes: &mut Planes, axis: Axis, offset: usize, d: usize) -> Vec
     runs
 }
 
-fn coords(offset: usize) -> Coords2D {
-    Morton2D::from(offset).as_coords()
-}
-
-fn is_power_of_four(n: usize) -> bool {
-    n.is_power_of_two() && n.trailing_zeros() % 2 == 0
-}
-
 #[test]
 fn uniform_plane_is_a_single_run() {
     for axis in AXES {
         let mut p = Planes::new();
-        write_run(p.plane_mut(axis), 0, PLANE_AREA, 0x1234);
+        write_run(p.plane_mut(axis), 0, PLANE_AREA, 5);
 
         assert_eq!(
             collect_runs(&mut p, axis, 0, 0),
-            vec![(0x1234, coords(0), PLANE_AREA)]
+            vec![(5, coords(0), PLANE_AREA)]
         );
     }
 }
@@ -158,19 +145,17 @@ fn every_node_of_a_uniform_plane_is_one_run_limited_to_that_node() {
 
 #[test]
 fn each_quadrant_reports_its_own_material_and_start_coords() {
-    // Neighbouring quadrants differ, so a run must stop at the node border,
-    // and the reported coords must be those of the node's first cell.
     let quad = depth_area(1);
     let mut p = Planes::new();
     for q in 0..4 {
-        write_run(p.plane_mut(AXIS_X), q * quad, quad, 100 + q as u16);
+        write_run(p.plane_mut(AXIS_X), q * quad, quad, q as u16);
     }
 
     for q in 0..4 {
         let offset = q * quad;
         assert_eq!(
             collect_runs(&mut p, AXIS_X, offset, 1),
-            vec![(100 + q as u16, coords(offset), quad)],
+            vec![(q as u16, coords(offset), quad)],
             "quadrant {q}"
         );
     }
@@ -186,79 +171,74 @@ fn axis_selects_which_plane_is_read() {
     for (axis, material) in [(AXIS_X, 1), (AXIS_Y, 2), (AXIS_Z, 3)] {
         assert_eq!(
             collect_runs(&mut p, axis, 0, 0),
-            vec![(material, coords(0), depth_area(0))]
+            vec![(material, coords(0), PLANE_AREA)]
         );
     }
 }
 
-fn check_single_odd_leaf(odd_offset: usize) {
+fn check_single_odd_cell(odd_offset: usize) {
     let mut p = Planes::new();
     write_run(p.plane_mut(AXIS_Y), 0, PLANE_AREA, 1);
-    write_run(p.plane_mut(AXIS_Y), odd_offset, LEAF, 2);
+    write_run(p.plane_mut(AXIS_Y), odd_offset, 1, 2);
 
     let runs = collect_runs(&mut p, AXIS_Y, 0, 0);
 
     assert_eq!(runs, reference_runs(p.plane(AXIS_Y), 0, PLANE_AREA));
 
-    // The odd leaf is reported exactly once, at its own coordinates...
     let odd: Vec<_> = runs.iter().filter(|r| r.0 == 2).collect();
     assert_eq!(odd.len(), 1);
-    assert_eq!(*odd[0], (2, coords(odd_offset), LEAF));
+    assert_eq!(*odd[0], (2, coords(odd_offset), 1));
 
-    // ...and the rest is the root->leaf path: 3 sibling nodes per level.
     assert_eq!(runs.len(), 1 + 3 * TREE_DEPTH);
     assert!(runs.iter().all(|r| is_power_of_four(r.2)), "{runs:?}");
     assert_eq!(runs.iter().map(|r| r.2).sum::<usize>(), PLANE_AREA);
 }
 
 #[test]
-fn odd_leaf_at_start_splits_area_into_quadtree_nodes() {
-    check_single_odd_leaf(0);
+fn odd_cell_at_start_splits_area_into_quadtree_nodes() {
+    check_single_odd_cell(0);
 }
 
 #[test]
-fn odd_leaf_at_end_splits_area_into_quadtree_nodes() {
-    check_single_odd_leaf(PLANE_AREA - LEAF);
+fn odd_cell_at_end_splits_area_into_quadtree_nodes() {
+    check_single_odd_cell(PLANE_AREA - 1);
 }
 
 #[test]
-fn odd_leaf_in_the_middle_splits_area_into_quadtree_nodes() {
-    check_single_odd_leaf(PLANE_AREA / 2 + LEAF);
+fn odd_cell_in_the_middle_splits_area_into_quadtree_nodes() {
+    check_single_odd_cell(PLANE_AREA / 2 + 1);
 }
 
 #[test]
-fn two_uniform_leaves_are_not_merged_into_a_non_quadtree_run() {
-    // [A A B B] + rest A: A A is uniform but is not a quadtree node, so the
-    // decomposition has to report them as two separate leaves.
+fn two_uniform_cells_are_not_merged_into_a_non_quadtree_run() {
     let mut p = Planes::new();
     write_run(p.plane_mut(AXIS_X), 0, PLANE_AREA, 1);
-    write_run(p.plane_mut(AXIS_X), 2 * LEAF, 2 * LEAF, 2);
+    write_run(p.plane_mut(AXIS_X), 2, 2, 2);
 
     let runs = collect_runs(&mut p, AXIS_X, 0, 0);
     assert!(runs.iter().all(|r| is_power_of_four(r.2)), "{runs:?}");
     assert_eq!(
-        runs[..4].to_vec(),
-        vec![
-            (1, coords(0), LEAF),
-            (1, coords(LEAF), LEAF),
-            (2, coords(2 * LEAF), LEAF),
-            (2, coords(3 * LEAF), LEAF),
+        &runs[..4],
+        &[
+            (1, coords(0), 1),
+            (1, coords(1), 1),
+            (2, coords(2), 1),
+            (2, coords(3), 1),
         ]
     );
 }
 
 #[test]
-fn checkerboard_of_leaves_yields_only_leaves_in_morton_order() {
+fn checkerboard_of_cells_yields_only_leaves_in_morton_order() {
     let mut p = Planes::new();
-    let leaves = PLANE_AREA / LEAF;
-    for i in 0..leaves {
-        write_run(p.plane_mut(AXIS_Z), i * LEAF, LEAF, (i % 2) as u16 + 1);
+    for i in 0..PLANE_AREA {
+        write_run(p.plane_mut(AXIS_Z), i, 1, (i % 2) as u16 + 1);
     }
 
     let runs = collect_runs(&mut p, AXIS_Z, 0, 0);
 
-    assert_eq!(runs.len(), leaves);
-    assert!(runs.iter().all(|r| r.2 == LEAF));
+    assert_eq!(runs.len(), PLANE_AREA);
+    assert!(runs.iter().all(|r| r.2 == 1));
     assert_eq!(runs, reference_runs(p.plane(AXIS_Z), 0, PLANE_AREA));
 }
 
@@ -266,11 +246,12 @@ fn checkerboard_of_leaves_yields_only_leaves_in_morton_order() {
 fn smallest_node_is_a_single_run() {
     let mut p = Planes::new();
     write_run(p.plane_mut(AXIS_X), 0, PLANE_AREA, 5);
-    write_run(p.plane_mut(AXIS_X), 5, 1, 6);
+    let offset = 5;
+    write_run(p.plane_mut(AXIS_X), offset, 1, 6);
 
     assert_eq!(
-        collect_runs(&mut p, AXIS_X, 5, TREE_DEPTH),
-        vec![(6, coords(5), 1)]
+        collect_runs(&mut p, AXIS_X, offset, TREE_DEPTH),
+        vec![(6, coords(offset), 1)]
     );
 }
 
@@ -323,22 +304,21 @@ fn random_planes_match_the_reference_decomposition() {
     }
 }
 
-const BACKGROUND: u16 = 0xA5C3;
+const BACKGROUND: u16 = 1;
 
 fn assert_only_area_changed(p: &Planes, axis: Axis, start: usize, len: usize, material: u16) {
     for a in AXES {
-        for leaf in (0..PLANE_AREA).step_by(LEAF) {
+        for cell in 0..PLANE_AREA {
             let expected =
-                if a.as_usize() == axis.as_usize() && (start..start + len).contains(&leaf) {
+                if a.as_usize() == axis.as_usize() && (start..start + len).contains(&cell) {
                     material
                 } else {
                     BACKGROUND
                 };
-
             assert_eq!(
-                read_leaf(p.plane(a), leaf),
+                read_cell(p.plane(a), cell),
                 expected,
-                "plane {}, leaf offset {leaf} (filled {start}..{})",
+                "plane {}, cell {cell} (filled {start}..{})",
                 a.as_usize(),
                 start + len
             );
@@ -352,36 +332,37 @@ fn fill_at_origin_writes_exactly_the_node_at_every_depth() {
         for d in 0..=TREE_DEPTH {
             let mut p = Planes::with_background(BACKGROUND);
             p.material()
-                .fill(axis, Morton3D::from_xyz(0, 0, 0), Depth(d as u8), 0x1234);
-            assert_only_area_changed(&p, axis, 0, depth_area(d), 0x1234);
+                .fill(axis, Morton3D::from_xyz(0, 0, 0), Depth(d as u8), 2);
+            assert_only_area_changed(&p, axis, 0, depth_area(d), 2);
         }
     }
 }
 
 #[test]
 fn fill_at_offset_node_writes_exactly_the_node_at_every_depth() {
-    // Node (1,1) at depth d starts at Morton index 3 * size regardless of
-    // which axis is dropped. For small nodes this start is not 64-bit
-    // aligned, which exercises the partial-word (head/tail/enclave) paths.
     for axis in AXES {
         for d in 1..=TREE_DEPTH {
-            let s = PLANE_SIDE >> d;
-            let m = Morton3D::from_xyz(s as u8, s as u8, s as u8);
+            let m = Morton3D::from_xyz(1, 1, 1);
             let size = depth_area(d);
-            let start = m.drop_axis(axis).as_usize();
-            assert_eq!(start, 3 * size, "test assumption about Morton layout");
+            let (morton_2d, _) = m.projected_axis_morton(axis, Depth(d as u8));
+            let start = morton_2d.as_usize();
+            assert_eq!(
+                start,
+                3 * size,
+                "test assumption about node (1,1)'s position"
+            );
 
             let mut p = Planes::with_background(BACKGROUND);
-            p.material().fill(axis, m, Depth(d as u8), 0xBEEF);
+            p.material().fill(axis, m, Depth(d as u8), 3);
 
-            assert_only_area_changed(&p, axis, start, size, 0xBEEF);
+            assert_only_area_changed(&p, axis, start, size, 3);
         }
     }
 }
 
 #[test]
 fn fill_handles_extreme_material_values() {
-    for material in [0x0000, 0x0001, 0x8000, 0xFFFF, 0x00FF, 0xFF00] {
+    for material in [0, 1, u16::MAX, u16::MAX - 1, u16::MAX / 2] {
         let mut p = Planes::with_background(BACKGROUND);
         p.material()
             .fill(AXIS_Y, Morton3D::from_xyz(0, 0, 0), Depth(1), material);
@@ -394,18 +375,18 @@ fn fill_overwrites_previous_content_of_the_area() {
     let mut p = Planes::new();
     let axis = AXIS_X;
     p.material()
-        .fill(axis, Morton3D::from_xyz(0, 0, 0), Depth(1), 0x1111);
+        .fill(axis, Morton3D::from_xyz(0, 0, 0), Depth(1), 4);
     p.material()
-        .fill(axis, Morton3D::from_xyz(0, 0, 0), Depth(2), 0x2222);
+        .fill(axis, Morton3D::from_xyz(0, 0, 0), Depth(2), 5);
 
     let inner = depth_area(2);
     let outer = depth_area(1);
-    for leaf in (0..outer).step_by(LEAF) {
-        let expected = if leaf < inner { 0x2222 } else { 0x1111 };
-        assert_eq!(read_leaf(p.plane(axis), leaf), expected, "leaf {leaf}");
+    for cell in 0..outer {
+        let expected = if cell < inner { 5 } else { 4 };
+        assert_eq!(read_cell(p.plane(axis), cell), expected, "cell {cell}");
     }
     assert_eq!(
-        read_leaf(p.plane(axis), outer),
+        read_cell(p.plane(axis), outer),
         0,
         "outside stays untouched"
     );
@@ -417,16 +398,33 @@ fn fill_then_iterate_round_trips() {
         for d in 0..=TREE_DEPTH {
             let mut p = Planes::new();
             let m = Morton3D::from_xyz(0, 0, 0);
-            p.material().fill(axis, m, Depth(d as u8), 0x4242);
+            p.material().fill(axis, m, Depth(d as u8), 6);
 
             let offset = m.drop_axis(axis).as_usize();
             assert_eq!(
                 collect_runs(&mut p, axis, offset, d),
-                vec![(0x4242, coords(offset), depth_area(d))],
+                vec![(6, coords(offset), depth_area(d))],
                 "depth {d}"
             );
         }
     }
+}
+
+#[test]
+fn fill_z_axis_bug_fix() {
+    let mut p = Planes::new();
+
+    let m0 = Morton3D::from(0);
+    p.material().fill(AXIS_Z, m0, Depth(4), 1);
+
+    let m1 = Morton3D::from(1);
+    p.material().fill(AXIS_Z, m1, Depth(4), 0);
+
+    let size = depth_area(4);
+    assert_eq!(
+        collect_runs(&mut p, AXIS_Z, 0, 4),
+        vec![(1, coords(0), size)],
+    );
 }
 
 #[test]

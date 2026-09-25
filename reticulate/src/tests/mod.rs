@@ -1,9 +1,9 @@
 mod compact;
 mod fixed8;
 mod material_plane;
-mod material_plane2;
 mod morton;
 mod octree;
+mod parity_bitfield;
 mod strip_weaver;
 
 use spdlog::{Level, LevelFilter};

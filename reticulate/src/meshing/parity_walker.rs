@@ -2,6 +2,7 @@ use crate::{
     DenseWalker, Depth, Morton3D,
     axis::*,
     meshing::bitfields::{Bitfields, MaterialId},
+    utils::print_materials,
 };
 
 pub struct ParityWalker<'a, M> {
@@ -30,11 +31,15 @@ impl<'a, M> ParityWalker<'a, M> {
         material: MaterialId,
     ) {
         let (morton_2d, layer) = morton.projected_axis_morton(axis, depth);
+        println!(
+            "REGISTER: A={axis:?}, M3D={morton:?}, L={layer}, M2D={morton_2d:?}, D={depth:?}, M={material}"
+        );
         self.bitfields.material.iterate_materials(
             axis,
             morton_2d,
             depth,
             |existing_material, coords, area| {
+                println!("IT: EM={existing_material}, M={material}, C={coords:?}, A={area}");
                 if existing_material != material {
                     self.bitfields.parity.set_transition(
                         axis,
@@ -47,6 +52,9 @@ impl<'a, M> ParityWalker<'a, M> {
         );
 
         self.bitfields.material.fill(axis, morton, depth, material);
+        if layer == 0 {
+            print_materials(&self.bitfields.material, &[AXIS_Z]);
+        }
     }
 }
 
@@ -60,14 +68,14 @@ where
 
     fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &Data) {
         let material = (self.to_material)(data);
-        self.register_material_at(AXIS_X, morton, depth, material);
-        self.register_material_at(AXIS_Y, morton, depth, material);
+        // self.register_material_at(AXIS_X, morton, depth, material);
+        // self.register_material_at(AXIS_Y, morton, depth, material);
         self.register_material_at(AXIS_Z, morton, depth, material);
     }
 
     fn on_empty(&mut self, depth: Depth, morton: Morton3D) {
-        self.register_material_at(AXIS_X, morton, depth, 0);
-        self.register_material_at(AXIS_Y, morton, depth, 0);
+        // self.register_material_at(AXIS_X, morton, depth, 0);
+        // self.register_material_at(AXIS_Y, morton, depth, 0);
         self.register_material_at(AXIS_Z, morton, depth, 0);
     }
 }

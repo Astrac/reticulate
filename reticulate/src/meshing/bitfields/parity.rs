@@ -56,6 +56,10 @@ impl<'a> Parity<'a> {
         }
     }
 
+    pub fn gather_edges(&self, axis: Axis, layer: usize) -> &[u32] {
+        self.masks[axis.as_usize()].get_layer(layer)
+    }
+
     #[inline(always)]
     pub fn gather_guard(
         &self,

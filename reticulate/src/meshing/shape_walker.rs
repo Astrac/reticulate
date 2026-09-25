@@ -53,11 +53,11 @@ where
                     && current_material != material
                 {
                     let layer = axis_coord - (1 >> current_material.min(1));
-                    let edges_layer =
-                        self.bitfields.parity.masks[axis_v.as_usize()].get_layer(layer);
+                    let edges_layer = self.bitfields.parity.gather_edges(axis_v, layer);
 
-                    println!("LAYER: {layer}, FACE: {face:?}, COORDS: {coords:?}, EDGES: {edges_layer:?}, CURR_MAT: {current_material}");
-                    crate::utils::print_parity(&self.bitfields.parity);
+                    println!("LAYER: {layer}, FACE: {face:?}, COORDS: {coords:?}, CURR_MAT: {current_material}");
+                    crate::utils::print_bitfield_slice(edges_layer);
+                    crate::utils::print_parity(&self.bitfields.parity, &[AXIS_Z], 0..3);
 
                     let bottom_edge = edges_layer[coords.u as usize];
                     let mut strip_weaver =

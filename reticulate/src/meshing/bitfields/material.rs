@@ -47,10 +47,11 @@ impl<'a> Material<'a> {
     /// Fills an area with the given material
     #[inline(always)]
     pub fn fill(&mut self, axis: Axis, morton: Morton3D, depth: Depth, material: u16) {
-        let index = morton.drop_axis(axis).as_usize() * MATERIAL_BITS;
+        let (morton_2d, _) = morton.projected_axis_morton(axis, depth);
         let plane_size = (PLANE_AREA >> (depth.as_usize() << 1)) * MATERIAL_BITS;
-        let plane_bits = &mut self.cells[axis.as_usize()][index..index + plane_size];
         let material_splat64 = splat64(material);
+        let index = morton_2d.as_usize() * MATERIAL_BITS;
+        let plane_bits = &mut self.cells[axis.as_usize()][index..index + plane_size];
 
         match plane_bits.domain_mut() {
             bitvec::domain::Domain::Enclave(mut v) => {
