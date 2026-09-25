@@ -49,9 +49,6 @@ impl<'a> Parity<'a> {
         let u = area_coords.u as usize;
         let v = area_coords.v as usize;
 
-        // println!("SET_TRANSITION({axis:?}, {axis_coord}, {area_coords:?}, {area_size})");
-        // println!("              (u = {u}, v = {v}, side = {side}, bit = {bit:032b})");
-
         for u in u..u + side {
             for v in v..v + side {
                 target[u * PLANE_SIDE + v] |= bit;

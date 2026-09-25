@@ -1,6 +1,6 @@
 use std::ops::{Add, Sub};
 
-use crate::meshing::bitfields::PLANE_SIDE;
+use crate::meshing::bitfields::{PLANE_AREA, PLANE_SIDE};
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
@@ -13,8 +13,13 @@ impl Depth {
     }
 
     #[inline(always)]
-    pub const fn as_face_size(&self) -> usize {
-        PLANE_SIDE >> (2 * self.0)
+    pub const fn as_area(&self) -> usize {
+        PLANE_AREA >> (self.0 << 1)
+    }
+
+    #[inline(always)]
+    pub const fn as_side(&self) -> usize {
+        PLANE_SIDE >> (self.0 << 1)
     }
 }
 

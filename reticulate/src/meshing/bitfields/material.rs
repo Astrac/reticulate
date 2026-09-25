@@ -3,7 +3,7 @@ use core::panic;
 use crate::{
     Coords2D, Depth, Morton2D, Morton3D,
     axis::Axis,
-    meshing::bitfields::{MaterialId, PLANE_AREA, STORAGE_WORD, Slice},
+    meshing::bitfields::{MATERIAL_BITS, MaterialId, PLANE_AREA, STORAGE_WORD, Slice},
 };
 
 #[repr(transparent)]
@@ -23,10 +23,8 @@ impl<'a> Material<'a> {
     ) {
         let materials = self.material_plane_mut(axis);
         let index = morton.as_usize();
-        let plane_size = PLANE_AREA >> (depth.as_usize() << 1);
+        let plane_size = depth.as_area();
         let final_index = index + plane_size;
-
-        // println!("ITERATE: {axis:?}, {index}, {plane_size}");
 
         let mut current_offset = index;
         let mut current_grid = quadtree_alignment(current_offset);
@@ -37,7 +35,7 @@ impl<'a> Material<'a> {
 
             on_material(
                 material,
-                Morton2D::from(index + current_offset).as_coords(),
+                Morton2D::from(current_offset).as_coords(),
                 scanned_length,
             );
 
@@ -49,12 +47,10 @@ impl<'a> Material<'a> {
     /// Fills an area with the given material
     #[inline(always)]
     pub fn fill(&mut self, axis: Axis, morton: Morton3D, depth: Depth, material: u16) {
-        let index = morton.drop_axis(axis).as_usize();
-        let plane_size = PLANE_AREA >> (depth.as_usize() << 1);
+        let index = morton.drop_axis(axis).as_usize() * MATERIAL_BITS;
+        let plane_size = (PLANE_AREA >> (depth.as_usize() << 1)) * MATERIAL_BITS;
         let plane_bits = &mut self.cells[axis.as_usize()][index..index + plane_size];
         let material_splat64 = splat64(material);
-
-        // println!("FILL: {axis:?}, {index}, {plane_size} => {material}");
 
         match plane_bits.domain_mut() {
             bitvec::domain::Domain::Enclave(mut v) => {
@@ -113,7 +109,7 @@ fn splat64(material: u16) -> u64 {
 }
 
 #[inline(always)]
-const fn next_material(materials: &[u16], start_offset: usize, max_length: usize) -> (u16, usize) {
+fn next_material(materials: &[u16], start_offset: usize, max_length: usize) -> (u16, usize) {
     debug_assert!(max_length > 0);
     debug_assert!(materials.len() > start_offset);
 
@@ -144,11 +140,11 @@ const fn quadtree_truncate(value: usize) -> usize {
     }
 }
 
-/// Returns the biggest power of 4 that can divide the offset or 64 if the offset is 0
+/// Returns the biggest power of 4 that can divide the offset or PLANE_AREA if the offset is 0
 #[inline(always)]
 const fn quadtree_alignment(offset: usize) -> usize {
     if offset == 0 {
-        64
+        PLANE_AREA
     } else {
         1 << (offset.trailing_zeros() & !1)
     }

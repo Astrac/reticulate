@@ -1,5 +1,7 @@
 mod compact;
 mod fixed8;
+mod material_plane;
+mod material_plane2;
 mod morton;
 mod octree;
 mod strip_weaver;

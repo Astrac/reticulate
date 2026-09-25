@@ -15,6 +15,15 @@ pub struct Morton3D(u32);
 // TODO - Cleanup repetitions!
 impl Morton3D {
     #[inline(always)]
+    pub const fn from_xyz(x: u8, y: u8, z: u8) -> Morton3D {
+        Morton3D(
+            (interleave_two_zeroes(z) << 2)
+                | (interleave_two_zeroes(y) << 1)
+                | interleave_two_zeroes(x),
+        )
+    }
+
+    #[inline(always)]
     pub const fn as_u32(&self) -> u32 {
         self.0
     }

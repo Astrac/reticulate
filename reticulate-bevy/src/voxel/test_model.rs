@@ -3,8 +3,8 @@ use reticulate::{CompactOctree, Coords3D, DenseWalk, Fixed8Octree, Morton3D};
 pub fn test_scene() -> impl DenseWalk<()> {
     let mut octree: Fixed8Octree<()> = Fixed8Octree::new();
 
-    add_single_cube(&mut octree);
-    // add_2x2(&mut octree);
+    // add_single_cube(&mut octree);
+    add_2x2(&mut octree);
     // add_8x8(&mut octree);
     // add_2x2_with_hole(&mut octree);
     // add_nested_cubes(&mut octree);

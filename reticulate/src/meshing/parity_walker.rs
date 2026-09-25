@@ -36,9 +36,12 @@ impl<'a, M> ParityWalker<'a, M> {
             depth,
             |existing_material, coords, area| {
                 if existing_material != material {
-                    self.bitfields
-                        .parity
-                        .set_transition(axis, layer, coords, area);
+                    self.bitfields.parity.set_transition(
+                        axis,
+                        layer - (1 >> material.max(1)),
+                        coords,
+                        area,
+                    );
                 }
             },
         );

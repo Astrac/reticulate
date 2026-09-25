@@ -45,6 +45,11 @@ impl Axis {
     pub const fn next(&self) -> Axis {
         Axis(((self.0 << 1) | (self.0 >> 2)) & 0b111)
     }
+
+    #[inline(always)]
+    pub const fn name(&self) -> &'static str {
+        AXIS_NAMES[self.as_usize()]
+    }
 }
 
 impl From<u8> for Axis {
