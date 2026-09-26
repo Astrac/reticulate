@@ -12,7 +12,6 @@ mod walking;
 
 pub use coords::{Coords2D, Coords3D};
 pub use depth::Depth;
-pub use meshing::{CompactingFaceWalker, MeshFace, SimpleFaceWalker};
 pub use morton_2d::Morton2D;
 pub use morton_3d::Morton3D;
 pub use octree::{CompactOctree, Fixed8Octree};

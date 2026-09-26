@@ -14,7 +14,6 @@ impl<Data: Copy + Default + PartialEq> CompactOctree<Data> {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum CompactOctreeNode<Data> {
     Branch(u8),

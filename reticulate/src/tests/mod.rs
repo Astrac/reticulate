@@ -26,6 +26,7 @@ pub fn init_logging() {
     }
 }
 
+#[allow(dead_code)]
 #[cfg(any(test, debug_assertions))]
 pub fn find_unclaimed_faces(
     parity: &crate::meshing::bitfields::Parity,

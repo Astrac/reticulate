@@ -1,4 +1,3 @@
-pub mod scanner;
 pub mod strip_run;
 pub mod strip_weaver;
 

@@ -1,19 +1,10 @@
-mod compacting_face_walker;
-mod decision_boundaries;
-mod harvest;
-mod mesh_face;
 mod parity_walker;
 mod shape_walker;
-mod simple_face_walker;
 mod triangulator;
-mod unculled_face_walker;
 
 pub mod bitfields;
 pub mod face;
 
-pub use compacting_face_walker::CompactingFaceWalker;
-pub use mesh_face::MeshFace;
-pub use simple_face_walker::SimpleFaceWalker;
 pub use triangulator::Triangulator;
 
 use crate::{

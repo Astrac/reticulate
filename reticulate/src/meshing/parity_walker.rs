@@ -2,7 +2,6 @@ use crate::{
     DenseWalker, Depth, Morton3D,
     axis::*,
     meshing::bitfields::{Bitfields, MaterialId},
-    utils::print_materials,
 };
 
 pub struct ParityWalker<'a, M> {
