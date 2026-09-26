@@ -46,7 +46,8 @@ impl StripWeaver {
         top_guard: u32,
         on_triangle: impl FnMut(StripTriangle),
     ) {
-        let vertices = self.bottom_edge ^ top_edge;
+        let caps = self.guard_caps(top_guard);
+        let vertices = (self.bottom_edge ^ top_edge) | caps;
 
         if vertices & self.scan_mask() != 0 {
             self.make_triangles(top_row, vertices, on_triangle);
@@ -56,6 +57,21 @@ impl StripWeaver {
         }
 
         self.filled[top_row] = self.fill_mask();
+    }
+
+    /// Top vertices introduced by the guard: the boundaries of each blocked
+    /// segment, computed per run so that two adjacent closed runs keep the
+    /// wall they share. A blocked segment covering columns a..b-1 yields
+    /// bits a and b, the same "bit k = boundary between k-1 and k"
+    /// convention as the edges.
+    #[inline(always)]
+    fn guard_caps(&self, guard: u32) -> u32 {
+        let mut caps = 0;
+        for i in 0..self.runs_count {
+            let blocked = self.runs[i].as_fill_mask() & guard;
+            caps |= blocked ^ (blocked << 1);
+        }
+        caps
     }
 
     fn make_triangles(
@@ -145,6 +161,11 @@ impl StripWeaver {
 
             let new_run = StripRun::from_edge(edge, start);
             self.runs[found_runs] = new_run;
+
+            debug_assert!(
+                (edge >> new_run.start) & 1 == 1,
+                "phantom run: no wall at run start"
+            );
 
             blocks = blocks >> length;
             found_runs += 1;

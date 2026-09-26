@@ -48,20 +48,26 @@ where
             .iterate_materials(axis, morton, depth, |material, coords, _| {
                 if self
                     .bitfields
-                    .occlusion
+                    .claims
                     .is_pending(axis, axis_coord, coords)
                     && current_material != material
                 {
-                    let layer = axis_coord - (1 >> current_material.min(1));
-                    let edges_layer = self.bitfields.parity.gather_edges(axis_v, layer);
+                    let has_prev = axis_coord > 0;
 
-                    println!("LAYER: {layer}, FACE: {face:?}, COORDS: {coords:?}, CURR_MAT: {current_material}");
-                    crate::utils::print_bitfield_slice(edges_layer);
-                    crate::utils::print_parity(&self.bitfields.parity, &[AXIS_Z], 0..3);
+                    let edges = self.bitfields.parity.gather_edges(axis_v, axis_coord);
+                    let prev_edges = has_prev
+                        .then(|| self.bitfields.parity.gather_edges(axis_v, axis_coord - 1));
 
-                    let bottom_edge = edges_layer[coords.u as usize];
+                    let claimed_at = |row: usize| self.bitfields.claims.claimed_row(axis, axis_coord, row);
+
+                    let edge_at = |row: usize| {
+                        let claimed = claimed_at(row);
+                        edges[row] | prev_edges.map_or(0, |p| p[row]) | (claimed ^ (claimed << 1))
+                    };
+
+                    let bottom_edge = edge_at(coords.u as usize);
                     let mut strip_weaver =
-                        StripWeaver::from_bottom_edge(bottom_edge, coords.u, coords.v);
+                        StripWeaver::from_bottom_edge(bottom_edge, coords.v, coords.u);
                     let mut row = coords.u as usize;
 
                     while strip_weaver.runs_count > 0 && row < 32 {
@@ -70,15 +76,27 @@ where
                             let mut g = 0u32;
                             for i in 0..strip_weaver.runs_count {
                                 let run = strip_weaver.runs[i];
-                                g |= self.bitfields.parity.gather_guard(
-                                    axis_u,
-                                    layer,
-                                    row,
-                                    run.start as usize,
-                                    run.end as usize,
-                                );
+                                let (start, end) = (run.start as usize, run.end as usize);
+
+                                g |= self
+                                    .bitfields
+                                    .parity
+                                    .gather_guard(axis_u, axis_coord, row, start, end);
+
+                                if has_prev {
+                                    g |= self.bitfields.parity.gather_guard(
+                                        axis_u,
+                                        axis_coord - 1,
+                                        row,
+                                        start,
+                                        end,
+                                    );
+                                }
                             }
-                            (edges_layer[row], g)
+
+                            g |= claimed_at(row) & strip_weaver.fill_mask();
+
+                            (edge_at(row), g)
                         } else {
                             (0u32, 0u32)
                         };
@@ -94,8 +112,18 @@ where
                     }
 
                     self.bitfields
-                        .occlusion
+                        .claims
                         .mark_done(axis, axis_coord, &strip_weaver.filled);
+
+                    #[cfg(debug_assertions)]
+                    for (u, &claimed) in strip_weaver.filled.iter().enumerate() {
+                        let footprint = self.bitfields.parity.gather_footprint(axis, axis_coord, u);
+                        debug_assert!(
+                            claimed & !footprint == 0,
+                            "strip claimed non-face cells on {axis:?}@{axis_coord}, row {u}: {:032b}",
+                            claimed & !footprint
+                        );
+                    }
                 }
             });
     }

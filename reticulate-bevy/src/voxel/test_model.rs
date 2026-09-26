@@ -6,8 +6,8 @@ pub fn test_scene() -> impl DenseWalk<()> {
     // add_single_cube(&mut octree);
     // add_2x2(&mut octree);
     // add_8x8(&mut octree);
-    // add_8x8_with_missing_corner(&mut octree);
-    add_2x2_with_hole(&mut octree);
+    add_8x8_with_missing_corner(&mut octree);
+    // add_2x2_with_hole(&mut octree);
     // add_nested_cubes(&mut octree);
     // add_tunnel(&mut octree);
     // add_3d_ortho_labyrint(&mut octree);

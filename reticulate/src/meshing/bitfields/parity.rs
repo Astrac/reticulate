@@ -56,6 +56,7 @@ impl<'a> Parity<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn gather_edges(&self, axis: Axis, layer: usize) -> &[u32] {
         self.masks[axis.as_usize()].get_layer(layer)
     }
@@ -75,5 +76,14 @@ impl<'a> Parity<'a> {
             guard |= ((word >> u) & 1) << axis_coord;
         }
         guard
+    }
+
+    pub fn gather_footprint(&self, axis: Axis, axis_coord: usize, u: usize) -> u32 {
+        let words = self.masks[axis.as_usize()].get_layer(u);
+        let mut row = 0u32;
+        for v in 0..PLANE_SIDE {
+            row |= ((words[v] >> axis_coord) & 1) << v;
+        }
+        row
     }
 }

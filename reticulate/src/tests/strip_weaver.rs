@@ -300,6 +300,40 @@ fn weave_strip_complex_shape_with_hole() {
     );
 }
 
+#[test]
+fn guard_closure_with_continuing_wall() {
+    // TODO - Use grid
+    let edges = [0b1_0000_0011, 0b1_0000_0001, 0];
+    let guards = [0, 0b1, 0];
+    let tris = weave(&edges, &guards, 0, 0);
+    assert_covers_exactly(&tris, &[0b1]);
+}
+
+#[test]
+fn hidden_floor_caps_strip() {
+    // TODO - Use grid
+    let edges = [0b1_0001, 0b1_0001, 0b1_0001, 0b1_0001, 0];
+    let guards = [0, 0, 0b1111, 0, 0b1111];
+    let tris = weave(&edges, &guards, 0, 0);
+    assert_covers_exactly(&tris, &[0b1111, 0b1111]);
+}
+
+#[test]
+#[ignore = "needs downward growth from the seed (step 3)"]
+fn l_shape_seeded_mid_face() {
+    // TODO - Use grid
+    let mut edges = vec![0b1_0000_0010];
+    edges.extend([0b1_0000_0001; 7]);
+    edges.push(0);
+    let mut guards = vec![0u32; 9];
+    guards[1] = 0b1;
+    guards[8] = 0xFF;
+    let tris = weave(&edges, &guards, 0, 1);
+    let mut expected = vec![0b1111_1110];
+    expected.extend([0xFF; 7]);
+    assert_covers_exactly(&tris, &expected);
+}
+
 struct Grid {
     edges: Vec<u32>,
     guards: Vec<u32>,
@@ -392,6 +426,57 @@ impl Grid {
         Grid {
             edges: horizontal,
             guards: vertical,
+        }
+    }
+}
+
+fn weave(edges: &[u32], guards: &[u32], seed_col: u32, seed_row: u32) -> Vec<StripTriangle> {
+    let mut out = Vec::new();
+    let mut w = StripWeaver::from_bottom_edge(edges[seed_row as usize], seed_col, seed_row);
+    let mut row = seed_row as usize + 1;
+    while w.runs_count > 0 && row < edges.len() {
+        w.weave_strip(row, edges[row], guards[row], |t| out.push(t));
+        row += 1;
+    }
+    out
+}
+
+fn coverage(tris: &[StripTriangle]) -> [[u8; 32]; 32] {
+    let mut counts = [[0u8; 32]; 32]; // [row][col]
+    for t in tris {
+        let p: Vec<(f64, f64)> = t
+            .vertices
+            .iter()
+            .map(|&(c, r)| (c as f64, r as f64))
+            .collect();
+        let area2 = (p[1].0 - p[0].0) * (p[2].1 - p[0].1) - (p[2].0 - p[0].0) * (p[1].1 - p[0].1);
+        assert!(area2 != 0.0, "degenerate triangle: {:?}", t);
+        for row in 0..32 {
+            for col in 0..32 {
+                let (x, y) = (col as f64 + 0.5 + 1e-4, row as f64 + 0.5 + 1.414e-4);
+                let side = |a: (f64, f64), b: (f64, f64)| {
+                    (b.0 - a.0) * (y - a.1) - (b.1 - a.1) * (x - a.0)
+                };
+                let (s0, s1, s2) = (side(p[0], p[1]), side(p[1], p[2]), side(p[2], p[0]));
+                if (s0 > 0.0 && s1 > 0.0 && s2 > 0.0) || (s0 < 0.0 && s1 < 0.0 && s2 < 0.0) {
+                    counts[row][col] += 1;
+                }
+            }
+        }
+    }
+    counts
+}
+
+fn assert_covers_exactly(tris: &[StripTriangle], expected: &[u32]) {
+    let counts = coverage(tris);
+    for row in 0..32 {
+        for col in 0..32 {
+            let want = expected.get(row).map_or(0, |m| (m >> col) & 1) as u8;
+            assert_eq!(
+                counts[row][col], want,
+                "cell (col {col}, row {row}) covered {} times, expected {want}",
+                counts[row][col]
+            );
         }
     }
 }

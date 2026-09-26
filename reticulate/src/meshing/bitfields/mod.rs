@@ -1,9 +1,9 @@
+mod claims;
 mod material;
-mod occlusion;
 mod parity;
 
+pub use claims::{Claims, ClaimsMask};
 pub use material::Material;
-pub use occlusion::Occlusion;
 pub use parity::{Parity, ParityMask};
 
 use bitvec::prelude::*;
@@ -36,7 +36,7 @@ pub struct BitfieldsStorage {
 }
 
 pub struct Bitfields<'a> {
-    pub occlusion: Occlusion<'a>,
+    pub claims: Claims<'a>,
     pub parity: Parity<'a>,
     pub material: Material<'a>,
 }
@@ -47,18 +47,18 @@ impl<'a> Bitfields<'a> {
         let (x_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_PLANE_WORDS);
         let (y_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_PLANE_WORDS);
         let (z_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_PLANE_WORDS);
-        let (x_occlusion, storage_words) = storage_words.split_at_mut(OCCLUSION_WORDS);
-        let (y_occlusion, storage_words) = storage_words.split_at_mut(OCCLUSION_WORDS);
-        let (z_occlusion, storage_words) = storage_words.split_at_mut(OCCLUSION_WORDS);
+        let (x_claims, storage_words) = storage_words.split_at_mut(OCCLUSION_WORDS);
+        let (y_claims, storage_words) = storage_words.split_at_mut(OCCLUSION_WORDS);
+        let (z_claims, storage_words) = storage_words.split_at_mut(OCCLUSION_WORDS);
         let (x_parity, storage_words) = storage_words.split_at_mut(PARITY_WORDS);
         let (y_parity, z_parity) = storage_words.split_at_mut(PARITY_WORDS);
 
         Bitfields {
-            occlusion: Occlusion {
+            claims: Claims {
                 masks: [
-                    BitSlice::from_slice_mut(x_occlusion),
-                    BitSlice::from_slice_mut(y_occlusion),
-                    BitSlice::from_slice_mut(z_occlusion),
+                    ClaimsMask::from_u64_slice(x_claims),
+                    ClaimsMask::from_u64_slice(y_claims),
+                    ClaimsMask::from_u64_slice(z_claims),
                 ],
             },
             parity: Parity {
