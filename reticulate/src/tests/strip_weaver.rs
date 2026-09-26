@@ -155,8 +155,12 @@ fn weave_strip_around_hole() {
         "....................xxx.",
     ]);
 
+    let triangles = grid.weave_triangles();
+
+    assert_covers_exactly(&triangles, &[0b1110, 0b1010, 0b1110]);
+
     assert_eq!(
-        grid.weave_triangles(),
+        triangles,
         vec![
             StripTriangle {
                 vertices: [(2, 1), (1, 0), (3, 1)]

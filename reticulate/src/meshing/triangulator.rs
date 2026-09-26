@@ -34,6 +34,8 @@ impl<F: FnMut(Triangle)> Triangulator<F> {
         let mut bitfields = Bitfields::from_storage(&mut self.storage);
         bitfields.material.clear_material_planes();
 
+        crate::utils::print_parity(&bitfields.parity, &[crate::axis::AXIS_X, crate::axis::AXIS_Y, crate::axis::AXIS_Z], 0..4);
+
         let mut shape_walker = ShapeWalker::new(bitfields, to_material, &mut self.on_triangle);
         tree.walk_dense(&mut shape_walker);
     }

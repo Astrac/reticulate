@@ -150,25 +150,23 @@ impl StripWeaver {
     fn set_new_runs(&mut self, edge: u32, guard: u32) {
         let mut blocks = self.fill_mask() ^ guard;
         let mut found_runs = 0;
-        let mut current_shift = 0;
 
-        while let Some(next_one) = blocks.lowest_one() {
-            blocks = blocks >> next_one;
-
-            let start = current_shift + next_one;
-            let length = blocks.trailing_ones();
-            current_shift = start + length;
-
+        while let Some(start) = blocks.lowest_one() {
             let new_run = StripRun::from_edge(edge, start);
-            self.runs[found_runs] = new_run;
-
             debug_assert!(
                 (edge >> new_run.start) & 1 == 1,
                 "phantom run: no wall at run start"
             );
+            debug_assert!(
+                found_runs == 0 || new_run.start >= self.runs[found_runs - 1].end,
+                "runs must be disjoint and ordered"
+            );
 
-            blocks = blocks >> length;
+            self.runs[found_runs] = new_run;
             found_runs += 1;
+
+            // Blocks that merge into this run must not create it again.
+            blocks &= !new_run.as_fill_mask();
         }
 
         self.runs_count = found_runs;

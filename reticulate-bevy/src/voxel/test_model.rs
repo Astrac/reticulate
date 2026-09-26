@@ -41,7 +41,7 @@ pub fn add_8x8_with_missing_corner(octree: &mut Fixed8Octree<()>) {
     for x in 0..8 {
         for y in 0..8 {
             for z in 0..8 {
-                if x == 0 && y == 0 && z == 0 {
+                if (x == 0 && y == 0 && z == 0) || (x == 4 && y == 4) {
                     continue;
                 }
 
@@ -52,17 +52,17 @@ pub fn add_8x8_with_missing_corner(octree: &mut Fixed8Octree<()>) {
 }
 
 pub fn add_tunnel(octree: &mut Fixed8Octree<()>) {
-    for x in 0..8 {
-        for y in 0..8 {
-            for z in 0..8 {
-                if (y == 3 || y == 4) && (x == 3 || x == 4) {
+    for x in 0..3 {
+        for y in 0..3 {
+            for z in 0..3 {
+                if (y == 1) && (x == 1) {
                     continue;
                 }
 
                 octree.update(
                     Coords3D {
                         x: x,
-                        y: y + 1,
+                        y: y,
                         z: z,
                     },
                     Some(()),
