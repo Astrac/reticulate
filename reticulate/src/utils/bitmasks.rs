@@ -45,6 +45,11 @@ pub const fn make_ones_mask(from: u8, to: u8) -> u32 {
 }
 
 #[inline(always)]
+pub const fn segment_boundaries(mask: u32) -> u32 {
+    mask ^ (mask << 1)
+}
+
+#[inline(always)]
 pub const fn transpose32(mut a: [u32; 32]) -> [u32; 32] {
     let mut j = 16u32;
     let mut m: u32 = 0x0000_FFFF;

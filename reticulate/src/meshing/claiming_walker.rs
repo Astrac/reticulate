@@ -5,7 +5,7 @@ use crate::{
     meshing::{
         Triangle,
         bitfields::{Bitfields, MaterialId},
-        triangulation::stepper::Stepper,
+        triangulation::scanner::Scanner,
     },
 };
 
@@ -39,93 +39,33 @@ where
         current_material: MaterialId,
     ) {
         let axis = face.axis();
-        let axis_u = axis.next();
-        let axis_v = axis_u.next();
         let (morton, axis_coord) = morton.projected_axis_morton(axis, depth);
+        let Bitfields {
+            material,
+            parity,
+            claims,
+            ..
+        } = &mut self.bitfields;
+        let scanner = Scanner::new(parity, axis, axis_coord);
 
-        self.bitfields
-            .material
-            .iterate_materials(axis, morton, depth, |material, coords, _| {
-                if self
-                    .bitfields
-                    .claims
-                    .is_pending(axis, axis_coord, coords)
-                    && current_material != material
-                {
-                    let has_prev = axis_coord > 0;
+        material.iterate_materials(axis, morton, depth, |material, coords, _| {
+            if material == current_material || !claims.is_pending(axis, axis_coord, coords) {
+                return;
+            }
+            let face_material = material.max(current_material);
 
-                    let edges = self.bitfields.parity.gather_edges(axis_v, axis_coord);
-                    let prev_edges = has_prev
-                        .then(|| self.bitfields.parity.gather_edges(axis_v, axis_coord - 1));
-
-                    let claimed_at = |row: usize| self.bitfields.claims.claimed_row(axis, axis_coord, row);
-
-                    let edge_at = |row: usize| {
-                        let claimed = claimed_at(row);
-                        edges[row] | prev_edges.map_or(0, |p| p[row]) | (claimed ^ (claimed << 1))
-                    };
-
-                    let bottom_edge = edge_at(coords.u as usize);
-                    let mut strip_weaver =
-                        Stepper::from_bottom_edge(bottom_edge, coords.v, coords.u);
-                    let mut row = coords.u as usize;
-
-                    while strip_weaver.runs.count() > 0 && row < 32 {
-                        row += 1;
-                        let (edge, guard) = if row < 32 {
-                            let mut g = 0u32;
-                            for i in 0..strip_weaver.runs.count() {
-                                let run = strip_weaver.runs.all()[i];
-                                let (start, end) = (run.start() as usize, run.end() as usize);
-
-                                g |= self
-                                    .bitfields
-                                    .parity
-                                    .gather_guard(axis_u, axis_coord, row, start, end);
-
-                                if has_prev {
-                                    g |= self.bitfields.parity.gather_guard(
-                                        axis_u,
-                                        axis_coord - 1,
-                                        row,
-                                        start,
-                                        end,
-                                    );
-                                }
-                            }
-
-                            g |= claimed_at(row) & strip_weaver.runs.fill_mask();
-
-                            (edge_at(row), g)
-                        } else {
-                            (0u32, 0u32)
-                        };
-
-                        strip_weaver.step_to(row, edge, guard, |t| {
-                            (self.on_triangle)(Triangle::from_strip_triangle(
-                                face,
-                                axis_coord as u8,
-                                t,
-                                material.max(current_material),
-                            ))
-                        });
-                    }
-
-                    self.bitfields
-                        .claims
-                        .mark_done(axis, axis_coord, &strip_weaver.filled);
-
-                    #[cfg(debug_assertions)]
-                    for (u, &claimed) in strip_weaver.filled.iter().enumerate() {
-                        let footprint = self.bitfields.parity.gather_footprint(axis, axis_coord, u);
-                        debug_assert!(
-                            claimed & !footprint == 0,
-                            "strip claimed non-face cells on {axis:?}@{axis_coord}, row {u}: {:032b}",
-                            claimed & !footprint
-                        );
-                    }
-                }
+            let filled = scanner.scan_seed(claims, coords, |t| {
+                (self.on_triangle)(Triangle::from_strip_triangle(
+                    face,
+                    axis_coord as u8,
+                    t,
+                    face_material,
+                ))
             });
+
+            scanner.debug_assert_within_footprint(&filled);
+            claims.mark_done(axis, axis_coord, &filled);
+        });
     }
 }
 

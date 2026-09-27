@@ -1,4 +1,4 @@
-use crate::meshing::triangulation::run::Run;
+use crate::{meshing::triangulation::run::Run, utils::bitmasks};
 
 #[derive(Clone, Debug, Default)]
 pub struct RunMasks {
@@ -102,7 +102,7 @@ impl Runs {
         let mut run_index = 0;
         while run_index < self.runs_count {
             let blocked = self.runs[run_index].fill_mask() & guard;
-            caps |= blocked ^ (blocked << 1);
+            caps |= bitmasks::segment_boundaries(blocked);
             run_index += 1;
         }
         caps
