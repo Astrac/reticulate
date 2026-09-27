@@ -1,4 +1,4 @@
-use crate::meshing::triangulation::{WeavedTriangle, runs::Runs, zipper::Zipper};
+use crate::meshing::triangulation::{Triangle2D, runs::Runs, zipper::Zipper};
 
 pub const GRID_SIDE: usize = 32;
 pub const INACTIVE_VERTEX: u8 = 0xFF;
@@ -45,7 +45,7 @@ impl Stepper {
         top_row: usize,
         top_edge: u32,
         top_guard: u32,
-        mut on_triangle: impl FnMut(WeavedTriangle),
+        mut on_triangle: impl FnMut(Triangle2D),
     ) {
         let caps = self.runs.guard_caps(top_guard);
         let vertices = (self.bottom_u_mask ^ top_edge) | caps;

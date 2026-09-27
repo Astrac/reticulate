@@ -3,7 +3,7 @@ use crate::{
     axis::Axis,
     meshing::{
         bitfields::{Claims, PLANE_SIDE, Parity},
-        triangulation::{WeavedTriangle, stepper::Stepper},
+        triangulation::{Triangle2D, stepper::Stepper},
     },
     utils::bitmasks,
 };
@@ -35,7 +35,7 @@ impl<'a> Scanner<'a> {
         &self,
         claims: &Claims,
         seed: Coords2D,
-        mut emit: impl FnMut(WeavedTriangle),
+        mut emit: impl FnMut(Triangle2D),
     ) -> [u32; PLANE_SIDE] {
         let claimed_row = |row: usize| {
             if row < PLANE_SIDE {

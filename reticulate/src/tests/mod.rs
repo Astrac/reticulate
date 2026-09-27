@@ -6,7 +6,7 @@ mod triangulation;
 
 use spdlog::{Level, LevelFilter};
 
-use crate::meshing::triangulation::WeavedTriangle;
+use crate::meshing::triangulation::Triangle2D;
 
 // TODO: Check if simpler using env_logger or anythign else; avoid multiple inits
 pub fn init_logging() {
@@ -54,7 +54,7 @@ pub fn find_unclaimed_faces(
     missing
 }
 
-pub fn assert_covers_exactly(tris: &[WeavedTriangle], expected: &[u32]) {
+pub fn assert_covers_exactly(tris: &[Triangle2D], expected: &[u32]) {
     let counts = coverage(tris);
     for row in 0..32 {
         for col in 0..32 {
@@ -68,7 +68,7 @@ pub fn assert_covers_exactly(tris: &[WeavedTriangle], expected: &[u32]) {
     }
 }
 
-fn coverage(tris: &[WeavedTriangle]) -> [[u8; 32]; 32] {
+fn coverage(tris: &[Triangle2D]) -> [[u8; 32]; 32] {
     let mut counts = [[0u8; 32]; 32]; // [row][col]
     for t in tris {
         let p: Vec<(f64, f64)> = t

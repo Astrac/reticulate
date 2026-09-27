@@ -15,13 +15,13 @@ impl<'a> Material<'a> {
     /// Reads the materials present in an area
     #[inline(always)]
     pub fn iterate_materials(
-        &mut self,
+        &self,
         axis: Axis,
         morton: Morton2D,
         depth: Depth,
         mut on_material: impl FnMut(MaterialId, Coords2D, usize),
     ) {
-        let materials = self.material_plane_mut(axis);
+        let materials = self.material_plane(axis);
         let index = morton.as_usize();
         let plane_size = depth.as_area();
         let final_index = index + plane_size;
@@ -74,15 +74,15 @@ impl<'a> Material<'a> {
     }
 
     #[inline(always)]
-    pub fn clear_material_planes(&mut self) {
+    pub fn clear(&mut self) {
         self.cells.iter_mut().for_each(|c| c.fill(false));
     }
 
     #[inline(always)]
-    fn material_plane_mut(&mut self, axis: Axis) -> &mut [u16] {
-        let plane_bits = &mut self.cells[axis.as_usize()];
+    fn material_plane(&self, axis: Axis) -> &[u16] {
+        let plane_bits = &self.cells[axis.as_usize()];
 
-        match plane_bits.domain_mut() {
+        match plane_bits.domain() {
             bitvec::domain::Domain::Enclave(_) => {
                 panic!("A material plane must have 1024 bits")
             }
@@ -97,7 +97,7 @@ impl<'a> Material<'a> {
                     "A material plane must be aligned with {}bit grid; found unaligned tail.",
                     STORAGE_WORD
                 );
-                bytemuck::cast_slice_mut(body)
+                bytemuck::cast_slice(body)
             }
         }
     }

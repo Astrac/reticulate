@@ -3,7 +3,7 @@ use crate::{
     axis::*,
     meshing::{
         bitfields::{Claims, ClaimsMask, PLANE_SIDE, Parity, ParityMask},
-        triangulation::{WeavedTriangle, scanner::Scanner},
+        triangulation::{Triangle2D, scanner::Scanner},
     },
     tests::assert_covers_exactly,
 };
@@ -93,7 +93,7 @@ fn scan(
     axis: Axis,
     axis_coord: usize,
     seed: (u32, u32),
-) -> ([u32; PLANE_SIDE], Vec<WeavedTriangle>) {
+) -> ([u32; PLANE_SIDE], Vec<Triangle2D>) {
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
     let scanner = Scanner::new(&parity, axis, axis_coord);
@@ -119,7 +119,7 @@ fn cells(list: &[(usize, usize)]) -> [u32; PLANE_SIDE] {
     m
 }
 
-fn assert_scan(filled: &[u32; PLANE_SIDE], tris: &[WeavedTriangle], expected: &[(usize, usize)]) {
+fn assert_scan(filled: &[u32; PLANE_SIDE], tris: &[Triangle2D], expected: &[(usize, usize)]) {
     assert_eq!(filled, &cells(expected), "claimed cells differ");
     assert_covers_exactly(tris, filled);
 }

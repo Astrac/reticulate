@@ -444,13 +444,13 @@ fn filling_a_child_makes_the_parent_decompose() {
 #[test]
 fn clear_material_planes_zeroes_all_three_planes() {
     let mut p = Planes::with_background(BACKGROUND);
-    p.material().clear_material_planes();
+    p.material().clear();
     assert!(p.bits.iter().all(|b| b.not_any()));
 }
 
 #[test]
 fn clear_material_planes_on_empty_planes_is_a_no_op() {
     let mut p = Planes::new();
-    p.material().clear_material_planes();
+    p.material().clear();
     assert!(p.bits.iter().all(|b| b.not_any()));
 }

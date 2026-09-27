@@ -8,7 +8,10 @@ pub use parity::{Parity, ParityMask};
 
 use bitvec::prelude::*;
 
-use crate::octree::TREE_DEPTH;
+use crate::{
+    meshing::{Triangle, shaper::Shaper},
+    octree::TREE_DEPTH,
+};
 
 type Word = u64;
 type Slice = BitSlice<u64, Lsb0>;
@@ -76,5 +79,12 @@ impl<'a> Bitfields<'a> {
                 ],
             },
         }
+    }
+
+    pub fn as_shaper<F: FnMut(Triangle)>(self, on_triangle: F) -> (Material<'a>, Shaper<'a, F>) {
+        (
+            self.material,
+            Shaper::new(self.claims, self.parity, on_triangle),
+        )
     }
 }
