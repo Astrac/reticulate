@@ -13,11 +13,11 @@ fn init_on_boundary() {
     let mut filled = [0; 32];
     filled[5] = 0b1111;
 
-    assert_eq!(strip_weaver.runs_count, 1);
-    assert_eq!(strip_weaver.runs[0].start, 0);
-    assert_eq!(strip_weaver.runs[0].end, 4);
+    assert_eq!(strip_weaver.runs.count(), 1);
+    assert_eq!(strip_weaver.runs.all()[0].start(), 0);
+    assert_eq!(strip_weaver.runs.all()[0].end(), 4);
     assert_eq!(strip_weaver.zipper.bottom_vs, expected_vertices);
-    assert_eq!(strip_weaver.fill_mask(), 0b1111);
+    assert_eq!(strip_weaver.runs.fill_mask(), 0b1111);
     assert_eq!(strip_weaver.filled, filled);
 }
 
@@ -31,11 +31,11 @@ fn init_in_middle() {
     let mut filled = [0; 32];
     filled[5] = 0b1110000;
 
-    assert_eq!(strip_weaver.runs_count, 1);
-    assert_eq!(strip_weaver.runs[0].start, 4);
-    assert_eq!(strip_weaver.runs[0].end, 7);
+    assert_eq!(strip_weaver.runs.count(), 1);
+    assert_eq!(strip_weaver.runs.all()[0].start(), 4);
+    assert_eq!(strip_weaver.runs.all()[0].end(), 7);
     assert_eq!(strip_weaver.zipper.bottom_vs, expected_vertices);
-    assert_eq!(strip_weaver.fill_mask(), 0b1110000);
+    assert_eq!(strip_weaver.runs.fill_mask(), 0b1110000);
     assert_eq!(strip_weaver.filled, filled);
 }
 
@@ -502,7 +502,7 @@ fn weave(edges: &[u32], guards: &[u32], seed_col: u32, seed_row: u32) -> Vec<Wea
     let mut out = Vec::new();
     let mut w = Stepper::from_bottom_edge(edges[seed_row as usize], seed_col, seed_row);
     let mut row = seed_row as usize + 1;
-    while w.runs_count > 0 && row < edges.len() {
+    while w.runs.count() > 0 && row < edges.len() {
         w.step_to(row, edges[row], guards[row], |t| out.push(t));
         row += 1;
     }

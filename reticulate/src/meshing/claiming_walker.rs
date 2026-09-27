@@ -70,13 +70,13 @@ where
                         Stepper::from_bottom_edge(bottom_edge, coords.v, coords.u);
                     let mut row = coords.u as usize;
 
-                    while strip_weaver.runs_count > 0 && row < 32 {
+                    while strip_weaver.runs.count() > 0 && row < 32 {
                         row += 1;
                         let (edge, guard) = if row < 32 {
                             let mut g = 0u32;
-                            for i in 0..strip_weaver.runs_count {
-                                let run = strip_weaver.runs[i];
-                                let (start, end) = (run.start as usize, run.end as usize);
+                            for i in 0..strip_weaver.runs.count() {
+                                let run = strip_weaver.runs.all()[i];
+                                let (start, end) = (run.start() as usize, run.end() as usize);
 
                                 g |= self
                                     .bitfields
@@ -94,7 +94,7 @@ where
                                 }
                             }
 
-                            g |= claimed_at(row) & strip_weaver.fill_mask();
+                            g |= claimed_at(row) & strip_weaver.runs.fill_mask();
 
                             (edge_at(row), g)
                         } else {

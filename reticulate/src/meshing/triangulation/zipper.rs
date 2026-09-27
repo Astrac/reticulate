@@ -7,7 +7,7 @@ pub struct Zipper {
 }
 
 impl Zipper {
-    pub fn zip_strip(
+    pub fn zip(
         &mut self,
         run_mask: u32,
         top_row: usize,
@@ -81,7 +81,7 @@ impl Zipper {
     }
 
     #[inline(always)]
-    pub const fn set_new_vertices(&mut self, row: usize, mut mask: u32, scan_mask: u32) {
+    pub const fn advance(&mut self, row: usize, mut mask: u32, scan_mask: u32) {
         self.bottom_u_mask = (self.bottom_u_mask & !mask) | (mask & scan_mask);
         while let Some(x) = mask.lowest_one() {
             mask &= !mask.isolate_lowest_one();

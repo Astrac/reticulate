@@ -44,10 +44,13 @@ fn draw_mesh(
         RenderAssetUsages::default(),
     );
 
-    mesh.insert_indices(Indices::U32(mesher.indices.clone()));
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, mesher.positions.clone());
-    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, mesher.normals.clone());
-    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, mesher.colors.clone());
+    mesh.insert_indices(Indices::U32(std::mem::take(&mut mesher.indices)));
+    mesh.insert_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        std::mem::take(&mut mesher.positions),
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, std::mem::take(&mut mesher.normals));
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, std::mem::take(&mut mesher.colors));
 
     if !mesher.positions.is_empty() {
         commands.spawn((
