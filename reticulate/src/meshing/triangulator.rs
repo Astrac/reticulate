@@ -3,8 +3,8 @@ use crate::{
     meshing::{
         Triangle,
         bitfields::{Bitfields, BitfieldsStorage, MaterialId},
-        parity_walker::ParityWalker,
-        shape_walker::ShapeWalker,
+        gathering_walker::GatheringWalker,
+        claiming_walker::ClaimingWalker,
     },
 };
 
@@ -28,15 +28,13 @@ impl<F: FnMut(Triangle)> Triangulator<F> {
         F: FnMut(Triangle),
     {
         let bitfields = Bitfields::from_storage(&mut self.storage);
-        let mut parity_walker = ParityWalker::new(bitfields, to_material);
+        let mut parity_walker = GatheringWalker::new(bitfields, to_material);
         tree.walk_dense(&mut parity_walker);
 
         let mut bitfields = Bitfields::from_storage(&mut self.storage);
         bitfields.material.clear_material_planes();
 
-        crate::utils::print_parity(&bitfields.parity, &[crate::axis::AXIS_X, crate::axis::AXIS_Y, crate::axis::AXIS_Z], 0..4);
-
-        let mut shape_walker = ShapeWalker::new(bitfields, to_material, &mut self.on_triangle);
+        let mut shape_walker = ClaimingWalker::new(bitfields, to_material, &mut self.on_triangle);
         tree.walk_dense(&mut shape_walker);
     }
 }

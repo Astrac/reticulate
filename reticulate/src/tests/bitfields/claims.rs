@@ -3,7 +3,7 @@ use crate::{
     axis::*,
     meshing::{
         bitfields::{Claims, ClaimsMask, PLANE_SIDE},
-        face::strip_weaver::StripWeaver,
+        triangulation::stepper::Stepper,
     },
 };
 
@@ -112,7 +112,7 @@ fn last_plane_and_corner_cell() {
 #[test]
 fn round_trip_with_strip_weaver_filled() {
     let edge = (1 << 5) | (1 << 16); // run [5,16) around col 7
-    let weaver = StripWeaver::from_bottom_edge(edge, 7, 3); // col 7, row 3
+    let weaver = Stepper::from_bottom_edge(edge, 7, 3); // col 7, row 3
     let mut s = storage();
     let mut c = build(&mut s);
     c.mark_done(AXIS_X, 2, &weaver.filled);

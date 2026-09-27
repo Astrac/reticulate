@@ -1,11 +1,11 @@
-use crate::meshing::face::{
-    StripTriangle,
-    strip_weaver::{INACTIVE_VERTEX, StripWeaver},
+use crate::meshing::triangulation::{
+    WeavedTriangle,
+    stepper::{INACTIVE_VERTEX, Stepper},
 };
 
 #[test]
 fn init_on_boundary() {
-    let strip_weaver = StripWeaver::from_bottom_edge(0b010010001, 0, 5);
+    let strip_weaver = Stepper::from_bottom_edge(0b010010001, 0, 5);
     let mut expected_vertices = [INACTIVE_VERTEX; 32];
     expected_vertices[0] = 5;
     expected_vertices[4] = 5;
@@ -23,7 +23,7 @@ fn init_on_boundary() {
 
 #[test]
 fn init_in_middle() {
-    let strip_weaver = StripWeaver::from_bottom_edge(0b010010001, 6, 5);
+    let strip_weaver = Stepper::from_bottom_edge(0b010010001, 6, 5);
     let mut expected_vertices = [INACTIVE_VERTEX; 32];
     expected_vertices[4] = 5;
     expected_vertices[7] = 5;
@@ -49,10 +49,10 @@ fn weave_strip_simple_rectangle() {
     assert_eq!(
         grid.weave_triangles(),
         vec![
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 1), (1, 0), (6, 0)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 1), (6, 0), (6, 1)]
             }
         ]
@@ -70,10 +70,10 @@ fn weave_strip_multirow_rectangle() {
     assert_eq!(
         grid.weave_triangles(),
         vec![
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 2), (1, 0), (6, 0)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 2), (6, 0), (6, 2)]
             }
         ]
@@ -91,22 +91,22 @@ fn weave_strip_shrinking() {
     assert_eq!(
         grid.weave_triangles(),
         vec![
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 1), (1, 0), (2, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 1), (1, 0), (3, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 1), (1, 0), (4, 0)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 1), (4, 0), (4, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 2), (2, 1), (3, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 2), (3, 1), (3, 2)]
             },
         ]
@@ -124,22 +124,22 @@ fn weave_strip_growing() {
     assert_eq!(
         grid.weave_triangles(),
         vec![
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 1), (2, 0), (3, 0)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 1), (3, 0), (3, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 2), (1, 1), (2, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 2), (2, 1), (3, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 2), (3, 1), (4, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 2), (4, 1), (4, 2)]
             }
         ]
@@ -162,28 +162,28 @@ fn weave_strip_around_hole() {
     assert_eq!(
         triangles,
         vec![
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 1), (1, 0), (3, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 1), (1, 0), (4, 0)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 2), (1, 0), (2, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 2), (3, 1), (4, 0)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 3), (1, 0), (2, 2)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 3), (2, 2), (3, 2)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 3), (3, 2), (4, 3)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(4, 3), (3, 2), (4, 0)]
             }
         ]
@@ -203,22 +203,22 @@ fn weave_strip_complex_shape() {
     assert_eq!(
         grid.weave_triangles(),
         vec![
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 2), (2, 0), (3, 0)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(0, 3), (0, 2), (1, 3)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 3), (0, 2), (2, 2)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 4), (1, 3), (3, 4)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 4), (1, 3), (2, 2)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 4), (2, 2), (3, 0)]
             }
         ]
@@ -240,64 +240,64 @@ fn weave_strip_complex_shape_with_hole() {
     assert_eq!(
         grid.weave_triangles(),
         vec![
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 1), (1, 0), (3, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 1), (1, 0), (4, 0)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 2), (1, 0), (2, 1)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 2), (3, 1), (4, 0)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 3), (1, 0), (2, 2)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(1, 3), (2, 2), (2, 3)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 3), (2, 2), (3, 2)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 3), (3, 2), (4, 3)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(4, 3), (3, 2), (4, 0)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(2, 4), (2, 3), (3, 4)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 4), (2, 3), (4, 3)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 4), (4, 3), (5, 4)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(5, 4), (4, 3), (6, 4)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(6, 4), (4, 3), (7, 3)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 5), (3, 4), (5, 4)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(3, 5), (5, 4), (5, 5)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(7, 5), (6, 4), (7, 3)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(6, 6), (6, 4), (7, 5)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(6, 6), (7, 5), (8, 5)]
             },
-            StripTriangle {
+            WeavedTriangle {
                 vertices: [(6, 6), (8, 5), (8, 6)]
             }
         ]
@@ -411,14 +411,14 @@ struct Grid {
 const EMPTY: u8 = b'.';
 
 impl Grid {
-    fn weave_triangles(&self) -> Vec<StripTriangle> {
+    fn weave_triangles(&self) -> Vec<WeavedTriangle> {
         let mut triangles = Vec::new();
         let seed_col = self.edges[0].trailing_zeros();
-        let mut weaver = StripWeaver::from_bottom_edge(self.edges[0], seed_col, 0);
+        let mut weaver = Stepper::from_bottom_edge(self.edges[0], seed_col, 0);
 
         let mut index = 1;
         while index < self.edges.len() {
-            weaver.weave_strip(index, self.edges[index], self.guards[index], |t| {
+            weaver.step_to(index, self.edges[index], self.guards[index], |t| {
                 triangles.push(t)
             });
             index += 1;
@@ -498,18 +498,18 @@ impl Grid {
     }
 }
 
-fn weave(edges: &[u32], guards: &[u32], seed_col: u32, seed_row: u32) -> Vec<StripTriangle> {
+fn weave(edges: &[u32], guards: &[u32], seed_col: u32, seed_row: u32) -> Vec<WeavedTriangle> {
     let mut out = Vec::new();
-    let mut w = StripWeaver::from_bottom_edge(edges[seed_row as usize], seed_col, seed_row);
+    let mut w = Stepper::from_bottom_edge(edges[seed_row as usize], seed_col, seed_row);
     let mut row = seed_row as usize + 1;
     while w.runs_count > 0 && row < edges.len() {
-        w.weave_strip(row, edges[row], guards[row], |t| out.push(t));
+        w.step_to(row, edges[row], guards[row], |t| out.push(t));
         row += 1;
     }
     out
 }
 
-fn coverage(tris: &[StripTriangle]) -> [[u8; 32]; 32] {
+fn coverage(tris: &[WeavedTriangle]) -> [[u8; 32]; 32] {
     let mut counts = [[0u8; 32]; 32]; // [row][col]
     for t in tris {
         let p: Vec<(f64, f64)> = t
@@ -535,7 +535,7 @@ fn coverage(tris: &[StripTriangle]) -> [[u8; 32]; 32] {
     counts
 }
 
-fn assert_covers_exactly(tris: &[StripTriangle], expected: &[u32]) {
+fn assert_covers_exactly(tris: &[WeavedTriangle], expected: &[u32]) {
     let counts = coverage(tris);
     for row in 0..32 {
         for col in 0..32 {

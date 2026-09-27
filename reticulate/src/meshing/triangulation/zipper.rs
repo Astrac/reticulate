@@ -1,4 +1,4 @@
-use crate::meshing::face::{StripTriangle, strip_weaver::INACTIVE_VERTEX};
+use crate::meshing::triangulation::{WeavedTriangle, stepper::INACTIVE_VERTEX};
 
 #[derive(Clone, Debug, Default)]
 pub struct Zipper {
@@ -11,12 +11,12 @@ impl Zipper {
         &mut self,
         run_mask: u32,
         top_row: usize,
-        mut top_u_mask: u32,
-        on_triangle: &mut impl FnMut(StripTriangle),
+        top_u_mask: u32,
+        on_triangle: &mut impl FnMut(WeavedTriangle),
     ) {
-        let mut triangle = StripTriangle::default();
+        let mut triangle = WeavedTriangle::default();
         let mut bottom_u_mask = self.bottom_u_mask & run_mask;
-        top_u_mask = top_u_mask & run_mask;
+        let mut top_u_mask = top_u_mask & run_mask;
 
         let (Some(mut top_u), Some(mut bottom_u)) =
             (top_u_mask.lowest_one(), bottom_u_mask.lowest_one())

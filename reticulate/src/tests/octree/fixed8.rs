@@ -99,17 +99,6 @@ fn test_update_inserts_and_retrieves_data() {
 }
 
 #[test]
-fn test_update_overwrites_existing_data() {
-    let mut tree = Fixed8Octree::new();
-    let coords = Coords3D { x: 0, y: 0, z: 0 };
-
-    tree.update(coords, Some("old".to_string()));
-    tree.update(coords, Some("new".to_string()));
-
-    assert_eq!(tree.get(coords), Some(&"new".to_string()));
-}
-
-#[test]
 fn test_update_removes_data() {
     let mut tree = Fixed8Octree::new();
     let coords = Coords3D { x: 0, y: 0, z: 0 };
@@ -253,4 +242,158 @@ fn test_walk_full_octants() {
         64, leaves,
         "There should be 64 terminal leaves in a 4x4x4 cubes"
     );
+}
+
+#[test]
+fn test_new_creates_empty_octree() {
+    crate::tests::init_logging();
+    let octree: Fixed8Octree<i32> = Fixed8Octree::new();
+    let coords = Coords3D { x: 0, y: 0, z: 0 };
+    assert!(octree.get(coords).is_none());
+}
+
+#[test]
+fn test_update_and_get_basic() {
+    crate::tests::init_logging();
+    let mut octree = Fixed8Octree::new();
+    let coords = Coords3D {
+        x: 10,
+        y: 20,
+        z: 30,
+    };
+    let value = 42;
+
+    // Updated: Wrap data in Some
+    octree.update(coords, Some(value));
+
+    assert_eq!(octree.get(coords), Some(&42));
+}
+
+#[test]
+fn test_update_overwrites_existing_data() {
+    crate::tests::init_logging();
+    let mut octree = Fixed8Octree::new();
+    let coords = Coords3D { x: 5, y: 5, z: 5 };
+
+    // Updated: Wrap data in Some
+    octree.update(coords, Some(1));
+    assert_eq!(octree.get(coords), Some(&1));
+
+    // Updated: Wrap data in Some
+    octree.update(coords, Some(2));
+    assert_eq!(octree.get(coords), Some(&2));
+}
+
+#[test]
+fn test_remove_existing_data() {
+    crate::tests::init_logging();
+    let mut octree = Fixed8Octree::new();
+    let coords = Coords3D {
+        x: 10,
+        y: 20,
+        z: 30,
+    };
+
+    // Insert data
+    octree.update(coords, Some(42));
+    assert_eq!(octree.get(coords), Some(&42));
+
+    // Remove data using None
+    octree.update(coords, None);
+    assert!(octree.get(coords).is_none());
+}
+
+#[test]
+fn test_remove_non_existent_data() {
+    crate::tests::init_logging();
+    let mut octree = Fixed8Octree::<u32>::new();
+    let coords = Coords3D {
+        x: 10,
+        y: 20,
+        z: 30,
+    };
+
+    // Attempting to remove data that doesn't exist should be safe
+    octree.update(coords, None);
+    assert!(octree.get(coords).is_none());
+}
+
+#[test]
+fn test_remove_and_reinsert() {
+    crate::tests::init_logging();
+    let mut octree = Fixed8Octree::new();
+    let coords = Coords3D { x: 5, y: 5, z: 5 };
+
+    // Insert initial data
+    octree.update(coords, Some(1));
+    assert_eq!(octree.get(coords), Some(&1));
+
+    // Remove
+    octree.update(coords, None);
+    assert!(octree.get(coords).is_none());
+
+    // Re-insert with new data
+    octree.update(coords, Some(2));
+    assert_eq!(octree.get(coords), Some(&2));
+}
+
+#[test]
+fn test_distinct_coordinates_are_independent() {
+    crate::tests::init_logging();
+    let mut octree = Fixed8Octree::new();
+
+    let c1 = Coords3D { x: 0, y: 0, z: 0 };
+    let c2 = Coords3D { x: 1, y: 1, z: 1 };
+
+    // Updated: Wrap data in Some
+    octree.update(c1, Some("Data A"));
+    // Updated: Wrap data in Some
+    octree.update(c2, Some("Data B"));
+
+    assert_eq!(octree.get(c1), Some(&"Data A"));
+    assert_eq!(octree.get(c2), Some(&"Data B"));
+}
+
+#[test]
+fn test_boundary_coordinates() {
+    crate::tests::init_logging();
+    let mut octree = Fixed8Octree::new();
+
+    let min_coords = Coords3D { x: 0, y: 0, z: 0 };
+    // Updated: Wrap data in Some
+    octree.update(min_coords, Some("Min"));
+    assert_eq!(octree.get(min_coords), Some(&"Min"));
+
+    let max_coords = Coords3D {
+        x: 255,
+        y: 255,
+        z: 255,
+    };
+    // Updated: Wrap data in Some
+    octree.update(max_coords, Some("Max"));
+    assert_eq!(octree.get(max_coords), Some(&"Max"));
+}
+
+#[test]
+fn test_generic_data_types() {
+    crate::tests::init_logging();
+
+    #[derive(Clone, PartialEq, Debug)]
+    struct CustomData {
+        val: u32,
+    }
+
+    let mut octree: Fixed8Octree<CustomData> = Fixed8Octree::new();
+    let coords = Coords3D {
+        x: 100,
+        y: 100,
+        z: 100,
+    };
+    let data = CustomData { val: 999 };
+
+    // Updated: Wrap data in Some
+    octree.update(coords, Some(data));
+
+    let retrieved = octree.get(coords);
+    assert_eq!(retrieved.map(|r| r.val), Some(999));
 }

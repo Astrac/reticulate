@@ -1,9 +1,9 @@
-mod parity_walker;
-mod shape_walker;
+mod claiming_walker;
+mod gathering_walker;
 mod triangulator;
 
 pub mod bitfields;
-pub mod face;
+pub mod triangulation;
 
 pub use triangulator::Triangulator;
 
@@ -11,7 +11,7 @@ use crate::{
     Coords3D,
     axis::*,
     face::Face,
-    meshing::{bitfields::MaterialId, face::StripTriangle},
+    meshing::{bitfields::MaterialId, triangulation::WeavedTriangle},
 };
 
 #[derive(Clone, Debug, Default)]
@@ -25,7 +25,7 @@ impl Triangle {
     pub fn from_strip_triangle(
         face: Face,
         axis_coord: u8,
-        strip_triangle: StripTriangle,
+        strip_triangle: WeavedTriangle,
         material: MaterialId,
     ) -> Triangle {
         let axis = face.axis();

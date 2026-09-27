@@ -1,11 +1,7 @@
-mod claims;
-mod compact;
-mod fixed8;
-mod material_plane;
+mod bitfields;
 mod morton;
 mod octree;
-mod parity_bitfield;
-mod strip_weaver;
+mod triangulation;
 
 use spdlog::{Level, LevelFilter};
 

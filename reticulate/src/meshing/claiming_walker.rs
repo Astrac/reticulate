@@ -5,17 +5,17 @@ use crate::{
     meshing::{
         Triangle,
         bitfields::{Bitfields, MaterialId},
-        face::strip_weaver::StripWeaver,
+        triangulation::stepper::Stepper,
     },
 };
 
-pub struct ShapeWalker<'a, M, F> {
+pub struct ClaimingWalker<'a, M, F> {
     bitfields: Bitfields<'a>,
     to_material: M,
     on_triangle: &'a mut F,
 }
 
-impl<'a, M, F> ShapeWalker<'a, M, F>
+impl<'a, M, F> ClaimingWalker<'a, M, F>
 where
     F: FnMut(Triangle),
 {
@@ -23,8 +23,8 @@ where
         bitfields: Bitfields<'a>,
         to_material: M,
         on_triangle: &'a mut F,
-    ) -> ShapeWalker<'a, M, F> {
-        ShapeWalker {
+    ) -> ClaimingWalker<'a, M, F> {
+        ClaimingWalker {
             bitfields,
             on_triangle,
             to_material,
@@ -67,7 +67,7 @@ where
 
                     let bottom_edge = edge_at(coords.u as usize);
                     let mut strip_weaver =
-                        StripWeaver::from_bottom_edge(bottom_edge, coords.v, coords.u);
+                        Stepper::from_bottom_edge(bottom_edge, coords.v, coords.u);
                     let mut row = coords.u as usize;
 
                     while strip_weaver.runs_count > 0 && row < 32 {
@@ -101,7 +101,7 @@ where
                             (0u32, 0u32)
                         };
 
-                        strip_weaver.weave_strip(row, edge, guard, |t| {
+                        strip_weaver.step_to(row, edge, guard, |t| {
                             (self.on_triangle)(Triangle::from_strip_triangle(
                                 face,
                                 axis_coord as u8,
@@ -129,7 +129,7 @@ where
     }
 }
 
-impl<'a, M, F, Data> DenseWalker<Data> for ShapeWalker<'a, M, F>
+impl<'a, M, F, Data> DenseWalker<Data> for ClaimingWalker<'a, M, F>
 where
     F: FnMut(Triangle),
     M: Fn(&Data) -> MaterialId,

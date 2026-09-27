@@ -4,14 +4,14 @@ use crate::{
     meshing::bitfields::{Bitfields, MaterialId},
 };
 
-pub struct ParityWalker<'a, M> {
+pub struct GatheringWalker<'a, M> {
     bitfields: Bitfields<'a>,
     to_material: M,
 }
 
-impl<'a, M> ParityWalker<'a, M> {
-    pub fn new(bitfields: Bitfields<'a>, to_material: M) -> ParityWalker<'a, M> {
-        ParityWalker {
+impl<'a, M> GatheringWalker<'a, M> {
+    pub fn new(bitfields: Bitfields<'a>, to_material: M) -> GatheringWalker<'a, M> {
+        GatheringWalker {
             bitfields,
             to_material,
         }
@@ -47,7 +47,7 @@ impl<'a, M> ParityWalker<'a, M> {
     }
 }
 
-impl<'a, M, Data> DenseWalker<Data> for ParityWalker<'a, M>
+impl<'a, M, Data> DenseWalker<Data> for GatheringWalker<'a, M>
 where
     M: Fn(&Data) -> MaterialId,
 {
