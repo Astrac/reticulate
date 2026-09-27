@@ -16,7 +16,7 @@ fn init_on_boundary() {
     assert_eq!(strip_weaver.runs_count, 1);
     assert_eq!(strip_weaver.runs[0].start, 0);
     assert_eq!(strip_weaver.runs[0].end, 4);
-    assert_eq!(strip_weaver.vertices, expected_vertices);
+    assert_eq!(strip_weaver.zipper.bottom_vs, expected_vertices);
     assert_eq!(strip_weaver.fill_mask(), 0b1111);
     assert_eq!(strip_weaver.filled, filled);
 }
@@ -34,7 +34,7 @@ fn init_in_middle() {
     assert_eq!(strip_weaver.runs_count, 1);
     assert_eq!(strip_weaver.runs[0].start, 4);
     assert_eq!(strip_weaver.runs[0].end, 7);
-    assert_eq!(strip_weaver.vertices, expected_vertices);
+    assert_eq!(strip_weaver.zipper.bottom_vs, expected_vertices);
     assert_eq!(strip_weaver.fill_mask(), 0b1110000);
     assert_eq!(strip_weaver.filled, filled);
 }
@@ -323,6 +323,71 @@ fn hidden_floor_caps_strip() {
 }
 
 #[test]
+fn weave_strip_two_holes_close_same_row() {
+    let rows = vec![
+        "................",
+        "..xxxxxxxxxxx...",
+        "..xxx.x.xxxxx...",
+        "..xxxxxxxxxxx...",
+    ];
+    let grid = Grid::parse(&rows);
+    let triangles = grid.weave_triangles();
+
+    let width = rows.iter().map(|r| r.len()).max().unwrap();
+    let expected: Vec<u32> = rows
+        .iter()
+        .rev()
+        .map(|row| {
+            let bytes = row.as_bytes();
+            let mut mask = 0u32;
+            for r in 0..width {
+                let c = if width - 1 - r < bytes.len() {
+                    bytes[width - 1 - r]
+                } else {
+                    b'.'
+                };
+                if c == b'x' {
+                    mask |= 1 << r;
+                }
+            }
+            mask
+        })
+        .collect();
+
+    assert_covers_exactly(&triangles, &expected);
+}
+
+#[test]
+fn weave_strip_branch_3() {
+    let rows = vec![
+        "..............",
+        "......xxxxxx..",
+        "......xxxxxx..",
+        "....xxxxxxxx..",
+        "....xxxxxxxx..",
+        ".....xxxxx.x..",
+        "....xxxxxxxx..",
+        "....xxxxxxxx..",
+    ];
+    let grid = Grid::parse(&rows);
+    let triangles = grid.weave_triangles();
+
+    assert_covers_exactly(
+        &triangles,
+        &[
+            0b00001111111100, // row 0
+            0b00001111111100, // row 1
+            0b00000111110100, // row 2
+            0b00001111111100, // row 3
+            0b00001111111100, // row 4
+            0b00000011111100, // row 5
+            0b00000011111100, // row 6
+            0b00000000000000, // row 7
+        ],
+    );
+}
+
+#[test]
 #[ignore = "needs downward growth from the seed (step 3)"]
 fn l_shape_seeded_mid_face() {
     // TODO - Use grid
@@ -346,17 +411,16 @@ struct Grid {
 const EMPTY: u8 = b'.';
 
 impl Grid {
-    // This assumes the seed of the triangulated shape to be valid at (2, 0)
     fn weave_triangles(&self) -> Vec<StripTriangle> {
         let mut triangles = Vec::new();
-        let mut weaver = StripWeaver::from_bottom_edge(self.edges[0], 2, 0);
+        let seed_col = self.edges[0].trailing_zeros();
+        let mut weaver = StripWeaver::from_bottom_edge(self.edges[0], seed_col, 0);
 
         let mut index = 1;
         while index < self.edges.len() {
             weaver.weave_strip(index, self.edges[index], self.guards[index], |t| {
                 triangles.push(t)
             });
-
             index += 1;
         }
 

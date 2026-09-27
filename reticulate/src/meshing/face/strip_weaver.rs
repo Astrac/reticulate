@@ -1,16 +1,16 @@
-use crate::meshing::face::{StripTriangle, strip_run::StripRun};
+use crate::meshing::face::{StripTriangle, strip_run::StripRun, strip_zipper::Zipper};
 
 pub const GRID_SIDE: usize = 32;
 pub const INACTIVE_VERTEX: u8 = 0xFF;
 
-#[derive(Clone, Copy, Debug, Default)]
+// TODO - Rename to scanner
+#[derive(Clone, Debug, Default)]
 pub struct StripWeaver {
     pub bottom_edge: u32,
     pub filled: [u32; 32],
-    pub present: u32,
     pub runs: [StripRun; 16],
     pub runs_count: usize,
-    pub vertices: [u8; 32],
+    pub zipper: Zipper,
 }
 
 impl StripWeaver {
@@ -31,10 +31,12 @@ impl StripWeaver {
         StripWeaver {
             bottom_edge,
             filled,
-            present: (1 << runs[0].start) | (1 << runs[0].end),
             runs,
             runs_count: 1,
-            vertices,
+            zipper: Zipper {
+                bottom_vs: vertices,
+                bottom_u_mask: (1 << runs[0].start) | (1 << runs[0].end),
+            },
         }
     }
 
@@ -52,7 +54,8 @@ impl StripWeaver {
         if vertices & self.scan_mask() != 0 {
             self.make_triangles(top_row, vertices, on_triangle);
             self.set_new_runs(top_edge, top_guard);
-            self.set_new_vertices(top_row, vertices);
+            self.zipper
+                .set_new_vertices(top_row, vertices, self.scan_mask());
             self.bottom_edge = top_edge;
         }
 
@@ -82,65 +85,11 @@ impl StripWeaver {
     ) {
         debug_assert!(self.runs_count > 0, "No bottom runs found");
 
-        let mut triangle = StripTriangle::default();
-
         for run_index in 0..self.runs_count {
             let run_mask = self.runs[run_index].as_scan_mask();
-            let mut relevant_top = top_vertices & run_mask;
-            let mut relevant_bottom = self.present & run_mask;
 
-            let Some(mut top_vertex) = relevant_top.lowest_one() else {
-                continue;
-            };
-
-            let Some(mut bottom_vertex) = relevant_bottom.lowest_one() else {
-                continue;
-            };
-
-            relevant_top -= relevant_top.isolate_lowest_one();
-            relevant_bottom -= relevant_bottom.isolate_lowest_one();
-
-            loop {
-                triangle.vertices[0] = (top_vertex as u8, top_row as u8);
-                triangle.vertices[1] = (bottom_vertex as u8, self.vertices[bottom_vertex as usize]);
-
-                let next_top = relevant_top
-                    .lowest_one()
-                    .map(|v| v as u8)
-                    .unwrap_or(INACTIVE_VERTEX);
-                let next_bottom = relevant_bottom
-                    .lowest_one()
-                    .map(|v| v as u8)
-                    .unwrap_or(INACTIVE_VERTEX);
-
-                let down = next_bottom != INACTIVE_VERTEX
-                    && self.vertices[next_bottom as usize] < self.vertices[bottom_vertex as usize];
-
-                if next_bottom == INACTIVE_VERTEX && next_top == INACTIVE_VERTEX {
-                    break;
-                } else if next_top != INACTIVE_VERTEX && (next_top < next_bottom || down) {
-                    relevant_top -= relevant_top.isolate_lowest_one();
-                    top_vertex = next_top as u32;
-
-                    triangle.vertices[2] = (top_vertex as u8, top_row as u8);
-                    on_triangle(triangle);
-                } else if down && bottom_vertex > top_vertex {
-                    break;
-                } else if !down && (next_bottom as u32) < top_vertex {
-                    relevant_bottom -= relevant_bottom.isolate_lowest_one();
-                    bottom_vertex = next_bottom as u32;
-                } else {
-                    relevant_bottom -= relevant_bottom.isolate_lowest_one();
-                    bottom_vertex = next_bottom as u32;
-                    self.present &= !(1 << bottom_vertex);
-
-                    triangle.vertices[2] =
-                        (bottom_vertex as u8, self.vertices[bottom_vertex as usize]);
-                    on_triangle(triangle);
-                }
-            }
-
-            self.present |= 1 << bottom_vertex;
+            self.zipper
+                .zip_strip(run_mask, top_row, top_vertices, &mut on_triangle);
         }
     }
 
@@ -155,11 +104,11 @@ impl StripWeaver {
             let new_run = StripRun::from_edge(edge, start);
             debug_assert!(
                 (edge >> new_run.start) & 1 == 1,
-                "phantom run: no wall at run start"
+                "No wall found at run start"
             );
             debug_assert!(
                 found_runs == 0 || new_run.start >= self.runs[found_runs - 1].end,
-                "runs must be disjoint and ordered"
+                "Found out of order or overlapping run"
             );
 
             self.runs[found_runs] = new_run;
@@ -170,15 +119,6 @@ impl StripWeaver {
         }
 
         self.runs_count = found_runs;
-    }
-
-    #[inline(always)]
-    const fn set_new_vertices(&mut self, row: usize, mut mask: u32) {
-        self.present = (self.present & !mask) | (mask & self.scan_mask());
-        while let Some(x) = mask.lowest_one() {
-            mask &= !mask.isolate_lowest_one();
-            self.vertices[x as usize] = row as u8;
-        }
     }
 
     #[inline(always)]
