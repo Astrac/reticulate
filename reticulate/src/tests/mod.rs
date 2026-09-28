@@ -1,4 +1,5 @@
 mod bitfields;
+mod discoverer;
 mod morton;
 mod octree;
 mod scanner;

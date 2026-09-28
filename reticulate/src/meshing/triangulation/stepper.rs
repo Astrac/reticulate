@@ -1,4 +1,7 @@
-use crate::meshing::triangulation::{Triangle2D, runs::Runs, zipper::Zipper};
+use crate::{
+    meshing::triangulation::{Triangle2D, runs::Runs, zipper::Zipper},
+    utils::bitmasks,
+};
 
 pub const GRID_SIDE: usize = 32;
 pub const INACTIVE_VERTEX: u8 = 0xFF;
@@ -78,5 +81,34 @@ impl Stepper {
 
             self.bottom_columns_mask = top_edge;
         }
+    }
+
+    // TODO - Benchmark and optimize
+    pub fn weave_to(
+        &mut self,
+        top_row: usize,
+        top_cells: u32,
+        mut on_triangle: impl FnMut(Triangle2D),
+    ) {
+        debug_assert!(
+            top_row > 0 && top_row <= GRID_SIDE,
+            "top_row out of range: {top_row}"
+        );
+        self.filled[top_row - 1] = self.runs.fill_mask();
+
+        let top_columns_mask = bitmasks::segment_boundaries(top_cells);
+        let vertices = self.bottom_columns_mask ^ top_columns_mask;
+        if vertices == 0 {
+            return;
+        }
+
+        self.runs.iterate_runs(|run| {
+            self.zipper
+                .zip(run.scan_mask(), top_row, vertices, &mut on_triangle);
+        });
+        self.runs = Runs::from_blocks(top_columns_mask, top_cells);
+        self.zipper
+            .advance(top_row, vertices, self.runs.scan_mask());
+        self.bottom_columns_mask = top_columns_mask;
     }
 }

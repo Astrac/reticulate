@@ -4,7 +4,7 @@ use crate::{
     meshing::{
         Triangle,
         bitfields::{Claims, Material, MaterialId, Parity},
-        triangulation::scanner::Scanner,
+        triangulation::{discoverer::Discoverer, scanner::Scanner},
     },
 };
 
@@ -37,7 +37,8 @@ where
     ) {
         let axis = face.axis();
         let (morton, axis_coord) = morton.projected_axis_morton(axis, depth);
-        let scanner = Scanner::new(&self.parity, axis, axis_coord);
+        let discoverer = Discoverer::new(&self.parity, axis, axis_coord);
+        let scanner = Scanner::new(discoverer);
 
         materials.iterate_materials(axis, morton, depth, |material, coords, _| {
             if material == current_material || !self.claims.is_pending(axis, axis_coord, coords) {
@@ -55,7 +56,7 @@ where
             });
 
             #[cfg(debug_assertions)]
-            scanner.debug_assert_within_footprint(&filled);
+            scanner.discoverer.debug_assert_within_footprint(&filled);
 
             self.claims.mark_done(axis, axis_coord, &filled);
         });

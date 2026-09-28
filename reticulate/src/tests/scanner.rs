@@ -2,13 +2,11 @@ use crate::{
     Coords2D,
     axis::*,
     meshing::{
-        bitfields::{Claims, ClaimsMask, PLANE_SIDE, Parity, ParityMask},
-        triangulation::{Triangle2D, scanner::Scanner},
+        bitfields::{Claims, ClaimsMask, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
+        triangulation::{Triangle2D, discoverer::Discoverer, scanner::Scanner},
     },
     tests::assert_covers_exactly,
 };
-
-const WORDS: usize = PLANE_SIDE * PLANE_SIDE * PLANE_SIDE / 64;
 
 /// Backing storage for one chunk's parity and claims.
 struct Fixture {
@@ -17,7 +15,7 @@ struct Fixture {
 }
 
 fn storage() -> [Vec<u64>; 3] {
-    core::array::from_fn(|_| vec![0u64; WORDS])
+    core::array::from_fn(|_| vec![0u64; PARITY_WORDS])
 }
 
 fn parity_of(s: &mut [Vec<u64>; 3]) -> Parity<'_> {
@@ -96,7 +94,7 @@ fn scan(
 ) -> ([u32; PLANE_SIDE], Vec<Triangle2D>) {
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
-    let scanner = Scanner::new(&parity, axis, axis_coord);
+    let scanner = Scanner::new(Discoverer::new(&parity, axis, axis_coord));
     let mut tris = Vec::new();
     let filled = scanner.scan_seed(
         &claims,
@@ -106,7 +104,7 @@ fn scan(
         },
         |t| tris.push(t),
     );
-    scanner.debug_assert_within_footprint(&filled);
+    scanner.discoverer.debug_assert_within_footprint(&filled);
     (filled, tris)
 }
 
@@ -126,6 +124,32 @@ fn assert_scan(filled: &[u32; PLANE_SIDE], tris: &[Triangle2D], expected: &[(usi
         let [(c0, r0), (c1, r1), (c2, r2)] = t.vertices.map(|(c, r)| (c as i32, r as i32));
         let cross = (c1 - c0) * (r2 - r0) - (r1 - r0) * (c2 - c0);
         assert!(cross > 0, "non-canonical winding: {t:?}");
+    }
+    assert_no_t_junctions(tris);
+}
+
+/// Fails if a vertex of one triangle lies strictly inside an edge of another.
+fn assert_no_t_junctions(tris: &[Triangle2D]) {
+    let points = |t: &Triangle2D| t.vertices.map(|(c, r)| (c as i32, r as i32));
+    for (i, a) in tris.iter().enumerate() {
+        for (j, b) in tris.iter().enumerate() {
+            if i == j {
+                continue;
+            }
+            let edges = points(b);
+            for p in points(a) {
+                for k in 0..3 {
+                    let (e0, e1) = (edges[k], edges[(k + 1) % 3]);
+                    let (dx, dy) = (e1.0 - e0.0, e1.1 - e0.1);
+                    let (px, py) = (p.0 - e0.0, p.1 - e0.1);
+                    let cross = dx * py - dy * px;
+                    let dot = dx * px + dy * py;
+                    if cross == 0 && dot > 0 && dot < dx * dx + dy * dy {
+                        panic!("T-junction: {p:?} of {a:?} inside edge {e0:?}-{e1:?} of {b:?}");
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -242,8 +266,10 @@ fn face_touching_chunk_top_closes_cleanly() {
 fn footprint_assertion_catches_non_face_cells() {
     let mut f = fixture(&[(2, 5, 9)]);
     let parity = parity_of(&mut f.parity);
-    let scanner = Scanner::new(&parity, AXIS_X, 2);
-    scanner.debug_assert_within_footprint(&cells(&[(5, 9), (5, 10)]));
+    let scanner = Scanner::new(Discoverer::new(&parity, AXIS_X, 2));
+    scanner
+        .discoverer
+        .debug_assert_within_footprint(&cells(&[(5, 9), (5, 10)]));
 }
 
 #[test]
@@ -305,7 +331,7 @@ fn column_seeded_at_its_top() {
 }
 
 #[test]
-fn downward_pass_starts_with_two_runs() {
+fn seed_above_two_runs() {
     let mut shape: Vec<_> = (1..=6).map(|c| (3, c)).collect();
     for r in 0..3 {
         shape.extend([(r, 1), (r, 2), (r, 5), (r, 6)]);
@@ -316,7 +342,7 @@ fn downward_pass_starts_with_two_runs() {
 }
 
 #[test]
-fn downward_pass_goes_around_a_hole() {
+fn seed_above_hole() {
     let mut shape = Vec::new();
     for r in 0..4 {
         for c in 1..=4 {
@@ -331,19 +357,21 @@ fn downward_pass_goes_around_a_hole() {
 }
 
 #[test]
-fn downward_pass_respects_claims() {
-    let mut shape = Vec::new();
+fn inverted_u_is_covered() {
+    let mut shape: Vec<_> = (1..=5).map(|c| (3, c)).collect();
     for r in 0..3 {
-        for c in 1..=3 {
-            shape.push((r, c));
-        }
+        shape.extend([(r, 1), (r, 5)]);
     }
     let mut f = plane_fixture(&shape);
-    claims_of(&mut f.claims).mark_done(AXIS_Y, 0, &cells(&[(1, 3), (0, 3)]));
+    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (0, 1));
+    assert_scan(&filled, &tris, &shape);
+}
+
+#[test]
+fn dip_below_start_is_covered() {
+    let mut shape = vec![(2, 1), (2, 2), (2, 4), (3, 4)];
+    shape.extend((1..=4).map(|c| (1, c)));
+    let mut f = plane_fixture(&shape);
     let (filled, tris) = scan(&mut f, AXIS_Y, 0, (2, 1));
-    assert_scan(
-        &filled,
-        &tris,
-        &[(2, 1), (2, 2), (2, 3), (1, 1), (1, 2), (0, 1), (0, 2)],
-    );
+    assert_scan(&filled, &tris, &shape);
 }
