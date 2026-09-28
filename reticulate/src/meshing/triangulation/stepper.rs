@@ -5,7 +5,7 @@ pub const INACTIVE_VERTEX: u8 = 0xFF;
 
 #[derive(Clone, Debug, Default)]
 pub struct Stepper {
-    pub bottom_u_mask: u32,
+    pub bottom_columns_mask: u32,
     pub filled: [u32; 32],
     pub runs: Runs,
     pub zipper: Zipper,
@@ -17,25 +17,25 @@ impl Stepper {
         debug_assert!(live != 0, "no live columns to start from");
         let runs = Runs::from_blocks(bottom_edge, live);
 
-        let mut bottom_vs = [INACTIVE_VERTEX; GRID_SIDE];
+        let mut bottom_column_heights = [INACTIVE_VERTEX; GRID_SIDE];
         let mut vertex_mask = 0u32;
 
         let mut idx = 0;
         while idx < runs.count() {
             let run = runs.at_index(idx);
-            bottom_vs[run.start() as usize] = row as u8;
-            bottom_vs[run.end() as usize] = row as u8;
+            bottom_column_heights[run.start() as usize] = row as u8;
+            bottom_column_heights[run.end() as usize] = row as u8;
             vertex_mask |= run.boundary_mask();
             idx += 1;
         }
 
         Stepper {
-            bottom_u_mask: bottom_edge,
+            bottom_columns_mask: bottom_edge,
             filled: [0; GRID_SIDE],
             runs,
             zipper: Zipper {
-                bottom_vs,
-                bottom_u_mask: vertex_mask,
+                bottom_column_heights,
+                bottom_columns_mask: vertex_mask,
             },
         }
     }
@@ -62,7 +62,7 @@ impl Stepper {
         self.filled[top_row - 1] = self.runs.fill_mask();
 
         let caps = self.runs.guard_caps(top_guard);
-        let vertices = (self.bottom_u_mask ^ top_edge) | caps;
+        let vertices = (self.bottom_columns_mask ^ top_edge) | caps;
 
         if vertices & self.runs.scan_mask() != 0 {
             self.runs.iterate_runs(|run| {
@@ -76,7 +76,7 @@ impl Stepper {
 
             self.zipper.advance(top_row, vertices, scan_mask);
 
-            self.bottom_u_mask = top_edge;
+            self.bottom_columns_mask = top_edge;
         }
     }
 }

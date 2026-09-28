@@ -19,7 +19,7 @@ impl Runs {
         let mut scan = 0;
 
         while let Some(start) = blocks.lowest_one() {
-            let run = Run::from_u_mask(edge, start);
+            let run = Run::from_columns_mask(edge, start);
             debug_assert!((edge >> run.start()) & 1 == 1, "No wall found at run start");
             debug_assert!(
                 count == 0 || run.start() >= runs[count - 1].end(),
@@ -43,8 +43,8 @@ impl Runs {
     }
 
     #[inline(always)]
-    pub const fn from_u_mask(u_mask: u32, seed_u: u32) -> Runs {
-        Self::from_blocks(u_mask, 1 << seed_u)
+    pub const fn from_columns_mask(columns_mask: u32, seed_columns: u32) -> Runs {
+        Self::from_blocks(columns_mask, 1 << seed_columns)
     }
 
     #[inline(always)]

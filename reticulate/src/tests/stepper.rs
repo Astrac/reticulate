@@ -16,7 +16,7 @@ fn init_on_boundary() {
     assert_eq!(stepper.runs.count(), 1);
     assert_eq!(stepper.runs.all()[0].start(), 0);
     assert_eq!(stepper.runs.all()[0].end(), 4);
-    assert_eq!(stepper.zipper.bottom_vs, expected_vertices);
+    assert_eq!(stepper.zipper.bottom_column_heights, expected_vertices);
     assert_eq!(stepper.filled, [0; 32]);
     assert_eq!(stepper.runs.fill_mask(), 0b1111);
 }
@@ -31,7 +31,7 @@ fn init_in_middle() {
     assert_eq!(stepper.runs.count(), 1);
     assert_eq!(stepper.runs.all()[0].start(), 4);
     assert_eq!(stepper.runs.all()[0].end(), 7);
-    assert_eq!(stepper.zipper.bottom_vs, expected_vertices);
+    assert_eq!(stepper.zipper.bottom_column_heights, expected_vertices);
     assert_eq!(stepper.filled, [0; 32]);
     assert_eq!(stepper.runs.fill_mask(), 0b1110000);
 }

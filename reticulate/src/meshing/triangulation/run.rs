@@ -18,7 +18,7 @@ impl Run {
     }
 
     #[inline(always)]
-    pub const fn from_u_mask(u_mask: u32, seed_u: u32) -> Run {
+    pub const fn from_columns_mask(u_mask: u32, seed_u: u32) -> Run {
         let mask_lower = u_mask & (!0u32 >> (31 - seed_u));
         let start = (31 - (mask_lower | 1).leading_zeros()) as u8;
 
