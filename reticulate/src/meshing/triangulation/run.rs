@@ -1,11 +1,10 @@
-use crate::utils::bitmasks;
+use crate::{meshing::triangulation::run_mask::RunMasks, utils::bitmasks};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Run {
     start: u8,
     end: u8,
-    fill_mask: u32,
-    scan_mask: u32,
+    masks: RunMasks,
 }
 
 impl Run {
@@ -14,8 +13,7 @@ impl Run {
         Run {
             start: 0,
             end: 0,
-            fill_mask: 0,
-            scan_mask: 0,
+            masks: RunMasks::new(0, 0),
         }
     }
 
@@ -27,14 +25,13 @@ impl Run {
         let mask_upper = u_mask & ((!0u32 << seed_u) << 1);
         let end = (mask_upper | (1 << 31)).trailing_zeros() as u8;
 
-        let fill_mask = bitmasks::make_ones_mask(start, end - 1);
-        let scan_mask = bitmasks::make_ones_mask(start, end);
+        let fill = bitmasks::make_ones_mask(start, end - 1);
+        let scan = bitmasks::make_ones_mask(start, end);
 
         Run {
             end,
-            fill_mask,
-            scan_mask,
             start,
+            masks: RunMasks::new(fill, scan),
         }
     }
 
@@ -50,11 +47,11 @@ impl Run {
 
     #[inline(always)]
     pub const fn fill_mask(&self) -> u32 {
-        self.fill_mask
+        self.masks.fill()
     }
 
     #[inline(always)]
     pub const fn scan_mask(&self) -> u32 {
-        self.scan_mask
+        self.masks.scan()
     }
 }

@@ -1,26 +1,7 @@
-use crate::{meshing::triangulation::run::Run, utils::bitmasks};
-
-#[derive(Clone, Debug, Default)]
-pub struct RunMasks {
-    fill: u32,
-    scan: u32,
-}
-
-impl RunMasks {
-    const fn from_runs(runs: &[Run; 16], count: usize) -> RunMasks {
-        let mut fill = 0;
-        let mut scan = 0;
-        let mut index = 0;
-
-        while index < count {
-            fill |= runs[index].fill_mask();
-            scan |= runs[index].scan_mask();
-            index += 1;
-        }
-
-        RunMasks { fill, scan }
-    }
-}
+use crate::{
+    meshing::triangulation::{run::Run, run_mask::RunMasks},
+    utils::bitmasks,
+};
 
 #[derive(Clone, Debug, Default)]
 pub struct Runs {
@@ -81,12 +62,12 @@ impl Runs {
 
     #[inline(always)]
     pub const fn fill_mask(&self) -> u32 {
-        self.masks.fill
+        self.masks.fill()
     }
 
     #[inline(always)]
     pub const fn scan_mask(&self) -> u32 {
-        self.masks.scan
+        self.masks.scan()
     }
 
     #[inline(always)]
