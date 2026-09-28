@@ -13,29 +13,36 @@ pub struct Stepper {
 
 impl Stepper {
     #[inline(always)]
-    pub const fn from_bottom_edge(bottom_u_mask: u32, seed_u: u32, seed_v: u32) -> Stepper {
-        debug_assert!(bottom_u_mask != 0, "Bottom edge must not be full of 0s");
+    pub const fn from_live(bottom_edge: u32, live: u32, row: u32) -> Stepper {
+        debug_assert!(live != 0, "no live columns to start from");
+        let runs = Runs::from_blocks(bottom_edge, live);
 
-        let runs = Runs::from_u_mask(bottom_u_mask, seed_u);
-        let start = runs.all()[0].start() as usize;
-        let end = runs.all()[0].end() as usize;
+        let mut bottom_vs = [INACTIVE_VERTEX; GRID_SIDE];
+        let mut vertex_mask = 0u32;
 
-        let mut vertices = [INACTIVE_VERTEX; 32];
-        vertices[start] = seed_v as u8;
-        vertices[end] = seed_v as u8;
-
-        let mut filled = [0; 32];
-        filled[seed_v as usize] = runs.fill_mask();
+        let mut idx = 0;
+        while idx < runs.count() {
+            let run = runs.at_index(idx);
+            bottom_vs[run.start() as usize] = row as u8;
+            bottom_vs[run.end() as usize] = row as u8;
+            vertex_mask |= run.boundary_mask();
+            idx += 1;
+        }
 
         Stepper {
-            bottom_u_mask,
-            filled,
-            runs: runs,
+            bottom_u_mask: bottom_edge,
+            filled: [0; GRID_SIDE],
+            runs,
             zipper: Zipper {
-                bottom_vs: vertices,
-                bottom_u_mask: (1 << start) | (1 << end),
+                bottom_vs,
+                bottom_u_mask: vertex_mask,
             },
         }
+    }
+
+    #[inline(always)]
+    pub fn from_bottom_edge(bottom_edge: u32, seed_col: u32, row: u32) -> Stepper {
+        Self::from_live(bottom_edge, 1 << seed_col, row)
     }
 
     // TODO - Benchmark and optimize
@@ -47,12 +54,17 @@ impl Stepper {
         top_guard: u32,
         mut on_triangle: impl FnMut(Triangle2D),
     ) {
+        debug_assert!(
+            top_row > 0 && top_row <= GRID_SIDE,
+            "Top-row should be in 1..={GRID_SIDE}: {top_row}"
+        );
+
+        self.filled[top_row - 1] = self.runs.fill_mask();
+
         let caps = self.runs.guard_caps(top_guard);
         let vertices = (self.bottom_u_mask ^ top_edge) | caps;
 
         if vertices & self.runs.scan_mask() != 0 {
-            debug_assert!(self.runs.count() > 0, "No bottom runs found");
-
             self.runs.iterate_runs(|run| {
                 let scan_mask = run.scan_mask();
                 self.zipper
@@ -66,7 +78,5 @@ impl Stepper {
 
             self.bottom_u_mask = top_edge;
         }
-
-        self.filled[top_row] = self.runs.fill_mask();
     }
 }

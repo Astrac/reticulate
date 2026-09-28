@@ -8,38 +8,44 @@ use crate::{
 
 #[test]
 fn init_on_boundary() {
-    let strip_weaver = Stepper::from_bottom_edge(0b010010001, 0, 5);
+    let stepper = Stepper::from_bottom_edge(0b010010001, 0, 5);
     let mut expected_vertices = [INACTIVE_VERTEX; 32];
     expected_vertices[0] = 5;
     expected_vertices[4] = 5;
 
-    let mut filled = [0; 32];
-    filled[5] = 0b1111;
-
-    assert_eq!(strip_weaver.runs.count(), 1);
-    assert_eq!(strip_weaver.runs.all()[0].start(), 0);
-    assert_eq!(strip_weaver.runs.all()[0].end(), 4);
-    assert_eq!(strip_weaver.zipper.bottom_vs, expected_vertices);
-    assert_eq!(strip_weaver.runs.fill_mask(), 0b1111);
-    assert_eq!(strip_weaver.filled, filled);
+    assert_eq!(stepper.runs.count(), 1);
+    assert_eq!(stepper.runs.all()[0].start(), 0);
+    assert_eq!(stepper.runs.all()[0].end(), 4);
+    assert_eq!(stepper.zipper.bottom_vs, expected_vertices);
+    assert_eq!(stepper.filled, [0; 32]);
+    assert_eq!(stepper.runs.fill_mask(), 0b1111);
 }
 
 #[test]
 fn init_in_middle() {
-    let strip_weaver = Stepper::from_bottom_edge(0b010010001, 6, 5);
+    let stepper = Stepper::from_bottom_edge(0b010010001, 6, 5);
     let mut expected_vertices = [INACTIVE_VERTEX; 32];
     expected_vertices[4] = 5;
     expected_vertices[7] = 5;
 
-    let mut filled = [0; 32];
-    filled[5] = 0b1110000;
+    assert_eq!(stepper.runs.count(), 1);
+    assert_eq!(stepper.runs.all()[0].start(), 4);
+    assert_eq!(stepper.runs.all()[0].end(), 7);
+    assert_eq!(stepper.zipper.bottom_vs, expected_vertices);
+    assert_eq!(stepper.filled, [0; 32]);
+    assert_eq!(stepper.runs.fill_mask(), 0b1110000);
+}
 
-    assert_eq!(strip_weaver.runs.count(), 1);
-    assert_eq!(strip_weaver.runs.all()[0].start(), 4);
-    assert_eq!(strip_weaver.runs.all()[0].end(), 7);
-    assert_eq!(strip_weaver.zipper.bottom_vs, expected_vertices);
-    assert_eq!(strip_weaver.runs.fill_mask(), 0b1110000);
-    assert_eq!(strip_weaver.filled, filled);
+#[test]
+fn first_step_records_start_row() {
+    let mut stepper = Stepper::from_bottom_edge(0b010010001, 0, 5);
+    let live = stepper.runs.fill_mask();
+    stepper.step_to(6, 0, live, |_| {});
+
+    let mut expected = [0; 32];
+    expected[5] = 0b1111;
+    assert_eq!(stepper.filled, expected);
+    assert_eq!(stepper.runs.count(), 0);
 }
 
 #[test]

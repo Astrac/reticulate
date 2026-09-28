@@ -1,3 +1,4 @@
+pub mod direction;
 pub mod run;
 pub mod run_mask;
 pub mod runs;

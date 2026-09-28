@@ -107,15 +107,15 @@ fn last_plane_and_corner_cell() {
     assert!(c.is_pending(AXIS_X, 30, uv(31, 31)));
 }
 
-/// Ties the layout to StripWeaver's: filled[row] has bits over columns,
-/// and is_pending takes Coords2D { u: row, v: column }.
 #[test]
 fn round_trip_with_strip_weaver_filled() {
-    let edge = (1 << 5) | (1 << 16); // run [5,16) around col 7
-    let weaver = Stepper::from_bottom_edge(edge, 7, 3); // col 7, row 3
+    let edge = (1 << 5) | (1 << 16);
+    let mut stepper = Stepper::from_bottom_edge(edge, 7, 3);
+    let live = stepper.runs.fill_mask();
+    stepper.step_to(4, 0, live, |_| {});
     let mut s = storage();
     let mut c = build(&mut s);
-    c.mark_done(AXIS_X, 2, &weaver.filled);
+    c.mark_done(AXIS_X, 2, &stepper.filled);
     for col in 0..PLANE_SIDE as u32 {
         let inside = (5..16).contains(&col);
         assert_eq!(c.is_pending(AXIS_X, 2, uv(3, col)), !inside, "col {col}");

@@ -3,7 +3,7 @@ mod morton;
 mod octree;
 mod scanner;
 mod shaper;
-mod triangulation;
+mod stepper;
 
 use spdlog::{Level, LevelFilter};
 

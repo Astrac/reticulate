@@ -46,6 +46,11 @@ impl Run {
     }
 
     #[inline(always)]
+    pub const fn boundary_mask(&self) -> u32 {
+        (1u32 << self.start) | (1u32 << self.end)
+    }
+
+    #[inline(always)]
     pub const fn fill_mask(&self) -> u32 {
         self.masks.fill()
     }

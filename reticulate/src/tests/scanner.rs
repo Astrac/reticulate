@@ -122,6 +122,11 @@ fn cells(list: &[(usize, usize)]) -> [u32; PLANE_SIDE] {
 fn assert_scan(filled: &[u32; PLANE_SIDE], tris: &[Triangle2D], expected: &[(usize, usize)]) {
     assert_eq!(filled, &cells(expected), "claimed cells differ");
     assert_covers_exactly(tris, filled);
+    for t in tris {
+        let [(c0, r0), (c1, r1), (c2, r2)] = t.vertices.map(|(c, r)| (c as i32, r as i32));
+        let cross = (c1 - c0) * (r2 - r0) - (r1 - r0) * (c2 - c0);
+        assert!(cross > 0, "non-canonical winding: {t:?}");
+    }
 }
 
 /// A voxel at an asymmetric position. Each of its six faces must be
@@ -222,11 +227,7 @@ fn claimed_cells_are_skipped() {
     );
 }
 
-/// A face reaching the last row. The scan steps to row 32, where the
-/// guard blocks every live column, and must close without a phantom run
-/// or an out-of-bounds write.
 #[test]
-#[ignore = "Disabled: touching chunk boundary not yet implemented"]
 fn face_touching_chunk_top_closes_cleanly() {
     let solid: Vec<_> = (28..PLANE_SIDE).map(|z| (5, 0, z)).collect();
     let mut f = fixture(&solid);
@@ -245,10 +246,23 @@ fn footprint_assertion_catches_non_face_cells() {
     scanner.debug_assert_within_footprint(&cells(&[(5, 9), (5, 10)]));
 }
 
-/// An L-shaped face seeded above its bottom row. Row 0 hangs below the
-/// seed, so an upward-only scan misses it.
 #[test]
-#[ignore = "Disabled: valley discover not yet implemented"]
+fn unconnected_shapes_below_the_seed_are_not_claimed() {
+    let mut voxels = Vec::new();
+    for x in 1..=3 {
+        voxels.push((x, 0, 3)); // P faces on plane y = 1, row 3
+        voxels.push((x, 1, 2)); // N faces on plane y = 1, row 2
+    }
+    for z in 0..=2 {
+        voxels.push((5, 0, z)); // separate P-face column, rows 0..2
+    }
+    let mut f = fixture(&voxels);
+
+    let (filled, tris) = scan(&mut f, AXIS_Y, 1, (3, 1)); // rows z, cols x
+    assert_scan(&filled, &tris, &[(3, 1), (3, 2), (3, 3)]);
+}
+
+#[test]
 fn valley_below_seed_is_claimed() {
     let mut solid = Vec::new();
     for y in 0..3 {
@@ -274,5 +288,62 @@ fn valley_below_seed_is_claimed() {
             (2, 1),
             (2, 2),
         ],
+    );
+}
+
+fn plane_fixture(cells_rc: &[(usize, usize)]) -> Fixture {
+    let voxels: Vec<_> = cells_rc.iter().map(|&(r, c)| (c, 0, r)).collect();
+    fixture(&voxels)
+}
+
+#[test]
+fn column_seeded_at_its_top() {
+    let shape: Vec<_> = (0..4).map(|r| (r, 5)).collect();
+    let mut f = plane_fixture(&shape);
+    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (3, 5));
+    assert_scan(&filled, &tris, &shape);
+}
+
+#[test]
+fn downward_pass_starts_with_two_runs() {
+    let mut shape: Vec<_> = (1..=6).map(|c| (3, c)).collect();
+    for r in 0..3 {
+        shape.extend([(r, 1), (r, 2), (r, 5), (r, 6)]);
+    }
+    let mut f = plane_fixture(&shape);
+    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (3, 3));
+    assert_scan(&filled, &tris, &shape);
+}
+
+#[test]
+fn downward_pass_goes_around_a_hole() {
+    let mut shape = Vec::new();
+    for r in 0..4 {
+        for c in 1..=4 {
+            if (r, c) != (1, 2) {
+                shape.push((r, c));
+            }
+        }
+    }
+    let mut f = plane_fixture(&shape);
+    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (3, 1));
+    assert_scan(&filled, &tris, &shape);
+}
+
+#[test]
+fn downward_pass_respects_claims() {
+    let mut shape = Vec::new();
+    for r in 0..3 {
+        for c in 1..=3 {
+            shape.push((r, c));
+        }
+    }
+    let mut f = plane_fixture(&shape);
+    claims_of(&mut f.claims).mark_done(AXIS_Y, 0, &cells(&[(1, 3), (0, 3)]));
+    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (2, 1));
+    assert_scan(
+        &filled,
+        &tris,
+        &[(2, 1), (2, 2), (2, 3), (1, 1), (1, 2), (0, 1), (0, 2)],
     );
 }
