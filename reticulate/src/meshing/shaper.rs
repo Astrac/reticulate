@@ -41,7 +41,10 @@ where
         let scanner = Scanner::new(discoverer);
 
         materials.iterate_materials(axis, morton, depth, |material, coords, _| {
-            if material == current_material || !self.claims.is_pending(axis, axis_coord, coords) {
+            if material == current_material
+                || (material != 0 && current_material != 0)
+                || !self.claims.is_pending(axis, axis_coord, coords)
+            {
                 return;
             }
             let face_material = material.max(current_material);

@@ -17,11 +17,6 @@ impl<'a, M> GatheringWalker<'a, M> {
         }
     }
 
-    // TODO - Optimization opportunities:
-    //   * Use occlusion mask to skip fully occluded areas
-    //   * Same thing could be done XORing the materials
-    //     - How to actually get materials in the area?
-    //     - Remember: XORing twice the same value is a noop
     fn register_material_at(
         &mut self,
         axis: Axis,

@@ -94,9 +94,6 @@ fn claims_of(s: &mut [Vec<u64>; 3]) -> Claims<'_> {
     }
 }
 
-/// Builds parity the way pass 1 does: a transition wherever a solid voxel
-/// meets an empty one. Two different solids touching is occluded and gets
-/// no transition.
 fn fixture(voxels: &[((u8, u8, u8), MaterialId)]) -> Fixture {
     let mut f = Fixture {
         grid: Grid::new(voxels),
@@ -108,8 +105,8 @@ fn fixture(voxels: &[((u8, u8, u8), MaterialId)]) -> Fixture {
         for c in 0..PLANE_SIDE as i32 {
             for u in 0..PLANE_SIDE as i32 {
                 for v in 0..PLANE_SIDE as i32 {
-                    let below = f.grid.at(voxel(a, c - 1, u, v)) != EMPTY;
-                    let here = f.grid.at(voxel(a, c, u, v)) != EMPTY;
+                    let below = f.grid.at(voxel(a, c - 1, u, v));
+                    let here = f.grid.at(voxel(a, c, u, v));
                     if below != here {
                         let uv = Coords2D {
                             u: u as u32,
@@ -435,17 +432,28 @@ fn rewalking_with_same_claims_emits_nothing() {
 }
 
 #[test]
-#[ignore = "seed check accepts occluded faces; parity has no material walls on exposed faces"]
-fn different_materials_split_and_skip_occluded_face() {
-    let mut f = fixture(&[((2, 3, 4), STONE), ((3, 3, 4), DIRT)]);
-    let tris = mesh(&mut f, &[]);
-    assert_mesh_matches(&f.grid, &tris);
-}
-
-#[test]
 #[ignore = "non-manifold: voxels touching along an edge leave a corner inside another face's edge"]
 fn edge_touching_voxels_are_seamless() {
     let mut f = fixture(&[((0, 0, 0), STONE), ((0, 0, 1), STONE), ((1, 1, 0), STONE)]);
     let tris = mesh(&mut f, &[]);
     assert_mesh_matches(&f.grid, &tris);
+}
+
+#[test]
+fn different_materials_split_and_skip_occluded_face() {
+    let mut f = fixture(&[((2, 3, 4), STONE), ((3, 3, 4), DIRT)]);
+    let tris = mesh(&mut f, &[]);
+    let stone = tris.iter().filter(|t| t.material == STONE).count();
+    let dirt = tris.iter().filter(|t| t.material == DIRT).count();
+    assert_eq!((stone, dirt), (10, 10));
+    assert_mesh_matches(&f.grid, &tris);
+}
+
+#[test]
+#[ignore = "multi-material: T-junction where a material boundary meets a neighbour's edge"]
+fn material_boundary_corner_inside_neighbour_edge() {
+    let mut f = fixture(&[((2, 3, 4), STONE), ((2, 3, 5), STONE), ((3, 3, 4), DIRT)]);
+    let tris = mesh(&mut f, &[]);
+    assert_mesh_matches(&f.grid, &tris);
+    assert_no_t_junctions_3d(&tris);
 }

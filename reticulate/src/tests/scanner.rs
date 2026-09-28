@@ -412,6 +412,24 @@ fn pinch_between_stacked_runs() {
 }
 
 #[test]
+#[ignore = "adjacent regions: a corner of one lies inside the other's edge"]
+fn adjacent_regions_share_boundary_vertices() {
+    let a = [(4, 2), (5, 2)];
+    let b = [(4, 3)];
+    let mut f = plane_fixture(&[a[0], a[1], b[0]]);
+
+    let a_tris = weave(&cells(&a));
+    claims_of(&mut f.claims).mark_done(AXIS_Y, 0, &cells(&a));
+
+    let (filled, b_tris) = scan(&mut f, AXIS_Y, 0, (4, 3));
+    assert_eq!(filled, cells(&b));
+
+    let all: Vec<_> = a_tris.into_iter().chain(b_tris).collect();
+    assert_covers_exactly(&all, &cells(&[a[0], a[1], b[0]]));
+    assert_no_t_junctions(&all);
+}
+
+#[test]
 fn scanner_weave_matches_reference_weave() {
     let shape = [(0, 1), (0, 2), (0, 3), (1, 1), (1, 3), (2, 1), (2, 2)];
     let mut f = plane_fixture(&shape);
