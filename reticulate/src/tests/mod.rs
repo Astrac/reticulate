@@ -2,6 +2,7 @@ mod bitfields;
 mod morton;
 mod octree;
 mod scanner;
+mod shaper;
 mod triangulation;
 
 use spdlog::{Level, LevelFilter};

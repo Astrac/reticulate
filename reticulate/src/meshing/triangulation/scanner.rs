@@ -66,6 +66,7 @@ impl<'a> Scanner<'a> {
         stepper.filled
     }
 
+    #[cfg(debug_assertions)]
     pub fn debug_assert_within_footprint(&self, filled: &[u32; PLANE_SIDE]) {
         #[cfg(debug_assertions)]
         for (u, &claimed) in filled.iter().enumerate() {

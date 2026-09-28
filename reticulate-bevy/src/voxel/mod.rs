@@ -55,7 +55,7 @@ fn draw_mesh(
             Mesh3d(meshes.add(mesh)),
             MeshMaterial3d(materials.add(StandardMaterial {
                 base_color: Color::WHITE,
-                cull_mode: None,
+                // cull_mode: None,
                 ..default()
             })),
             Transform::from_xyz(0.0, 0.0, 0.0),

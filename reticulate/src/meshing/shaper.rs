@@ -54,7 +54,9 @@ where
                 ))
             });
 
+            #[cfg(debug_assertions)]
             scanner.debug_assert_within_footprint(&filled);
+
             self.claims.mark_done(axis, axis_coord, &filled);
         });
     }

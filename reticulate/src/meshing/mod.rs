@@ -1,9 +1,9 @@
 mod gathering_walker;
-mod shaper;
-mod shaping_walker;
 mod triangulator;
 
 pub mod bitfields;
+pub mod shaper;
+pub mod shaping_walker;
 pub mod triangulation;
 
 pub use triangulator::Triangulator;
@@ -23,7 +23,8 @@ pub struct Triangle {
 }
 
 impl Triangle {
-    pub fn from_strip_triangle(
+    #[inline(always)]
+    pub const fn from_strip_triangle(
         face: Face,
         axis_coord: u8,
         strip_triangle: Triangle2D,
@@ -41,9 +42,21 @@ impl Triangle {
             ],
         }
     }
+
+    #[inline(always)]
+    pub const fn outward_vertices(&self) -> [Coords3D; 3] {
+        let [a, b, c] = self.vertices;
+
+        if self.face.0 & 0b1000 == 0 {
+            [a, c, b]
+        } else {
+            [a, b, c]
+        }
+    }
 }
 
-fn to_coords_3d(axis: Axis, axis_coord: u8, uv_coords: (u8, u8)) -> Coords3D {
+#[inline(always)]
+const fn to_coords_3d(axis: Axis, axis_coord: u8, uv_coords: (u8, u8)) -> Coords3D {
     match axis {
         AXIS_X => Coords3D {
             x: axis_coord,

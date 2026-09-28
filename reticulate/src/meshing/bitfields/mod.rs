@@ -18,18 +18,17 @@ type Slice = BitSlice<u64, Lsb0>;
 // TODO Move this type, here is wrong
 pub type MaterialId = u16;
 
-pub const STORAGE_WORD: usize = size_of::<Word>() * 8;
-pub const MATERIAL_BITS: usize = size_of::<MaterialId>() * 8;
-pub const PLANE_SIDE: usize = 1 << TREE_DEPTH;
-pub const PLANE_AREA: usize = PLANE_SIDE * PLANE_SIDE;
 pub const CHUNK_VOLUME: usize = PLANE_SIDE * PLANE_SIDE * PLANE_SIDE;
-
-const OCCLUSION_BITS: usize = CHUNK_VOLUME;
-const OCCLUSION_WORDS: usize = OCCLUSION_BITS / STORAGE_WORD;
-const MATERIAL_PLANE_BITS: usize = PLANE_AREA * MATERIAL_BITS;
-const MATERIAL_PLANE_WORDS: usize = PLANE_AREA * MATERIAL_BITS / STORAGE_WORD;
-const PARITY_BITS: usize = CHUNK_VOLUME;
-const PARITY_WORDS: usize = PARITY_BITS / STORAGE_WORD;
+pub const MATERIAL_BITS: usize = size_of::<MaterialId>() * 8;
+pub const MATERIAL_PLANE_BITS: usize = PLANE_AREA * MATERIAL_BITS;
+pub const MATERIAL_WORDS: usize = PLANE_AREA * MATERIAL_BITS / STORAGE_WORD;
+pub const OCCLUSION_BITS: usize = CHUNK_VOLUME;
+pub const OCCLUSION_WORDS: usize = OCCLUSION_BITS / STORAGE_WORD;
+pub const PARITY_BITS: usize = CHUNK_VOLUME;
+pub const PARITY_WORDS: usize = PARITY_BITS / STORAGE_WORD;
+pub const PLANE_AREA: usize = PLANE_SIDE * PLANE_SIDE;
+pub const PLANE_SIDE: usize = 1 << TREE_DEPTH;
+pub const STORAGE_WORD: usize = size_of::<Word>() * 8;
 
 const BITFIELD_SIZE: usize = (OCCLUSION_BITS * 3) + (MATERIAL_PLANE_BITS * 3) + (PARITY_BITS * 3);
 
@@ -47,9 +46,9 @@ pub struct Bitfields<'a> {
 impl<'a> Bitfields<'a> {
     pub fn from_storage(storage: &'a mut BitfieldsStorage) -> Bitfields<'a> {
         let storage_words = storage.bits.as_raw_mut_slice();
-        let (x_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_PLANE_WORDS);
-        let (y_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_PLANE_WORDS);
-        let (z_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_PLANE_WORDS);
+        let (x_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_WORDS);
+        let (y_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_WORDS);
+        let (z_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_WORDS);
         let (x_claims, storage_words) = storage_words.split_at_mut(OCCLUSION_WORDS);
         let (y_claims, storage_words) = storage_words.split_at_mut(OCCLUSION_WORDS);
         let (z_claims, storage_words) = storage_words.split_at_mut(OCCLUSION_WORDS);

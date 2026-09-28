@@ -19,7 +19,7 @@ impl Depth {
 
     #[inline(always)]
     pub const fn as_side(&self) -> usize {
-        PLANE_SIDE >> (self.0 << 1)
+        PLANE_SIDE >> self.0
     }
 }
 

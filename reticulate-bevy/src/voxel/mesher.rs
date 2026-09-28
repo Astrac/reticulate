@@ -33,9 +33,10 @@ impl Mesher {
         let mut next_index = 0;
 
         let mut triangulator = Triangulator::new(|t| {
-            self.positions.push(to_position(t.vertices[0]));
-            self.positions.push(to_position(t.vertices[1]));
-            self.positions.push(to_position(t.vertices[2]));
+            let [v1, v2, v3] = t.outward_vertices();
+            self.positions.push(to_position(v1));
+            self.positions.push(to_position(v2));
+            self.positions.push(to_position(v3));
 
             self.indices.push(next_index);
             self.indices.push(next_index + 1);
