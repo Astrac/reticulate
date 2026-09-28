@@ -3,9 +3,10 @@ use crate::{
     axis::*,
     meshing::{
         bitfields::{Claims, ClaimsMask, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
-        triangulation::{Triangle2D, discoverer::Discoverer, scanner::Scanner},
+        triangulation::{Triangle2D, discoverer::Discoverer, scanner::Scanner, stepper::Stepper},
     },
     tests::assert_covers_exactly,
+    utils::bitmasks,
 };
 
 /// Backing storage for one chunk's parity and claims.
@@ -374,4 +375,72 @@ fn dip_below_start_is_covered() {
     let mut f = plane_fixture(&shape);
     let (filled, tris) = scan(&mut f, AXIS_Y, 0, (2, 1));
     assert_scan(&filled, &tris, &shape);
+}
+
+#[test]
+fn pinch_start_below_end_above() {
+    let shape = [(0, 1), (0, 2), (0, 3), (1, 1), (1, 3), (2, 1), (2, 2)];
+    let mut f = plane_fixture(&shape);
+    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (0, 1));
+    assert_scan(&filled, &tris, &shape);
+}
+
+#[test]
+fn pinch_end_below_start_above() {
+    let shape = [(0, 1), (0, 2), (0, 3), (1, 1), (1, 3), (2, 2), (2, 3)];
+    let mut f = plane_fixture(&shape);
+    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (0, 1));
+    assert_scan(&filled, &tris, &shape);
+}
+
+#[test]
+fn pinch_between_stacked_runs() {
+    let shape = [
+        (0, 1),
+        (0, 2),
+        (0, 3),
+        (0, 4),
+        (1, 1),
+        (1, 3),
+        (1, 4),
+        (2, 1),
+        (2, 2),
+    ];
+    let mut f = plane_fixture(&shape);
+    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (0, 1));
+    assert_scan(&filled, &tris, &shape);
+}
+
+#[test]
+fn scanner_weave_matches_reference_weave() {
+    let shape = [(0, 1), (0, 2), (0, 3), (1, 1), (1, 3), (2, 1), (2, 2)];
+    let mut f = plane_fixture(&shape);
+    let parity = parity_of(&mut f.parity);
+    let claims = claims_of(&mut f.claims);
+    let scanner = Scanner::new(Discoverer::new(&parity, AXIS_Y, 0));
+    let seed = Coords2D { u: 0, v: 1 };
+
+    let region = scanner.discoverer.discover(&claims, seed);
+    let reference = weave(&region); // the helper the stepper tests use
+
+    let mut tris = Vec::new();
+    scanner.scan_seed(&claims, seed, |t| tris.push(t));
+    assert_eq!(tris, reference);
+}
+
+// TODO - Remove duplication with stepper tests
+/// Weaves region rows from the bottom up: `cells[r]` are row r's cells.
+/// Everything past the end of `cells` is empty, which closes the last runs.
+fn weave(cells: &[u32]) -> Vec<Triangle2D> {
+    let mut out = Vec::new();
+    let Some(first) = cells.iter().position(|&c| c != 0) else {
+        return out;
+    };
+    let edge = bitmasks::segment_boundaries(cells[first]);
+    let mut stepper = Stepper::from_live(edge, cells[first], first as u32);
+    for row in first + 1..=cells.len() {
+        let top = cells.get(row).copied().unwrap_or(0);
+        stepper.weave_to(row, top, |t| out.push(t));
+    }
+    out
 }

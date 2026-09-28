@@ -45,8 +45,23 @@ pub const fn make_ones_mask(from: u8, to: u8) -> u32 {
 }
 
 #[inline(always)]
-pub const fn segment_boundaries(mask: u32) -> u32 {
-    mask ^ (mask << 1)
+pub const fn run_starts(cells: u32) -> u32 {
+    cells & !(cells << 1)
+}
+
+#[inline(always)]
+pub const fn run_ends(cells: u32) -> u32 {
+    (cells << 1) & !cells
+}
+
+#[inline(always)]
+pub const fn segment_boundaries(cells: u32) -> u32 {
+    cells ^ (cells << 1)
+}
+
+#[inline(always)]
+pub const fn boundary_changes(below: u32, above: u32) -> u32 {
+    (run_starts(below) ^ run_starts(above)) | (run_ends(below) ^ run_ends(above))
 }
 
 #[inline(always)]
@@ -109,5 +124,37 @@ mod tests {
         assert_eq!(interleave_two_zeroes(0b010_u8), 0b000_001_000);
         assert_eq!(interleave_two_zeroes(0b001_u8), 0b000_000_001);
         assert_eq!(interleave_two_zeroes(0), 0);
+    }
+
+    #[test]
+    fn boundary_masks() {
+        // Cells 3 and 4: starts at 3, ends at 5.
+        assert_eq!(run_starts(0b11000), 1 << 3);
+        assert_eq!(run_ends(0b11000), 1 << 5);
+        assert_eq!(segment_boundaries(0b11000), (1 << 3) | (1 << 5));
+
+        // Two runs, cells {1} and {3, 4}.
+        let cells = 0b11010;
+        assert_eq!(run_starts(cells), (1 << 1) | (1 << 3));
+        assert_eq!(run_ends(cells), (1 << 2) | (1 << 5));
+        assert_eq!(
+            segment_boundaries(cells),
+            run_starts(cells) | run_ends(cells)
+        );
+
+        // A straight wall at boundary 1 on both rows: no change.
+        assert_eq!(boundary_changes(0b0110, 0b0110), 0);
+
+        // Pinch: boundary 3 starts a run below ({3}) and ends one above ({1, 2}).
+        // A plain XOR of the edges cancels it; boundary_changes keeps it.
+        let (below, above) = (0b1000, 0b0110);
+        assert_eq!(
+            segment_boundaries(below) ^ segment_boundaries(above),
+            (1 << 1) | (1 << 4)
+        );
+        assert_eq!(
+            boundary_changes(below, above),
+            (1 << 1) | (1 << 3) | (1 << 4)
+        );
     }
 }

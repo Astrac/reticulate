@@ -8,7 +8,6 @@ pub const INACTIVE_VERTEX: u8 = 0xFF;
 
 #[derive(Clone, Debug, Default)]
 pub struct Stepper {
-    pub bottom_columns_mask: u32,
     pub filled: [u32; 32],
     pub runs: Runs,
     pub zipper: Zipper,
@@ -33,7 +32,6 @@ impl Stepper {
         }
 
         Stepper {
-            bottom_columns_mask: bottom_edge,
             filled: [0; GRID_SIDE],
             runs,
             zipper: Zipper {
@@ -49,41 +47,6 @@ impl Stepper {
     }
 
     // TODO - Benchmark and optimize
-    #[inline(always)]
-    pub fn step_to(
-        &mut self,
-        top_row: usize,
-        top_edge: u32,
-        top_guard: u32,
-        mut on_triangle: impl FnMut(Triangle2D),
-    ) {
-        debug_assert!(
-            top_row > 0 && top_row <= GRID_SIDE,
-            "Top-row should be in 1..={GRID_SIDE}: {top_row}"
-        );
-
-        self.filled[top_row - 1] = self.runs.fill_mask();
-
-        let caps = self.runs.guard_caps(top_guard);
-        let vertices = (self.bottom_columns_mask ^ top_edge) | caps;
-
-        if vertices & self.runs.scan_mask() != 0 {
-            self.runs.iterate_runs(|run| {
-                let scan_mask = run.scan_mask();
-                self.zipper
-                    .zip(scan_mask, top_row, vertices, &mut on_triangle);
-            });
-
-            self.runs.advance(top_edge, top_guard);
-            let scan_mask = self.runs.scan_mask();
-
-            self.zipper.advance(top_row, vertices, scan_mask);
-
-            self.bottom_columns_mask = top_edge;
-        }
-    }
-
-    // TODO - Benchmark and optimize
     pub fn weave_to(
         &mut self,
         top_row: usize,
@@ -94,10 +57,15 @@ impl Stepper {
             top_row > 0 && top_row <= GRID_SIDE,
             "top_row out of range: {top_row}"
         );
-        self.filled[top_row - 1] = self.runs.fill_mask();
+        debug_assert_eq!(
+            bitmasks::segment_boundaries(top_cells),
+            top_cells ^ (top_cells << 1)
+        );
 
-        let top_columns_mask = bitmasks::segment_boundaries(top_cells);
-        let vertices = self.bottom_columns_mask ^ top_columns_mask;
+        let bottom_cells = self.runs.fill_mask();
+        self.filled[top_row - 1] = bottom_cells;
+
+        let vertices = bitmasks::boundary_changes(bottom_cells, top_cells);
         if vertices == 0 {
             return;
         }
@@ -106,9 +74,8 @@ impl Stepper {
             self.zipper
                 .zip(run.scan_mask(), top_row, vertices, &mut on_triangle);
         });
-        self.runs = Runs::from_blocks(top_columns_mask, top_cells);
+        self.runs = Runs::from_blocks(bitmasks::segment_boundaries(top_cells), top_cells);
         self.zipper
             .advance(top_row, vertices, self.runs.scan_mask());
-        self.bottom_columns_mask = top_columns_mask;
     }
 }

@@ -4,6 +4,7 @@ use crate::{
         stepper::{INACTIVE_VERTEX, Stepper},
     },
     tests::assert_covers_exactly,
+    utils::bitmasks,
 };
 
 #[test]
@@ -39,8 +40,7 @@ fn init_in_middle() {
 #[test]
 fn first_step_records_start_row() {
     let mut stepper = Stepper::from_bottom_edge(0b010010001, 0, 5);
-    let live = stepper.runs.fill_mask();
-    stepper.step_to(6, 0, live, |_| {});
+    stepper.weave_to(6, 0, |_| {});
 
     let mut expected = [0; 32];
     expected[5] = 0b1111;
@@ -314,24 +314,6 @@ fn weave_strip_complex_shape_with_hole() {
 }
 
 #[test]
-fn guard_closure_with_continuing_wall() {
-    // TODO - Use grid
-    let edges = [0b1_0000_0011, 0b1_0000_0001, 0];
-    let guards = [0, 0b1, 0];
-    let tris = weave(&edges, &guards, 0, 0);
-    assert_covers_exactly(&tris, &[0b1]);
-}
-
-#[test]
-fn hidden_floor_caps_strip() {
-    // TODO - Use grid
-    let edges = [0b1_0001, 0b1_0001, 0b1_0001, 0b1_0001, 0];
-    let guards = [0, 0, 0b1111, 0, 0b1111];
-    let tris = weave(&edges, &guards, 0, 0);
-    assert_covers_exactly(&tris, &[0b1111, 0b1111]);
-}
-
-#[test]
 fn weave_strip_two_holes_close_same_row() {
     let rows = vec![
         "................",
@@ -397,123 +379,61 @@ fn weave_strip_branch_3() {
 }
 
 #[test]
-#[ignore = "needs downward growth from the seed (step 3)"]
 fn l_shape_seeded_mid_face() {
-    // TODO - Use grid
-    let mut edges = vec![0b1_0000_0010];
-    edges.extend([0b1_0000_0001; 7]);
-    edges.push(0);
-    let mut guards = vec![0u32; 9];
-    guards[1] = 0b1;
-    guards[8] = 0xFF;
-    let tris = weave(&edges, &guards, 0, 1);
-    let mut expected = vec![0b1111_1110];
-    expected.extend([0xFF; 7]);
-    assert_covers_exactly(&tris, &expected);
+    let mut cells = vec![0b1111_1110];
+    cells.extend([0xFF; 7]);
+    assert_covers_exactly(&weave(&cells), &cells);
 }
 
 struct Grid {
-    edges: Vec<u32>,
-    guards: Vec<u32>,
+    cells: Vec<u32>,
 }
 
 const EMPTY: u8 = b'.';
 
 impl Grid {
     fn weave_triangles(&self) -> Vec<Triangle2D> {
-        let mut triangles = Vec::new();
-        let seed_col = self.edges[0].trailing_zeros();
-        let mut weaver = Stepper::from_bottom_edge(self.edges[0], seed_col, 0);
-
-        let mut index = 1;
-        while index < self.edges.len() {
-            weaver.step_to(index, self.edges[index], self.guards[index], |t| {
-                triangles.push(t)
-            });
-            index += 1;
-        }
-
-        triangles
+        weave(&self.cells)
     }
 
     fn parse(grid: &[&str]) -> Grid {
-        let height = grid.len();
-        if height == 0 {
-            return Grid {
-                edges: vec![],
-                guards: vec![],
-            };
-        }
+        let width = grid.iter().map(|line| line.len()).max().unwrap_or(0);
+        debug_assert!(width <= 32, "grid is wider than 32 columns: {width}");
+        debug_assert!(
+            grid.len() <= 32,
+            "grid is taller than 32 rows: {}",
+            grid.len()
+        );
 
-        let rows: Vec<&[u8]> = grid.iter().map(|s| s.as_bytes()).collect();
-        let width = rows.iter().map(|r| r.len()).max().unwrap_or(0);
+        let cells = grid
+            .iter()
+            .rev() // the last line of text is row 0
+            .map(|line| {
+                let bytes = line.as_bytes();
+                (0..width).fold(0u32, |mask, r| {
+                    let x = width - 1 - r;
+                    let cell = bytes.get(x).copied().unwrap_or(EMPTY);
+                    if cell != EMPTY { mask | (1 << r) } else { mask }
+                })
+            })
+            .collect();
 
-        let get_cell = |x: usize, y: usize| -> u8 {
-            let row = rows[height - 1 - y];
-            if x >= row.len() { EMPTY } else { row[x] }
-        };
-
-        let get_cell_rev = |r: usize, y: usize| -> u8 {
-            if width == 0 {
-                return EMPTY;
-            }
-            get_cell(width - 1 - r, y)
-        };
-
-        let mut horizontal = Vec::with_capacity(height);
-        for y in 0..height {
-            let mut mask: u32 = 0;
-            for r in 0..width {
-                let prev = if r == 0 {
-                    EMPTY
-                } else {
-                    get_cell_rev(r - 1, y)
-                };
-                let curr = get_cell_rev(r, y);
-                if prev != curr {
-                    mask |= 1 << r;
-                }
-            }
-            horizontal.push(mask);
-        }
-
-        let mut vertical_by_column = vec![0u32; width];
-        for x in 0..width {
-            let mut mask: u32 = 0;
-            for y in 0..height {
-                let below = if y == 0 { EMPTY } else { get_cell(x, y - 1) };
-                let above = get_cell(x, y);
-                if below != above {
-                    mask |= 1 << y;
-                }
-            }
-            vertical_by_column[x] = mask;
-        }
-
-        let mut vertical = vec![0u32; height];
-        for x in 0..width {
-            let r = width - 1 - x;
-            for y in 0..height {
-                if (vertical_by_column[x] >> y) & 1 == 1 {
-                    vertical[y] |= 1 << r;
-                }
-            }
-        }
-
-        Grid {
-            edges: horizontal,
-            guards: vertical,
-        }
+        Grid { cells }
     }
 }
 
-fn weave(edges: &[u32], guards: &[u32], seed_col: u32, seed_row: u32) -> Vec<Triangle2D> {
+/// Weaves region rows from the bottom up: `cells[r]` are row r's cells.
+/// Everything past the end of `cells` is empty, which closes the last runs.
+fn weave(cells: &[u32]) -> Vec<Triangle2D> {
     let mut out = Vec::new();
-    let mut w = Stepper::from_bottom_edge(edges[seed_row as usize], seed_col, seed_row);
-    let mut row = seed_row as usize + 1;
-    while w.runs.count() > 0 && row < edges.len() {
-        w.step_to(row, edges[row], guards[row], |t| out.push(t));
-        row += 1;
+    let Some(first) = cells.iter().position(|&c| c != 0) else {
+        return out;
+    };
+    let edge = bitmasks::segment_boundaries(cells[first]);
+    let mut stepper = Stepper::from_live(edge, cells[first], first as u32);
+    for row in first + 1..=cells.len() {
+        let top = cells.get(row).copied().unwrap_or(0);
+        stepper.weave_to(row, top, |t| out.push(t));
     }
     out
 }
