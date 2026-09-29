@@ -32,28 +32,32 @@ impl Mesher {
     pub fn build_mesh(&mut self, octree: impl DenseWalk<()>) {
         let mut next_index = 0;
 
-        let mut triangulator = Triangulator::new(|t| {
-            let [v1, v2, v3] = t.outward_vertices();
-            self.positions.push(to_position(v1));
-            self.positions.push(to_position(v2));
-            self.positions.push(to_position(v3));
+        let mut triangulator = Triangulator::default();
 
-            self.indices.push(next_index);
-            self.indices.push(next_index + 1);
-            self.indices.push(next_index + 2);
+        triangulator.triangulate(
+            octree,
+            |_| 1,
+            |t| {
+                let [v1, v2, v3] = t.outward_vertices();
+                self.positions.push(to_position(v1));
+                self.positions.push(to_position(v2));
+                self.positions.push(to_position(v3));
 
-            self.normals.push(to_normal(t.face));
-            self.normals.push(to_normal(t.face));
-            self.normals.push(to_normal(t.face));
+                self.indices.push(next_index);
+                self.indices.push(next_index + 1);
+                self.indices.push(next_index + 2);
 
-            self.colors.push(Vec4::new(1., 0., 0., 1.));
-            self.colors.push(Vec4::new(0., 1., 0., 1.));
-            self.colors.push(Vec4::new(0., 0., 1., 1.));
+                self.normals.push(to_normal(t.face));
+                self.normals.push(to_normal(t.face));
+                self.normals.push(to_normal(t.face));
 
-            next_index += 3;
-        });
+                self.colors.push(Vec4::new(1., 0., 0., 1.));
+                self.colors.push(Vec4::new(0., 1., 0., 1.));
+                self.colors.push(Vec4::new(0., 0., 1., 1.));
 
-        triangulator.triangulate(octree, |_| 1);
+                next_index += 3;
+            },
+        );
     }
 }
 

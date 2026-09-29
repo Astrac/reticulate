@@ -6,18 +6,18 @@ use crate::{
 
 pub struct GatheringWalker<'a, M> {
     bitfields: Bitfields<'a>,
-    to_material: M,
+    to_material: &'a mut M,
 }
 
 impl<'a, M> GatheringWalker<'a, M> {
-    pub fn new(bitfields: Bitfields<'a>, to_material: M) -> GatheringWalker<'a, M> {
+    pub fn new(bitfields: Bitfields<'a>, to_material: &'a mut M) -> GatheringWalker<'a, M> {
         GatheringWalker {
             bitfields,
             to_material,
         }
     }
 
-    fn register_material_at(
+    fn set_transitions(
         &mut self,
         axis: Axis,
         morton: Morton3D,
@@ -52,14 +52,14 @@ where
 
     fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &Data) {
         let material = (self.to_material)(data);
-        self.register_material_at(AXIS_X, morton, depth, material);
-        self.register_material_at(AXIS_Y, morton, depth, material);
-        self.register_material_at(AXIS_Z, morton, depth, material);
+        self.set_transitions(AXIS_X, morton, depth, material);
+        self.set_transitions(AXIS_Y, morton, depth, material);
+        self.set_transitions(AXIS_Z, morton, depth, material);
     }
 
     fn on_empty(&mut self, depth: Depth, morton: Morton3D) {
-        self.register_material_at(AXIS_X, morton, depth, 0);
-        self.register_material_at(AXIS_Y, morton, depth, 0);
-        self.register_material_at(AXIS_Z, morton, depth, 0);
+        self.set_transitions(AXIS_X, morton, depth, 0);
+        self.set_transitions(AXIS_Y, morton, depth, 0);
+        self.set_transitions(AXIS_Z, morton, depth, 0);
     }
 }

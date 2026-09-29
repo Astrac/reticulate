@@ -7,9 +7,9 @@ resolver = "3"
 
 [profile.dev]
 opt-level = 0
-debug = 2               # Forces full line tables and variable tracking info
-debug-assertions = true # Mandated to catch indexing panic paths
-panic = "unwind"        # Required for backtrace to trace stack frames cleanly
+debug = "line-tables-only"
+debug-assertions = true
+panic = "unwind"
 
 [profile.dev.package."*"]
-opt-level = 0           # Strip optimizations from libraries like bitvec
+opt-level = 0

@@ -1,2 +1,9 @@
 [target.aarch64-apple-darwin]
-rustflags = ["-C", "link-arg=-Wl,-no_compact_unwind"]
+rustflags = ["-C", "link-arg=-Wl,-no_compact_unwind", "-Z", "threads=8"]
+
+# Unsupported by bevy
+# [unstable]
+# codegen-backend = true
+#
+# [profile.dev]
+# codegen-backend = "cranelift"

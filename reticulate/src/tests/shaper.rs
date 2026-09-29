@@ -10,8 +10,8 @@ use crate::{
             CHUNK_VOLUME, Claims, ClaimsMask, MATERIAL_WORDS, Material, MaterialId, PARITY_WORDS,
             PLANE_SIDE, Parity, ParityMask,
         },
-        shaper::Shaper,
-        shaping_walker::ShapingWalker,
+        surface_scanner::SurfaceScanner,
+        surface_walker::SurfaceWalker,
     },
     octree::TREE_DEPTH,
 };
@@ -175,10 +175,12 @@ fn mesh(f: &mut Fixture, blocks: &[((u8, u8, u8), u8)]) -> Vec<Triangle> {
                 mz.view_bits_mut::<Lsb0>(),
             ],
         };
-        let shaper = Shaper::new(claims_of(&mut f.claims), parity_of(&mut f.parity), |t| {
-            tris.push(t)
-        });
-        let mut walker = ShapingWalker::new(materials, shaper, |m: &MaterialId| *m);
+        let shaper =
+            SurfaceScanner::new(claims_of(&mut f.claims), parity_of(&mut f.parity), |t| {
+                tris.push(t)
+            });
+        let mut to_material = |m: &MaterialId| *m;
+        let mut walker = SurfaceWalker::new(materials, shaper, &mut to_material);
         dense_walk(&mut walker, &f.grid, blocks);
     }
     tris

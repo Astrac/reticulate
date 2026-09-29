@@ -2,8 +2,8 @@ pub mod discoverer;
 pub mod run;
 pub mod run_mask;
 pub mod runs;
-pub mod scanner;
 pub mod stepper;
+pub mod weaver;
 pub mod zipper;
 
 #[repr(transparent)]

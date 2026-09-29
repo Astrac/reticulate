@@ -1,4 +1,4 @@
-use crate::{Depth, axis::*, coords::Coords3D, morton_3d::Morton3D};
+use crate::{Depth, axis::*, coords_3d::Coords3D, morton_3d::Morton3D};
 
 #[test]
 fn test_roundtrip_zero() {

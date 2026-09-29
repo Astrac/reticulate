@@ -9,7 +9,7 @@ pub use parity::{Parity, ParityMask};
 use bitvec::prelude::*;
 
 use crate::{
-    meshing::{Triangle, shaper::Shaper},
+    meshing::{Triangle, surface_scanner::SurfaceScanner},
     octree::TREE_DEPTH,
 };
 
@@ -32,7 +32,7 @@ pub const STORAGE_WORD: usize = size_of::<Word>() * 8;
 
 const BITFIELD_SIZE: usize = (CLAIMS_BITS * 3) + (MATERIAL_PLANE_BITS * 3) + (PARITY_BITS * 3);
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct BitfieldsStorage {
     bits: BitArr!(for BITFIELD_SIZE, in Word, Lsb0),
 }
@@ -80,10 +80,13 @@ impl<'a> Bitfields<'a> {
         }
     }
 
-    pub fn as_shaper<F: FnMut(Triangle)>(self, on_triangle: F) -> (Material<'a>, Shaper<'a, F>) {
+    pub fn as_surface_scanner<F: FnMut(Triangle)>(
+        self,
+        on_triangle: F,
+    ) -> (Material<'a>, SurfaceScanner<'a, F>) {
         (
             self.material,
-            Shaper::new(self.claims, self.parity, on_triangle),
+            SurfaceScanner::new(self.claims, self.parity, on_triangle),
         )
     }
 }

@@ -3,6 +3,7 @@ use crate::{
     axis::*,
     meshing::{
         bitfields::{Claims, ClaimsMask, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
+        surface_layer::SurfaceLayer,
         triangulation::discoverer::Discoverer,
     },
 };
@@ -98,7 +99,8 @@ fn plane_fixture(cells_rc: &[(usize, usize)]) -> Fixture {
 fn discover(f: &mut Fixture, axis: Axis, axis_coord: usize, seed: (u32, u32)) -> [u32; PLANE_SIDE] {
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
-    Discoverer::new(&parity, axis, axis_coord).discover(
+    Discoverer::new(&parity, SurfaceLayer::new(axis, axis_coord)).discover(
+        SurfaceLayer::new(axis, axis_coord),
         &claims,
         Coords2D {
             u: seed.0,
@@ -226,7 +228,7 @@ fn claims_cut_off_what_lies_beyond_them() {
     let mut shape: Vec<_> = (1..=5).map(|c| (2, c)).collect();
     shape.extend([(0, 5), (1, 5)]);
     let mut f = plane_fixture(&shape);
-    claims_of(&mut f.claims).mark_done(AXIS_Y, 0, &cells(&[(2, 5)]));
+    claims_of(&mut f.claims).claim(SurfaceLayer::new(AXIS_Y, 0), &cells(&[(2, 5)]));
     assert_region(
         &discover(&mut f, AXIS_Y, 0, (2, 1)),
         &[(2, 1), (2, 2), (2, 3), (2, 4)],

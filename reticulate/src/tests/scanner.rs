@@ -3,10 +3,11 @@ use crate::{
     axis::*,
     meshing::{
         bitfields::{Claims, ClaimsMask, MaterialId, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
-        triangulation::{Triangle2D, discoverer::Discoverer, scanner::Scanner, stepper::Stepper},
+        surface_layer::SurfaceLayer,
+        triangulation::{Triangle2D, discoverer::Discoverer, stepper::Stepper, weaver::Weaver},
     },
     tests::assert_covers_exactly,
-    utils::bitmasks,
+    utils::{bitmasks, debug_assertions::debug_assert_within_footprint},
 };
 
 const EMPTY: MaterialId = 0;
@@ -109,17 +110,21 @@ fn scan(
 ) -> ([u32; PLANE_SIDE], Vec<Triangle2D>) {
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
-    let scanner = Scanner::new(Discoverer::new(&parity, axis, axis_coord));
+    let scanner = Weaver::new(Discoverer::new(
+        &parity,
+        SurfaceLayer::new(axis, axis_coord),
+    ));
     let mut tris = Vec::new();
-    let filled = scanner.scan_seed(
+    let filled = scanner.from_seed(
         &claims,
+        SurfaceLayer::new(axis, axis_coord),
         Coords2D {
             u: seed.0,
             v: seed.1,
         },
         |t| tris.push(t),
     );
-    scanner.discoverer.debug_assert_within_footprint(&filled);
+    debug_assert_within_footprint(&parity, axis, axis_coord, &filled);
     (filled, tris)
 }
 
@@ -247,7 +252,7 @@ fn claimed_cells_are_skipped() {
         }
     }
     let mut f = fixture(&solid);
-    claims_of(&mut f.claims).mark_done(AXIS_Y, 0, &cells(&[(1, 3)]));
+    claims_of(&mut f.claims).claim(SurfaceLayer::new(AXIS_Y, 0), &cells(&[(1, 3)]));
 
     let (filled, tris) = scan(&mut f, AXIS_Y, 0, (0, 1)); // rows z, cols x
     assert_scan(
@@ -281,10 +286,7 @@ fn face_touching_chunk_top_closes_cleanly() {
 fn footprint_assertion_catches_non_face_cells() {
     let mut f = fixture(&[(2, 5, 9)]);
     let parity = parity_of(&mut f.parity);
-    let scanner = Scanner::new(Discoverer::new(&parity, AXIS_X, 2));
-    scanner
-        .discoverer
-        .debug_assert_within_footprint(&cells(&[(5, 9), (5, 10)]));
+    debug_assert_within_footprint(&parity, AXIS_X, 2, &cells(&[(5, 9), (5, 10)]));
 }
 
 #[test]
@@ -431,14 +433,18 @@ fn scanner_weave_matches_reference_weave() {
     let mut f = plane_fixture(&shape);
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
-    let scanner = Scanner::new(Discoverer::new(&parity, AXIS_Y, 0));
+    let scanner = Weaver::new(Discoverer::new(&parity, SurfaceLayer::new(AXIS_Y, 0)));
     let seed = Coords2D { u: 0, v: 1 };
 
-    let region = scanner.discoverer.discover(&claims, seed);
+    let region = scanner
+        .discoverer
+        .discover(SurfaceLayer::new(AXIS_Y, 0), &claims, seed);
     let reference = weave(&region); // the helper the stepper tests use
 
     let mut tris = Vec::new();
-    scanner.scan_seed(&claims, seed, |t| tris.push(t));
+    scanner.from_seed(&claims, SurfaceLayer::new(AXIS_Y, 0), seed, |t| {
+        tris.push(t)
+    });
     assert_eq!(tris, reference);
 }
 
@@ -454,7 +460,7 @@ fn adjacent_regions_share_boundary_vertices() {
 
     let (a_filled, a_tris) = scan(&mut f, AXIS_Y, 0, (4, 2));
     assert_eq!(a_filled, cells(&[(4, 2), (5, 2)]), "stone region");
-    claims_of(&mut f.claims).mark_done(AXIS_Y, 0, &a_filled);
+    claims_of(&mut f.claims).claim(SurfaceLayer::new(AXIS_Y, 0), &a_filled);
 
     let (b_filled, b_tris) = scan(&mut f, AXIS_Y, 0, (4, 3));
     assert_eq!(b_filled, cells(&[(4, 3)]), "dirt region");

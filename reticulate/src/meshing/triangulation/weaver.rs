@@ -2,32 +2,39 @@ use crate::{
     Coords2D,
     meshing::{
         bitfields::{Claims, PLANE_SIDE},
+        surface_layer::SurfaceLayer,
         triangulation::{Triangle2D, discoverer::Discoverer, stepper::Stepper},
     },
     utils::bitmasks,
 };
 
-pub struct Scanner<'a> {
+pub struct Weaver<'a> {
     pub discoverer: Discoverer<'a>,
 }
 
-impl<'a> Scanner<'a> {
+impl<'a> Weaver<'a> {
     pub fn new(discoverer: Discoverer<'a>) -> Self {
-        Scanner { discoverer }
+        Weaver { discoverer }
     }
 
-    pub fn scan_seed(
+    pub fn from_seed(
         &self,
         claims: &Claims,
+        layer: SurfaceLayer,
         seed: Coords2D,
         mut emit: impl FnMut(Triangle2D),
     ) -> [u32; PLANE_SIDE] {
-        let region = self.discoverer.discover(claims, seed);
-        self.weave(&region, &mut emit);
+        let region = self.discoverer.discover(layer, claims, seed);
+        self.weave(layer, &region, &mut emit);
         region
     }
 
-    fn weave(&self, region: &[u32; PLANE_SIDE], emit: &mut impl FnMut(Triangle2D)) {
+    fn weave(
+        &self,
+        layer: SurfaceLayer,
+        region: &[u32; PLANE_SIDE],
+        emit: &mut impl FnMut(Triangle2D),
+    ) {
         let Some(first) = region.iter().position(|&cells| cells != 0) else {
             return;
         };
@@ -36,13 +43,16 @@ impl<'a> Scanner<'a> {
         let edge = bitmasks::segment_boundaries(region[first]);
         let mut stepper = Stepper::from_live(edge, region[first], first as u32);
         let start_extra =
-            self.partition_corners(first, bitmasks::boundary_points(0, region[first]));
+            self.partition_corners(layer, first, bitmasks::boundary_points(0, region[first]));
         stepper.add_vertices(start_extra, first as u32);
 
         for row in first + 1..=last + 1 {
             let cells = if row < PLANE_SIDE { region[row] } else { 0 };
-            let extra =
-                self.partition_corners(row, bitmasks::boundary_points(region[row - 1], cells));
+            let extra = self.partition_corners(
+                layer,
+                row,
+                bitmasks::boundary_points(region[row - 1], cells),
+            );
             stepper.weave_to(row, cells, extra, |t| emit(t));
         }
 
@@ -52,7 +62,7 @@ impl<'a> Scanner<'a> {
         );
     }
 
-    fn partition_corners(&self, line: usize, points: u32) -> u32 {
+    fn partition_corners(&self, layer: SurfaceLayer, line: usize, points: u32) -> u32 {
         if points == 0 {
             return 0;
         }
@@ -69,7 +79,8 @@ impl<'a> Scanner<'a> {
         // Each point c needs the segments under cells c - 1 and c.
         let cells = points | (points >> 1);
         let across = if line < PLANE_SIDE {
-            self.discoverer.boundary_guard(line, cells)
+            // self.discoverer.boundary_guard(axis, layer, line, cells)
+            self.discoverer.boundary_guard(layer, line, cells)
         } else {
             0
         };

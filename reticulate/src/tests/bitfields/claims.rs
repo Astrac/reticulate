@@ -3,6 +3,7 @@ use crate::{
     axis::*,
     meshing::{
         bitfields::{Claims, ClaimsMask, PLANE_SIDE},
+        surface_layer::SurfaceLayer,
         triangulation::stepper::Stepper,
     },
 };
@@ -42,7 +43,7 @@ fn fresh_storage_is_all_pending() {
         for coord in 0..PLANE_SIDE {
             for u in 0..PLANE_SIDE as u32 {
                 for v in 0..PLANE_SIDE as u32 {
-                    assert!(c.is_pending(axis, coord, uv(u, v)));
+                    assert!(c.is_unclaimed(SurfaceLayer::new(axis, coord), uv(u, v)));
                 }
             }
         }
@@ -54,9 +55,9 @@ fn fresh_storage_is_all_pending() {
 fn is_pending_is_not_transposed() {
     let mut s = storage();
     let mut c = build(&mut s);
-    c.mark_done(AXIS_Y, 5, &shape_with(&[(3, 17)]));
-    assert!(!c.is_pending(AXIS_Y, 5, uv(3, 17)));
-    assert!(c.is_pending(AXIS_Y, 5, uv(17, 3)));
+    c.claim(SurfaceLayer::new(AXIS_Y, 5), &shape_with(&[(3, 17)]));
+    assert!(!c.is_unclaimed(SurfaceLayer::new(AXIS_Y, 5), uv(3, 17)));
+    assert!(c.is_unclaimed(SurfaceLayer::new(AXIS_Y, 5), uv(17, 3)));
 }
 
 /// Regression test for bug 1: a second strip must not erase the first.
@@ -64,23 +65,23 @@ fn is_pending_is_not_transposed() {
 fn mark_done_accumulates() {
     let mut s = storage();
     let mut c = build(&mut s);
-    c.mark_done(AXIS_X, 0, &shape_with(&[(1, 0), (1, 1)]));
-    c.mark_done(AXIS_X, 0, &shape_with(&[(0, 5)]));
-    assert!(!c.is_pending(AXIS_X, 0, uv(1, 0)));
-    assert!(!c.is_pending(AXIS_X, 0, uv(1, 1)));
-    assert!(!c.is_pending(AXIS_X, 0, uv(0, 5)));
+    c.claim(SurfaceLayer::new(AXIS_X, 0), &shape_with(&[(1, 0), (1, 1)]));
+    c.claim(SurfaceLayer::new(AXIS_X, 0), &shape_with(&[(0, 5)]));
+    assert!(!c.is_unclaimed(SurfaceLayer::new(AXIS_X, 0), uv(1, 0)));
+    assert!(!c.is_unclaimed(SurfaceLayer::new(AXIS_X, 0), uv(1, 1)));
+    assert!(!c.is_unclaimed(SurfaceLayer::new(AXIS_X, 0), uv(0, 5)));
 }
 
 #[test]
 fn mark_done_isolated_to_plane_and_axis() {
     let mut s = storage();
     let mut c = build(&mut s);
-    c.mark_done(AXIS_Y, 5, &shape_with(&[(2, 2)]));
-    assert!(!c.is_pending(AXIS_Y, 5, uv(2, 2)));
-    assert!(c.is_pending(AXIS_Y, 4, uv(2, 2)));
-    assert!(c.is_pending(AXIS_Y, 6, uv(2, 2)));
-    assert!(c.is_pending(AXIS_X, 5, uv(2, 2)));
-    assert!(c.is_pending(AXIS_Z, 5, uv(2, 2)));
+    c.claim(SurfaceLayer::new(AXIS_Y, 5), &shape_with(&[(2, 2)]));
+    assert!(!c.is_unclaimed(SurfaceLayer::new(AXIS_Y, 5), uv(2, 2)));
+    assert!(c.is_unclaimed(SurfaceLayer::new(AXIS_Y, 4), uv(2, 2)));
+    assert!(c.is_unclaimed(SurfaceLayer::new(AXIS_Y, 6), uv(2, 2)));
+    assert!(c.is_unclaimed(SurfaceLayer::new(AXIS_X, 5), uv(2, 2)));
+    assert!(c.is_unclaimed(SurfaceLayer::new(AXIS_Z, 5), uv(2, 2)));
 }
 
 #[test]
@@ -88,12 +89,15 @@ fn claimed_row_matches_is_pending() {
     let mut s = storage();
     let mut c = build(&mut s);
     let shape = shape_with(&[(0, 0), (0, 31), (7, 3), (7, 4), (31, 31)]);
-    c.mark_done(AXIS_Z, 9, &shape);
+    c.claim(SurfaceLayer::new(AXIS_Z, 9), &shape);
     for u in 0..PLANE_SIDE {
-        assert_eq!(c.claimed_row(AXIS_Z, 9, u), shape[u]);
+        assert_eq!(c.claimed_row(SurfaceLayer::new(AXIS_Z, 9), u), shape[u]);
         for v in 0..PLANE_SIDE as u32 {
             let claimed = (shape[u] >> v) & 1 == 1;
-            assert_eq!(c.is_pending(AXIS_Z, 9, uv(u as u32, v)), !claimed);
+            assert_eq!(
+                c.is_unclaimed(SurfaceLayer::new(AXIS_Z, 9), uv(u as u32, v)),
+                !claimed
+            );
         }
     }
 }
@@ -102,9 +106,9 @@ fn claimed_row_matches_is_pending() {
 fn last_plane_and_corner_cell() {
     let mut s = storage();
     let mut c = build(&mut s);
-    c.mark_done(AXIS_X, 31, &shape_with(&[(31, 31)]));
-    assert!(!c.is_pending(AXIS_X, 31, uv(31, 31)));
-    assert!(c.is_pending(AXIS_X, 30, uv(31, 31)));
+    c.claim(SurfaceLayer::new(AXIS_X, 31), &shape_with(&[(31, 31)]));
+    assert!(!c.is_unclaimed(SurfaceLayer::new(AXIS_X, 31), uv(31, 31)));
+    assert!(c.is_unclaimed(SurfaceLayer::new(AXIS_X, 30), uv(31, 31)));
 }
 
 #[test]
@@ -114,13 +118,17 @@ fn round_trip_with_strip_weaver_filled() {
     stepper.weave_to(4, 0, 0, |_| {}); // an empty row above closes row 3
     let mut s = storage();
     let mut c = build(&mut s);
-    c.mark_done(AXIS_X, 2, &stepper.filled);
+    c.claim(SurfaceLayer::new(AXIS_X, 2), &stepper.filled);
     for col in 0..PLANE_SIDE as u32 {
         let inside = (5..16).contains(&col);
-        assert_eq!(c.is_pending(AXIS_X, 2, uv(3, col)), !inside, "col {col}");
+        assert_eq!(
+            c.is_unclaimed(SurfaceLayer::new(AXIS_X, 2), uv(3, col)),
+            !inside,
+            "col {col}"
+        );
     }
     assert!(
-        c.is_pending(AXIS_X, 2, uv(10, 3)),
+        c.is_unclaimed(SurfaceLayer::new(AXIS_X, 2), uv(10, 3)),
         "transposed cell must stay pending"
     );
 }
@@ -131,6 +139,6 @@ fn round_trip_with_strip_weaver_filled() {
 fn double_claim_panics_in_debug() {
     let mut s = storage();
     let mut c = build(&mut s);
-    c.mark_done(AXIS_X, 0, &shape_with(&[(4, 4)]));
-    c.mark_done(AXIS_X, 0, &shape_with(&[(4, 4)]));
+    c.claim(SurfaceLayer::new(AXIS_X, 0), &shape_with(&[(4, 4)]));
+    c.claim(SurfaceLayer::new(AXIS_X, 0), &shape_with(&[(4, 4)]));
 }

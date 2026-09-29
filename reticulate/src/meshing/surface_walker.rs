@@ -5,34 +5,34 @@ use crate::{
     meshing::{
         Triangle,
         bitfields::{Material, MaterialId},
-        shaper::Shaper,
+        surface_scanner::SurfaceScanner,
     },
 };
 
-pub struct ShapingWalker<'a, M, F> {
+pub struct SurfaceWalker<'a, M, F> {
     materials: Material<'a>,
-    shaper: Shaper<'a, F>,
-    to_material: M,
+    surface_scanner: SurfaceScanner<'a, F>,
+    to_material: &'a mut M,
 }
 
-impl<'a, M, F> ShapingWalker<'a, M, F>
+impl<'a, M, F> SurfaceWalker<'a, M, F>
 where
     F: FnMut(Triangle),
 {
     pub fn new(
         materials: Material<'a>,
-        shaper: Shaper<'a, F>,
-        to_material: M,
-    ) -> ShapingWalker<'a, M, F> {
-        ShapingWalker {
+        surface_scanner: SurfaceScanner<'a, F>,
+        to_material: &'a mut M,
+    ) -> SurfaceWalker<'a, M, F> {
+        SurfaceWalker {
             materials,
-            shaper,
+            surface_scanner,
             to_material,
         }
     }
 }
 
-impl<'a, M, F, Data> DenseWalker<Data> for ShapingWalker<'a, M, F>
+impl<'a, M, F, Data> DenseWalker<Data> for SurfaceWalker<'a, M, F>
 where
     F: FnMut(Triangle),
     M: Fn(&Data) -> MaterialId,
@@ -43,12 +43,12 @@ where
     fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &Data) {
         let material = (self.to_material)(data);
 
-        self.shaper
-            .process(FACE_X_N, morton, depth, material, &self.materials);
-        self.shaper
-            .process(FACE_Y_N, morton, depth, material, &self.materials);
-        self.shaper
-            .process(FACE_Z_N, morton, depth, material, &self.materials);
+        self.surface_scanner
+            .scan(FACE_X_N, morton, depth, material, &self.materials);
+        self.surface_scanner
+            .scan(FACE_Y_N, morton, depth, material, &self.materials);
+        self.surface_scanner
+            .scan(FACE_Z_N, morton, depth, material, &self.materials);
 
         self.materials.fill(AXIS_X, morton, depth, material);
         self.materials.fill(AXIS_Y, morton, depth, material);
@@ -58,12 +58,12 @@ where
     fn on_empty(&mut self, depth: Depth, morton: Morton3D) {
         let material = 0;
 
-        self.shaper
-            .process(FACE_X_P, morton, depth, 0, &self.materials);
-        self.shaper
-            .process(FACE_Y_P, morton, depth, 0, &self.materials);
-        self.shaper
-            .process(FACE_Z_P, morton, depth, 0, &self.materials);
+        self.surface_scanner
+            .scan(FACE_X_P, morton, depth, 0, &self.materials);
+        self.surface_scanner
+            .scan(FACE_Y_P, morton, depth, 0, &self.materials);
+        self.surface_scanner
+            .scan(FACE_Z_P, morton, depth, 0, &self.materials);
 
         self.materials.fill(AXIS_X, morton, depth, material);
         self.materials.fill(AXIS_Y, morton, depth, material);

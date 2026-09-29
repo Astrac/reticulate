@@ -1,4 +1,7 @@
-use crate::{Coords2D, axis::*, meshing::bitfields::PLANE_SIDE};
+use crate::{
+    Coords2D,
+    meshing::{bitfields::PLANE_SIDE, surface_layer::SurfaceLayer},
+};
 
 /// Per-axis claim storage: plane `axis_coord` is PLANE_SIDE words, where
 /// word u is row u and bit v is column v. This is the same layout as
@@ -32,8 +35,8 @@ pub struct Claims<'a> {
 
 impl<'a> Claims<'a> {
     /// Adds `shape` (row u, bits over v) to the claimed cells of this plane.
-    pub fn mark_done(&mut self, axis: Axis, axis_coord: usize, shape: &[u32; PLANE_SIDE]) {
-        let plane = self.masks[axis.as_usize()].plane_mut(axis_coord);
+    pub fn claim(&mut self, layer: SurfaceLayer, shape: &[u32; PLANE_SIDE]) {
+        let plane = self.masks[layer.axis.as_usize()].plane_mut(layer.layer);
         for (word, &row) in plane.iter_mut().zip(shape.iter()) {
             debug_assert!(
                 *word & row == 0,
@@ -46,12 +49,12 @@ impl<'a> Claims<'a> {
 
     /// Claimed cells of row u, bits over v. A single word read, for step 2's guard.
     #[inline(always)]
-    pub fn claimed_row(&self, axis: Axis, axis_coord: usize, u: usize) -> u32 {
-        self.masks[axis.as_usize()].plane(axis_coord)[u]
+    pub fn claimed_row(&self, layer: SurfaceLayer, u: usize) -> u32 {
+        self.masks[layer.axis.as_usize()].plane(layer.layer)[u]
     }
 
     #[inline(always)]
-    pub fn is_pending(&self, axis: Axis, axis_coord: usize, uv: Coords2D) -> bool {
-        (self.claimed_row(axis, axis_coord, uv.u as usize) >> uv.v) & 1 == 0
+    pub fn is_unclaimed(&self, layer: SurfaceLayer, uv: Coords2D) -> bool {
+        (self.claimed_row(layer, uv.u as usize) >> uv.v) & 1 == 0
     }
 }

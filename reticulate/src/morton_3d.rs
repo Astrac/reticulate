@@ -1,7 +1,7 @@
 use crate::{
     Coords2D, Depth,
     axis::{self, Axis},
-    coords::Coords3D,
+    coords_3d::Coords3D,
     morton_2d::Morton2D,
     octree::TREE_DEPTH,
     utils::bitmasks::*,

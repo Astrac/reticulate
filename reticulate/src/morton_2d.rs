@@ -1,4 +1,4 @@
-use crate::{coords::Coords2D, utils::bitmasks::*};
+use crate::{Coords2D, utils::bitmasks};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Morton2D(pub u32);
@@ -103,13 +103,13 @@ unsafe fn decode_morton_bmi2(code: u32) -> (u32, u32) {
 
 #[inline(always)]
 const fn encode_morton_portable(x: u32, y: u32) -> u32 {
-    interleave_zeroes(x) | (interleave_zeroes(y) << 1)
+    bitmasks::interleave_zeroes(x) | (bitmasks::interleave_zeroes(y) << 1)
 }
 
 #[inline(always)]
 const fn decode_morton_portable(code: u32) -> (u32, u32) {
     (
-        take_one_every_2_bits(code),
-        take_one_every_2_bits(code >> 1),
+        bitmasks::take_one_every_2_bits(code),
+        bitmasks::take_one_every_2_bits(code >> 1),
     )
 }

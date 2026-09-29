@@ -3,6 +3,9 @@ mod print_walker;
 
 pub mod bitmasks;
 
+#[cfg(debug_assertions)]
+pub mod debug_assertions;
+
 use std::ops::Range;
 
 pub use dense_print_walker::DensePrintWalker;

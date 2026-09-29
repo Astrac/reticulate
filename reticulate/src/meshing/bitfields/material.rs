@@ -103,12 +103,6 @@ impl<'a> Material<'a> {
     }
 }
 
-fn splat64(material: u16) -> u64 {
-    let result = material as u64;
-
-    result | (result << 16) | (result << 32) | (result << 48)
-}
-
 #[inline(always)]
 fn next_material(materials: &[u16], start_offset: usize, max_length: usize) -> (u16, usize) {
     debug_assert!(max_length > 0);
@@ -149,4 +143,10 @@ const fn quadtree_alignment(offset: usize) -> usize {
     } else {
         1 << (offset.trailing_zeros() & !1)
     }
+}
+
+#[inline(always)]
+const fn splat64(material: u16) -> u64 {
+    let material_u64 = material as u64;
+    material_u64 | (material_u64 << 16) | (material_u64 << 32) | (material_u64 << 48)
 }
