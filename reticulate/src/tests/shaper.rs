@@ -432,7 +432,6 @@ fn rewalking_with_same_claims_emits_nothing() {
 }
 
 #[test]
-#[ignore = "non-manifold: voxels touching along an edge leave a corner inside another face's edge"]
 fn edge_touching_voxels_are_seamless() {
     let mut f = fixture(&[((0, 0, 0), STONE), ((0, 0, 1), STONE), ((1, 1, 0), STONE)]);
     let tris = mesh(&mut f, &[]);
@@ -450,10 +449,42 @@ fn different_materials_split_and_skip_occluded_face() {
 }
 
 #[test]
-#[ignore = "multi-material: T-junction where a material boundary meets a neighbour's edge"]
 fn material_boundary_corner_inside_neighbour_edge() {
     let mut f = fixture(&[((2, 3, 4), STONE), ((2, 3, 5), STONE), ((3, 3, 4), DIRT)]);
     let tris = mesh(&mut f, &[]);
     assert_mesh_matches(&f.grid, &tris);
     assert_no_t_junctions_3d(&tris);
+}
+
+/// Random blobs of up to three materials, meshed end to end: every face is
+/// covered once with the right material and orientation, and there are no
+/// T-junctions anywhere, including across creases. Kept away from the
+/// chunk's far edges, which are the pinned multi-chunk cases.
+#[test]
+fn random_multi_material_blobs_are_seamless() {
+    let mut state: u32 = 0x9E37_79B9;
+    let mut next = move || {
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        state
+    };
+
+    for _ in 0..10 {
+        let mut voxels = Vec::new();
+        for x in 1..7u8 {
+            for y in 1..7u8 {
+                for z in 1..7u8 {
+                    let r = next() % 8;
+                    if r < 5 {
+                        voxels.push(((x, y, z), 1 + (r % 3) as MaterialId));
+                    }
+                }
+            }
+        }
+        let mut f = fixture(&voxels);
+        let tris = mesh(&mut f, &[]);
+        assert_mesh_matches(&f.grid, &tris);
+        assert_no_t_junctions_3d(&tris);
+    }
 }

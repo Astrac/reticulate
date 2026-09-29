@@ -46,11 +46,22 @@ impl Stepper {
         Self::from_live(bottom_edge, 1 << seed_col, row)
     }
 
+    #[inline(always)]
+    pub const fn add_vertices(&mut self, mask: u32, row: u32) {
+        let mut m = mask;
+        while let Some(c) = m.lowest_one() {
+            self.zipper.bottom_column_heights[c as usize] = row as u8;
+            m &= m - 1;
+        }
+        self.zipper.bottom_columns_mask |= mask;
+    }
+
     // TODO - Benchmark and optimize
     pub fn weave_to(
         &mut self,
         top_row: usize,
         top_cells: u32,
+        extra_vertices: u32,
         mut on_triangle: impl FnMut(Triangle2D),
     ) {
         debug_assert!(
@@ -65,7 +76,7 @@ impl Stepper {
         let bottom_cells = self.runs.fill_mask();
         self.filled[top_row - 1] = bottom_cells;
 
-        let vertices = bitmasks::boundary_changes(bottom_cells, top_cells);
+        let vertices = bitmasks::boundary_changes(bottom_cells, top_cells) | extra_vertices;
         if vertices == 0 {
             return;
         }

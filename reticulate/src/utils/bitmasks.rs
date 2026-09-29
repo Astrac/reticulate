@@ -45,6 +45,11 @@ pub const fn make_ones_mask(from: u8, to: u8) -> u32 {
 }
 
 #[inline(always)]
+pub const fn segment_boundaries(cells: u32) -> u32 {
+    cells ^ (cells << 1)
+}
+
+#[inline(always)]
 pub const fn run_starts(cells: u32) -> u32 {
     cells & !(cells << 1)
 }
@@ -55,13 +60,14 @@ pub const fn run_ends(cells: u32) -> u32 {
 }
 
 #[inline(always)]
-pub const fn segment_boundaries(cells: u32) -> u32 {
-    cells ^ (cells << 1)
+pub const fn boundary_changes(below: u32, above: u32) -> u32 {
+    (run_starts(below) ^ run_starts(above)) | (run_ends(below) ^ run_ends(above))
 }
 
 #[inline(always)]
-pub const fn boundary_changes(below: u32, above: u32) -> u32 {
-    (run_starts(below) ^ run_starts(above)) | (run_ends(below) ^ run_ends(above))
+pub const fn boundary_points(below: u32, above: u32) -> u32 {
+    let crossings = below ^ above;
+    segment_boundaries(below) | segment_boundaries(above) | crossings | (crossings << 1)
 }
 
 #[inline(always)]

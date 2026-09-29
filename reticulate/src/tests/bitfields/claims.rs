@@ -111,7 +111,7 @@ fn last_plane_and_corner_cell() {
 fn round_trip_with_strip_weaver_filled() {
     let edge = (1 << 5) | (1 << 16);
     let mut stepper = Stepper::from_bottom_edge(edge, 7, 3);
-    stepper.weave_to(4, 0, |_| {}); // an empty row above closes row 3
+    stepper.weave_to(4, 0, 0, |_| {}); // an empty row above closes row 3
     let mut s = storage();
     let mut c = build(&mut s);
     c.mark_done(AXIS_X, 2, &stepper.filled);

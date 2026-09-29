@@ -2,12 +2,16 @@ use crate::{
     Coords2D,
     axis::*,
     meshing::{
-        bitfields::{Claims, ClaimsMask, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
+        bitfields::{Claims, ClaimsMask, MaterialId, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
         triangulation::{Triangle2D, discoverer::Discoverer, scanner::Scanner, stepper::Stepper},
     },
     tests::assert_covers_exactly,
     utils::bitmasks,
 };
+
+const EMPTY: MaterialId = 0;
+const STONE: MaterialId = 1;
+const DIRT: MaterialId = 2;
 
 /// Backing storage for one chunk's parity and claims.
 struct Fixture {
@@ -41,18 +45,22 @@ fn claims_of(s: &mut [Vec<u64>; 3]) -> Claims<'_> {
     }
 }
 
-/// Builds parity from a set of solid voxels, with the same rules as
-/// pass 1: a transition along axis A at coordinate c wherever the voxel
-/// at c differs from the one at c-1. Outside the chunk counts as empty.
-/// (u, v) follow projected_axis_uv: X -> (y, z), Y -> (z, x), Z -> (x, y).
-fn fixture(solid: &[(usize, usize, usize)]) -> Fixture {
-    let mut grid = vec![false; PLANE_SIDE * PLANE_SIDE * PLANE_SIDE];
+/// Builds parity the way pass 1 does: a transition along axis A at
+/// coordinate c wherever the material at c differs from the one at c - 1,
+/// including between two different solids. Outside the chunk counts as
+/// empty. (u, v) follow projected_axis_uv: X -> (y, z), Y -> (z, x), Z -> (x, y).
+fn fixture_with_materials(voxels: &[((usize, usize, usize), MaterialId)]) -> Fixture {
+    let mut grid = vec![EMPTY; PLANE_SIDE * PLANE_SIDE * PLANE_SIDE];
     let idx = |x: usize, y: usize, z: usize| (x * PLANE_SIDE + y) * PLANE_SIDE + z;
-    for &(x, y, z) in solid {
-        grid[idx(x, y, z)] = true;
+    for &((x, y, z), material) in voxels {
+        grid[idx(x, y, z)] = material;
     }
     let at = |x: isize, y: isize, z: isize| {
-        x >= 0 && y >= 0 && z >= 0 && grid[idx(x as usize, y as usize, z as usize)]
+        if x < 0 || y < 0 || z < 0 {
+            EMPTY
+        } else {
+            grid[idx(x as usize, y as usize, z as usize)]
+        }
     };
 
     let mut f = Fixture {
@@ -83,6 +91,12 @@ fn fixture(solid: &[(usize, usize, usize)]) -> Fixture {
     }
     drop(parity);
     f
+}
+
+/// Single-material shapes: every listed voxel is stone.
+fn fixture(solid: &[(usize, usize, usize)]) -> Fixture {
+    let voxels: Vec<_> = solid.iter().map(|&p| (p, STONE)).collect();
+    fixture_with_materials(&voxels)
 }
 
 /// Scans one face plane from `seed` = (row, col). Returns the claimed
@@ -412,24 +426,6 @@ fn pinch_between_stacked_runs() {
 }
 
 #[test]
-#[ignore = "adjacent regions: a corner of one lies inside the other's edge"]
-fn adjacent_regions_share_boundary_vertices() {
-    let a = [(4, 2), (5, 2)];
-    let b = [(4, 3)];
-    let mut f = plane_fixture(&[a[0], a[1], b[0]]);
-
-    let a_tris = weave(&cells(&a));
-    claims_of(&mut f.claims).mark_done(AXIS_Y, 0, &cells(&a));
-
-    let (filled, b_tris) = scan(&mut f, AXIS_Y, 0, (4, 3));
-    assert_eq!(filled, cells(&b));
-
-    let all: Vec<_> = a_tris.into_iter().chain(b_tris).collect();
-    assert_covers_exactly(&all, &cells(&[a[0], a[1], b[0]]));
-    assert_no_t_junctions(&all);
-}
-
-#[test]
 fn scanner_weave_matches_reference_weave() {
     let shape = [(0, 1), (0, 2), (0, 3), (1, 1), (1, 3), (2, 1), (2, 2)];
     let mut f = plane_fixture(&shape);
@@ -446,6 +442,28 @@ fn scanner_weave_matches_reference_weave() {
     assert_eq!(tris, reference);
 }
 
+/// Two materials on the plane under y = 0 (rows z, cols x): a stone column A
+/// at x = 2, z = 4..5, and a dirt cell B at x = 3, z = 4, beside A's lower
+/// half. The material wall makes them separate regions. B's corner at
+/// (3, 5) lies on A's edge from (3, 4) to (3, 6), so A must have a vertex
+/// there too.
+#[test]
+fn adjacent_regions_share_boundary_vertices() {
+    let mut f =
+        fixture_with_materials(&[((2, 0, 4), STONE), ((2, 0, 5), STONE), ((3, 0, 4), DIRT)]);
+
+    let (a_filled, a_tris) = scan(&mut f, AXIS_Y, 0, (4, 2));
+    assert_eq!(a_filled, cells(&[(4, 2), (5, 2)]), "stone region");
+    claims_of(&mut f.claims).mark_done(AXIS_Y, 0, &a_filled);
+
+    let (b_filled, b_tris) = scan(&mut f, AXIS_Y, 0, (4, 3));
+    assert_eq!(b_filled, cells(&[(4, 3)]), "dirt region");
+
+    let all: Vec<_> = a_tris.into_iter().chain(b_tris).collect();
+    assert_covers_exactly(&all, &cells(&[(4, 2), (5, 2), (4, 3)]));
+    assert_no_t_junctions(&all);
+}
+
 // TODO - Remove duplication with stepper tests
 /// Weaves region rows from the bottom up: `cells[r]` are row r's cells.
 /// Everything past the end of `cells` is empty, which closes the last runs.
@@ -458,7 +476,7 @@ fn weave(cells: &[u32]) -> Vec<Triangle2D> {
     let mut stepper = Stepper::from_live(edge, cells[first], first as u32);
     for row in first + 1..=cells.len() {
         let top = cells.get(row).copied().unwrap_or(0);
-        stepper.weave_to(row, top, |t| out.push(t));
+        stepper.weave_to(row, top, 0, |t| out.push(t));
     }
     out
 }

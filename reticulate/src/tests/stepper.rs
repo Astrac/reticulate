@@ -40,7 +40,7 @@ fn init_in_middle() {
 #[test]
 fn first_step_records_start_row() {
     let mut stepper = Stepper::from_bottom_edge(0b010010001, 0, 5);
-    stepper.weave_to(6, 0, |_| {});
+    stepper.weave_to(6, 0, 0, |_| {});
 
     let mut expected = [0; 32];
     expected[5] = 0b1111;
@@ -433,7 +433,7 @@ fn weave(cells: &[u32]) -> Vec<Triangle2D> {
     let mut stepper = Stepper::from_live(edge, cells[first], first as u32);
     for row in first + 1..=cells.len() {
         let top = cells.get(row).copied().unwrap_or(0);
-        stepper.weave_to(row, top, |t| out.push(t));
+        stepper.weave_to(row, top, 0, |t| out.push(t));
     }
     out
 }

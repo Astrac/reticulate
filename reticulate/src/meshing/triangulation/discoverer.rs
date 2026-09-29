@@ -8,6 +8,7 @@ use crate::{
     utils::bitmasks,
 };
 
+// TODO - The division between this and Scanner is a bit messy, reorganize
 pub struct Discoverer<'a> {
     axis: Axis,
     axis_coord: usize,
@@ -78,7 +79,7 @@ impl<'a> Discoverer<'a> {
     }
 
     /// Walls of `row` in both slabs.
-    fn walls(&self, row: usize) -> u32 {
+    pub fn walls(&self, row: usize) -> u32 {
         self.edges[row] | self.prev_edges.map_or(0, |p| p[row])
     }
 
@@ -88,7 +89,7 @@ impl<'a> Discoverer<'a> {
 
     /// Columns of `mask` with a transition across parity `boundary` in
     /// either slab.
-    fn boundary_guard(&self, boundary: usize, mask: u32) -> u32 {
+    pub fn boundary_guard(&self, boundary: usize, mask: u32) -> u32 {
         let start = mask.trailing_zeros() as usize;
         let end = (32 - mask.leading_zeros()) as usize;
         let mut g =

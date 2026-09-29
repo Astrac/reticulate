@@ -3,8 +3,8 @@ use crate::{
     meshing::{
         Triangle,
         bitfields::{Bitfields, BitfieldsStorage, MaterialId},
-        shaping_walker::ShapingWalker,
         gathering_walker::GatheringWalker,
+        shaping_walker::ShapingWalker,
     },
 };
 
@@ -24,7 +24,7 @@ impl<F: FnMut(Triangle)> Triangulator<F> {
     pub fn triangulate<Data, M>(&mut self, tree: impl DenseWalk<Data>, to_material: M)
     where
         Data: Copy + PartialEq,
-        M: Copy + Fn(&Data) -> MaterialId,
+        M: Copy + Fn(&Data) -> MaterialId, // TODO - Remove Copy here
         F: FnMut(Triangle),
     {
         let bitfields = Bitfields::from_storage(&mut self.storage);
