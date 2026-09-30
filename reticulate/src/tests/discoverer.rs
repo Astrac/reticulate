@@ -1,6 +1,6 @@
 use crate::{
     Coords2D,
-    axis::*,
+    axis::Axis,
     meshing::{
         bitfields::{Claims, ClaimsMask, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
         surface_layer::SurfaceLayer,
@@ -68,13 +68,13 @@ fn fixture(solid: &[(usize, usize, usize)]) -> Fixture {
                     v: v as u32,
                 };
                 if here != at(xi - 1, yi, zi) {
-                    parity.set_transition(AXIS_X, x, uv(y, z), 1);
+                    parity.set_transition(Axis::X, x, uv(y, z), 1);
                 }
                 if here != at(xi, yi - 1, zi) {
-                    parity.set_transition(AXIS_Y, y, uv(z, x), 1);
+                    parity.set_transition(Axis::Y, y, uv(z, x), 1);
                 }
                 if here != at(xi, yi, zi - 1) {
-                    parity.set_transition(AXIS_Z, z, uv(x, y), 1);
+                    parity.set_transition(Axis::Z, z, uv(x, y), 1);
                 }
             }
         }
@@ -138,7 +138,7 @@ fn assert_region(region: &[u32; PLANE_SIDE], expected: &[(usize, usize)]) {
 fn rectangle_from_an_interior_seed() {
     let shape: Vec<_> = (2..5).flat_map(|r| (1..4).map(move |c| (r, c))).collect();
     let mut f = plane_fixture(&shape);
-    assert_region(&discover(&mut f, AXIS_Y, 0, (3, 2)), &shape);
+    assert_region(&discover(&mut f, Axis::Y, 0, (3, 2)), &shape);
 }
 
 /// Rows below the seed are found by the downward pass.
@@ -153,7 +153,7 @@ fn l_shape_seeded_mid_face() {
         }
     }
     let mut f = plane_fixture(&shape);
-    assert_region(&discover(&mut f, AXIS_Y, 0, (1, 1)), &shape);
+    assert_region(&discover(&mut f, Axis::Y, 0, (1, 1)), &shape);
 }
 
 /// The right leg hangs below the bar: a valley under the upward pass.
@@ -164,7 +164,7 @@ fn inverted_u_from_left_leg() {
         shape.extend([(r, 1), (r, 5)]);
     }
     let mut f = plane_fixture(&shape);
-    assert_region(&discover(&mut f, AXIS_Y, 0, (0, 1)), &shape);
+    assert_region(&discover(&mut f, Axis::Y, 0, (0, 1)), &shape);
 }
 
 /// Column 4 rises above row 1, outside the seed's run: a hill over the
@@ -174,7 +174,7 @@ fn hill_beside_downward_extension() {
     let mut shape = vec![(2, 1), (2, 2), (2, 4), (3, 4)];
     shape.extend((1..=4).map(|c| (1, c)));
     let mut f = plane_fixture(&shape);
-    assert_region(&discover(&mut f, AXIS_Y, 0, (2, 1)), &shape);
+    assert_region(&discover(&mut f, Axis::Y, 0, (2, 1)), &shape);
 }
 
 #[test]
@@ -184,7 +184,7 @@ fn table_seeded_on_its_top() {
         shape.extend([(r, 1), (r, 2), (r, 5), (r, 6)]);
     }
     let mut f = plane_fixture(&shape);
-    assert_region(&discover(&mut f, AXIS_Y, 0, (3, 3)), &shape);
+    assert_region(&discover(&mut f, Axis::Y, 0, (3, 3)), &shape);
 }
 
 /// A snake that changes vertical direction twice: up leg A, across the
@@ -198,7 +198,7 @@ fn snake_needs_several_rounds() {
     shape.extend((4..=7).map(|c| (0, c))); // bottom bar
     shape.extend((1..=4).map(|r| (r, 7))); // leg C
     let mut f = plane_fixture(&shape);
-    assert_region(&discover(&mut f, AXIS_Y, 0, (0, 1)), &shape);
+    assert_region(&discover(&mut f, Axis::Y, 0, (0, 1)), &shape);
 }
 
 /// On plane y = 1, row 3 is a P face and row 2 directly below it is an N
@@ -216,7 +216,7 @@ fn unconnected_shapes_are_excluded() {
     }
     let mut f = fixture(&voxels);
     assert_region(
-        &discover(&mut f, AXIS_Y, 1, (3, 1)),
+        &discover(&mut f, Axis::Y, 1, (3, 1)),
         &[(3, 1), (3, 2), (3, 3)],
     );
 }
@@ -228,9 +228,9 @@ fn claims_cut_off_what_lies_beyond_them() {
     let mut shape: Vec<_> = (1..=5).map(|c| (2, c)).collect();
     shape.extend([(0, 5), (1, 5)]);
     let mut f = plane_fixture(&shape);
-    claims_of(&mut f.claims).claim(SurfaceLayer::new(AXIS_Y, 0), &cells(&[(2, 5)]));
+    claims_of(&mut f.claims).claim(SurfaceLayer::new(Axis::Y, 0), &cells(&[(2, 5)]));
     assert_region(
-        &discover(&mut f, AXIS_Y, 0, (2, 1)),
+        &discover(&mut f, Axis::Y, 0, (2, 1)),
         &[(2, 1), (2, 2), (2, 3), (2, 4)],
     );
 }
@@ -241,7 +241,7 @@ fn claims_cut_off_what_lies_beyond_them() {
 fn full_height_column_from_the_middle() {
     let shape: Vec<_> = (0..PLANE_SIDE).map(|r| (r, 3)).collect();
     let mut f = plane_fixture(&shape);
-    assert_region(&discover(&mut f, AXIS_Y, 0, (16, 3)), &shape);
+    assert_region(&discover(&mut f, Axis::Y, 0, (16, 3)), &shape);
 }
 
 /// A run reaching the last column. Its right end would be a wall at
@@ -251,5 +251,5 @@ fn full_height_column_from_the_middle() {
 fn run_reaching_last_column() {
     let shape = [(3, 29), (3, 30), (3, 31)];
     let mut f = plane_fixture(&shape);
-    assert_region(&discover(&mut f, AXIS_Y, 0, (3, 29)), &shape);
+    assert_region(&discover(&mut f, Axis::Y, 0, (3, 29)), &shape);
 }

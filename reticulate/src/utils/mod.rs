@@ -25,7 +25,7 @@ pub fn print_bitfield_slice(bits: &[u32]) {
 pub fn print_parity(parity: &Parity<'_>, axes: &[Axis], layers: Range<usize>) {
     for axis in axes {
         for layer in layers.clone() {
-            println!("-- {}{layer:02} {}", axis.name(), "-".repeat(25));
+            println!("-- {}{layer:02} {axis:?}", "-".repeat(25));
             print_bits(parity.masks[axis.as_usize()].get_layer(layer));
             println!("{}", "-".repeat(32));
         }
@@ -38,7 +38,7 @@ pub fn print_materials(materials: &Material<'_>, axes: &[Axis]) {
             bytemuck::cast::<_, [MaterialId; 8 / size_of::<MaterialId>()]>(x.to_le_bytes())
         });
 
-        println!("-- {} {}", axis.name(), "-".repeat(27));
+        println!("-- {} {axis:?}", "-".repeat(27));
         for _ in 0..32 {
             for _ in 0..32 {
                 let Some(m) = data.next() else { unreachable!() };

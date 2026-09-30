@@ -19,8 +19,16 @@ use crate::{
 const EMPTY: MaterialId = 0;
 const STONE: MaterialId = 1;
 const DIRT: MaterialId = 2;
-const POSITIVE: [Face; 3] = [FACE_X_P, FACE_Y_P, FACE_Z_P];
-const NEGATIVE: [Face; 3] = [FACE_X_N, FACE_Y_N, FACE_Z_N];
+const POSITIVE: [Face; 3] = [
+    Face::Positive(Axis::X),
+    Face::Positive(Axis::Y),
+    Face::Positive(Axis::Z),
+];
+const NEGATIVE: [Face; 3] = [
+    Face::Negative(Axis::X),
+    Face::Negative(Axis::Y),
+    Face::Negative(Axis::Z),
+];
 
 struct Grid(Vec<MaterialId>);
 
@@ -175,10 +183,9 @@ fn mesh(f: &mut Fixture, blocks: &[((u8, u8, u8), u8)]) -> Vec<Triangle> {
                 mz.view_bits_mut::<Lsb0>(),
             ],
         };
-        let shaper =
-            SurfaceScanner::new(claims_of(&mut f.claims), parity_of(&mut f.parity), |t| {
-                tris.push(t)
-            });
+        let shaper = SurfaceScanner::new(claims_of(&mut f.claims), parity_of(&mut f.parity), |t| {
+            tris.push(t)
+        });
         let mut to_material = |m: &MaterialId| *m;
         let mut walker = SurfaceWalker::new(materials, shaper, &mut to_material);
         dense_walk(&mut walker, &f.grid, blocks);
@@ -229,7 +236,7 @@ fn assert_mesh_matches(grid: &Grid, tris: &[Triangle]) {
     let slot = |a: usize, c: usize, u: usize, v: usize| ((a * n + c) * n + u) * n + v;
     let mut count = vec![0u8; 3 * n * n * n];
     let mut material = vec![EMPTY; 3 * n * n * n];
-    let mut face = vec![Face::default(); 3 * n * n * n];
+    let mut face = vec![Face::Positive(Axis::X); 3 * n * n * n];
 
     for t in tris {
         let a = (0..3)
@@ -313,9 +320,7 @@ fn assert_mesh_matches(grid: &Grid, tris: &[Triangle]) {
                         assert_eq!(material[i], solid, "{at}: wrong material");
                         assert!(
                             face[i] == expected,
-                            "{at}: face {:#06b}, expected {:#06b}",
-                            face[i].0,
-                            expected.0
+                            "{at}: face {face:?}, expected {expected:?}",
                         );
                     }
                 }

@@ -1,6 +1,6 @@
 use crate::{
     Coords2D,
-    axis::*,
+    axis::Axis,
     meshing::{
         bitfields::{Claims, ClaimsMask, MaterialId, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
         surface_layer::SurfaceLayer,
@@ -79,13 +79,13 @@ fn fixture_with_materials(voxels: &[((usize, usize, usize), MaterialId)]) -> Fix
                     v: v as u32,
                 };
                 if here != at(xi - 1, yi, zi) {
-                    parity.set_transition(AXIS_X, x, uv(y, z), 1);
+                    parity.set_transition(Axis::X, x, uv(y, z), 1);
                 }
                 if here != at(xi, yi - 1, zi) {
-                    parity.set_transition(AXIS_Y, y, uv(z, x), 1);
+                    parity.set_transition(Axis::Y, y, uv(z, x), 1);
                 }
                 if here != at(xi, yi, zi - 1) {
-                    parity.set_transition(AXIS_Z, z, uv(x, y), 1);
+                    parity.set_transition(Axis::Z, z, uv(x, y), 1);
                 }
             }
         }
@@ -182,9 +182,9 @@ fn single_voxel_all_six_faces() {
     let mut f = fixture(&[(2, 5, 9)]);
     // (axis, voxel coordinate on that axis, (row, col) of its projection)
     for (axis, c, cell) in [
-        (AXIS_X, 2, (5, 9)),
-        (AXIS_Y, 5, (9, 2)),
-        (AXIS_Z, 9, (2, 5)),
+        (Axis::X, 2, (5, 9)),
+        (Axis::Y, 5, (9, 2)),
+        (Axis::Z, 9, (2, 5)),
     ] {
         for plane in [c, c + 1] {
             let (filled, tris) = scan(&mut f, axis, plane, (cell.0 as u32, cell.1 as u32));
@@ -204,16 +204,16 @@ fn single_voxel_all_six_faces() {
 fn domino_faces_are_not_transposed() {
     let mut f = fixture(&[(3, 4, 5), (4, 4, 5)]);
 
-    let (filled, tris) = scan(&mut f, AXIS_Y, 4, (5, 3)); // rows z, cols x
+    let (filled, tris) = scan(&mut f, Axis::Y, 4, (5, 3)); // rows z, cols x
     assert_scan(&filled, &tris, &[(5, 3), (5, 4)]);
 
-    let (filled, tris) = scan(&mut f, AXIS_Z, 5, (3, 4)); // rows x, cols y
+    let (filled, tris) = scan(&mut f, Axis::Z, 5, (3, 4)); // rows x, cols y
     assert_scan(&filled, &tris, &[(3, 4), (4, 4)]);
 
-    let (filled, tris) = scan(&mut f, AXIS_X, 3, (4, 5)); // rows y, cols z
+    let (filled, tris) = scan(&mut f, Axis::X, 3, (4, 5)); // rows y, cols z
     assert_scan(&filled, &tris, &[(4, 5)]);
 
-    let (filled, tris) = scan(&mut f, AXIS_X, 5, (4, 5)); // positive X face
+    let (filled, tris) = scan(&mut f, Axis::X, 5, (4, 5)); // positive X face
     assert_scan(&filled, &tris, &[(4, 5)]);
 }
 
@@ -234,10 +234,10 @@ fn face_exists_only_where_the_two_slabs_differ() {
     }
     let mut f = fixture(&solid);
 
-    let (filled, tris) = scan(&mut f, AXIS_X, 1, (1, 1));
+    let (filled, tris) = scan(&mut f, Axis::X, 1, (1, 1));
     assert_scan(&filled, &tris, &[(1, 1)]);
 
-    let (filled, tris) = scan(&mut f, AXIS_X, 0, (0, 0)); // outer face: full 2x2
+    let (filled, tris) = scan(&mut f, Axis::X, 0, (0, 0)); // outer face: full 2x2
     assert_scan(&filled, &tris, &[(0, 0), (0, 1), (1, 0), (1, 1)]);
 }
 
@@ -252,9 +252,9 @@ fn claimed_cells_are_skipped() {
         }
     }
     let mut f = fixture(&solid);
-    claims_of(&mut f.claims).claim(SurfaceLayer::new(AXIS_Y, 0), &cells(&[(1, 3)]));
+    claims_of(&mut f.claims).claim(SurfaceLayer::new(Axis::Y, 0), &cells(&[(1, 3)]));
 
-    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (0, 1)); // rows z, cols x
+    let (filled, tris) = scan(&mut f, Axis::Y, 0, (0, 1)); // rows z, cols x
     assert_scan(
         &filled,
         &tris,
@@ -276,7 +276,7 @@ fn face_touching_chunk_top_closes_cleanly() {
     let solid: Vec<_> = (28..PLANE_SIDE).map(|z| (5, 0, z)).collect();
     let mut f = fixture(&solid);
 
-    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (28, 5)); // rows z, cols x
+    let (filled, tris) = scan(&mut f, Axis::Y, 0, (28, 5)); // rows z, cols x
     assert_scan(&filled, &tris, &[(28, 5), (29, 5), (30, 5), (31, 5)]);
 }
 
@@ -286,7 +286,7 @@ fn face_touching_chunk_top_closes_cleanly() {
 fn footprint_assertion_catches_non_face_cells() {
     let mut f = fixture(&[(2, 5, 9)]);
     let parity = parity_of(&mut f.parity);
-    debug_assert_within_footprint(&parity, AXIS_X, 2, &cells(&[(5, 9), (5, 10)]));
+    debug_assert_within_footprint(&parity, Axis::X, 2, &cells(&[(5, 9), (5, 10)]));
 }
 
 #[test]
@@ -301,7 +301,7 @@ fn unconnected_shapes_below_the_seed_are_not_claimed() {
     }
     let mut f = fixture(&voxels);
 
-    let (filled, tris) = scan(&mut f, AXIS_Y, 1, (3, 1)); // rows z, cols x
+    let (filled, tris) = scan(&mut f, Axis::Y, 1, (3, 1)); // rows z, cols x
     assert_scan(&filled, &tris, &[(3, 1), (3, 2), (3, 3)]);
 }
 
@@ -317,7 +317,7 @@ fn valley_below_seed_is_claimed() {
     }
     let mut f = fixture(&solid);
 
-    let (filled, tris) = scan(&mut f, AXIS_X, 0, (1, 0)); // rows y, cols z
+    let (filled, tris) = scan(&mut f, Axis::X, 0, (1, 0)); // rows y, cols z
     assert_scan(
         &filled,
         &tris,
@@ -343,7 +343,7 @@ fn plane_fixture(cells_rc: &[(usize, usize)]) -> Fixture {
 fn column_seeded_at_its_top() {
     let shape: Vec<_> = (0..4).map(|r| (r, 5)).collect();
     let mut f = plane_fixture(&shape);
-    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (3, 5));
+    let (filled, tris) = scan(&mut f, Axis::Y, 0, (3, 5));
     assert_scan(&filled, &tris, &shape);
 }
 
@@ -354,7 +354,7 @@ fn seed_above_two_runs() {
         shape.extend([(r, 1), (r, 2), (r, 5), (r, 6)]);
     }
     let mut f = plane_fixture(&shape);
-    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (3, 3));
+    let (filled, tris) = scan(&mut f, Axis::Y, 0, (3, 3));
     assert_scan(&filled, &tris, &shape);
 }
 
@@ -369,7 +369,7 @@ fn seed_above_hole() {
         }
     }
     let mut f = plane_fixture(&shape);
-    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (3, 1));
+    let (filled, tris) = scan(&mut f, Axis::Y, 0, (3, 1));
     assert_scan(&filled, &tris, &shape);
 }
 
@@ -380,7 +380,7 @@ fn inverted_u_is_covered() {
         shape.extend([(r, 1), (r, 5)]);
     }
     let mut f = plane_fixture(&shape);
-    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (0, 1));
+    let (filled, tris) = scan(&mut f, Axis::Y, 0, (0, 1));
     assert_scan(&filled, &tris, &shape);
 }
 
@@ -389,7 +389,7 @@ fn dip_below_start_is_covered() {
     let mut shape = vec![(2, 1), (2, 2), (2, 4), (3, 4)];
     shape.extend((1..=4).map(|c| (1, c)));
     let mut f = plane_fixture(&shape);
-    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (2, 1));
+    let (filled, tris) = scan(&mut f, Axis::Y, 0, (2, 1));
     assert_scan(&filled, &tris, &shape);
 }
 
@@ -397,7 +397,7 @@ fn dip_below_start_is_covered() {
 fn pinch_start_below_end_above() {
     let shape = [(0, 1), (0, 2), (0, 3), (1, 1), (1, 3), (2, 1), (2, 2)];
     let mut f = plane_fixture(&shape);
-    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (0, 1));
+    let (filled, tris) = scan(&mut f, Axis::Y, 0, (0, 1));
     assert_scan(&filled, &tris, &shape);
 }
 
@@ -405,7 +405,7 @@ fn pinch_start_below_end_above() {
 fn pinch_end_below_start_above() {
     let shape = [(0, 1), (0, 2), (0, 3), (1, 1), (1, 3), (2, 2), (2, 3)];
     let mut f = plane_fixture(&shape);
-    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (0, 1));
+    let (filled, tris) = scan(&mut f, Axis::Y, 0, (0, 1));
     assert_scan(&filled, &tris, &shape);
 }
 
@@ -423,7 +423,7 @@ fn pinch_between_stacked_runs() {
         (2, 2),
     ];
     let mut f = plane_fixture(&shape);
-    let (filled, tris) = scan(&mut f, AXIS_Y, 0, (0, 1));
+    let (filled, tris) = scan(&mut f, Axis::Y, 0, (0, 1));
     assert_scan(&filled, &tris, &shape);
 }
 
@@ -433,16 +433,16 @@ fn scanner_weave_matches_reference_weave() {
     let mut f = plane_fixture(&shape);
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
-    let scanner = Weaver::new(Discoverer::new(&parity, SurfaceLayer::new(AXIS_Y, 0)));
+    let scanner = Weaver::new(Discoverer::new(&parity, SurfaceLayer::new(Axis::Y, 0)));
     let seed = Coords2D { u: 0, v: 1 };
 
     let region = scanner
         .discoverer
-        .discover(SurfaceLayer::new(AXIS_Y, 0), &claims, seed);
+        .discover(SurfaceLayer::new(Axis::Y, 0), &claims, seed);
     let reference = weave(&region); // the helper the stepper tests use
 
     let mut tris = Vec::new();
-    scanner.from_seed(&claims, SurfaceLayer::new(AXIS_Y, 0), seed, |t| {
+    scanner.from_seed(&claims, SurfaceLayer::new(Axis::Y, 0), seed, |t| {
         tris.push(t)
     });
     assert_eq!(tris, reference);
@@ -458,11 +458,11 @@ fn adjacent_regions_share_boundary_vertices() {
     let mut f =
         fixture_with_materials(&[((2, 0, 4), STONE), ((2, 0, 5), STONE), ((3, 0, 4), DIRT)]);
 
-    let (a_filled, a_tris) = scan(&mut f, AXIS_Y, 0, (4, 2));
+    let (a_filled, a_tris) = scan(&mut f, Axis::Y, 0, (4, 2));
     assert_eq!(a_filled, cells(&[(4, 2), (5, 2)]), "stone region");
-    claims_of(&mut f.claims).claim(SurfaceLayer::new(AXIS_Y, 0), &a_filled);
+    claims_of(&mut f.claims).claim(SurfaceLayer::new(Axis::Y, 0), &a_filled);
 
-    let (b_filled, b_tris) = scan(&mut f, AXIS_Y, 0, (4, 3));
+    let (b_filled, b_tris) = scan(&mut f, Axis::Y, 0, (4, 3));
     assert_eq!(b_filled, cells(&[(4, 3)]), "dirt region");
 
     let all: Vec<_> = a_tris.into_iter().chain(b_tris).collect();

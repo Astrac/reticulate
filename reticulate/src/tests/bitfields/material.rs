@@ -129,13 +129,13 @@ fn uniform_plane_is_a_single_run() {
 #[test]
 fn every_node_of_a_uniform_plane_is_one_run_limited_to_that_node() {
     let mut p = Planes::new();
-    write_run(p.plane_mut(AXIS_Z), 0, PLANE_AREA, 7);
+    write_run(p.plane_mut(Axis::Z), 0, PLANE_AREA, 7);
 
     for d in 0..=TREE_DEPTH {
         let size = depth_area(d);
         for offset in (0..PLANE_AREA).step_by(size) {
             assert_eq!(
-                collect_runs(&mut p, AXIS_Z, offset, d),
+                collect_runs(&mut p, Axis::Z, offset, d),
                 vec![(7, coords(offset), size)],
                 "depth {d}, offset {offset}"
             );
@@ -148,13 +148,13 @@ fn each_quadrant_reports_its_own_material_and_start_coords() {
     let quad = depth_area(1);
     let mut p = Planes::new();
     for q in 0..4 {
-        write_run(p.plane_mut(AXIS_X), q * quad, quad, q as u16);
+        write_run(p.plane_mut(Axis::X), q * quad, quad, q as u16);
     }
 
     for q in 0..4 {
         let offset = q * quad;
         assert_eq!(
-            collect_runs(&mut p, AXIS_X, offset, 1),
+            collect_runs(&mut p, Axis::X, offset, 1),
             vec![(q as u16, coords(offset), quad)],
             "quadrant {q}"
         );
@@ -164,11 +164,11 @@ fn each_quadrant_reports_its_own_material_and_start_coords() {
 #[test]
 fn axis_selects_which_plane_is_read() {
     let mut p = Planes::new();
-    write_run(p.plane_mut(AXIS_X), 0, PLANE_AREA, 1);
-    write_run(p.plane_mut(AXIS_Y), 0, PLANE_AREA, 2);
-    write_run(p.plane_mut(AXIS_Z), 0, PLANE_AREA, 3);
+    write_run(p.plane_mut(Axis::X), 0, PLANE_AREA, 1);
+    write_run(p.plane_mut(Axis::Y), 0, PLANE_AREA, 2);
+    write_run(p.plane_mut(Axis::Z), 0, PLANE_AREA, 3);
 
-    for (axis, material) in [(AXIS_X, 1), (AXIS_Y, 2), (AXIS_Z, 3)] {
+    for (axis, material) in [(Axis::X, 1), (Axis::Y, 2), (Axis::Z, 3)] {
         assert_eq!(
             collect_runs(&mut p, axis, 0, 0),
             vec![(material, coords(0), PLANE_AREA)]
@@ -178,12 +178,12 @@ fn axis_selects_which_plane_is_read() {
 
 fn check_single_odd_cell(odd_offset: usize) {
     let mut p = Planes::new();
-    write_run(p.plane_mut(AXIS_Y), 0, PLANE_AREA, 1);
-    write_run(p.plane_mut(AXIS_Y), odd_offset, 1, 2);
+    write_run(p.plane_mut(Axis::Y), 0, PLANE_AREA, 1);
+    write_run(p.plane_mut(Axis::Y), odd_offset, 1, 2);
 
-    let runs = collect_runs(&mut p, AXIS_Y, 0, 0);
+    let runs = collect_runs(&mut p, Axis::Y, 0, 0);
 
-    assert_eq!(runs, reference_runs(p.plane(AXIS_Y), 0, PLANE_AREA));
+    assert_eq!(runs, reference_runs(p.plane(Axis::Y), 0, PLANE_AREA));
 
     let odd: Vec<_> = runs.iter().filter(|r| r.0 == 2).collect();
     assert_eq!(odd.len(), 1);
@@ -212,10 +212,10 @@ fn odd_cell_in_the_middle_splits_area_into_quadtree_nodes() {
 #[test]
 fn two_uniform_cells_are_not_merged_into_a_non_quadtree_run() {
     let mut p = Planes::new();
-    write_run(p.plane_mut(AXIS_X), 0, PLANE_AREA, 1);
-    write_run(p.plane_mut(AXIS_X), 2, 2, 2);
+    write_run(p.plane_mut(Axis::X), 0, PLANE_AREA, 1);
+    write_run(p.plane_mut(Axis::X), 2, 2, 2);
 
-    let runs = collect_runs(&mut p, AXIS_X, 0, 0);
+    let runs = collect_runs(&mut p, Axis::X, 0, 0);
     assert!(runs.iter().all(|r| is_power_of_four(r.2)), "{runs:?}");
     assert_eq!(
         &runs[..4],
@@ -232,25 +232,25 @@ fn two_uniform_cells_are_not_merged_into_a_non_quadtree_run() {
 fn checkerboard_of_cells_yields_only_leaves_in_morton_order() {
     let mut p = Planes::new();
     for i in 0..PLANE_AREA {
-        write_run(p.plane_mut(AXIS_Z), i, 1, (i % 2) as u16 + 1);
+        write_run(p.plane_mut(Axis::Z), i, 1, (i % 2) as u16 + 1);
     }
 
-    let runs = collect_runs(&mut p, AXIS_Z, 0, 0);
+    let runs = collect_runs(&mut p, Axis::Z, 0, 0);
 
     assert_eq!(runs.len(), PLANE_AREA);
     assert!(runs.iter().all(|r| r.2 == 1));
-    assert_eq!(runs, reference_runs(p.plane(AXIS_Z), 0, PLANE_AREA));
+    assert_eq!(runs, reference_runs(p.plane(Axis::Z), 0, PLANE_AREA));
 }
 
 #[test]
 fn smallest_node_is_a_single_run() {
     let mut p = Planes::new();
-    write_run(p.plane_mut(AXIS_X), 0, PLANE_AREA, 5);
+    write_run(p.plane_mut(Axis::X), 0, PLANE_AREA, 5);
     let offset = 5;
-    write_run(p.plane_mut(AXIS_X), offset, 1, 6);
+    write_run(p.plane_mut(Axis::X), offset, 1, 6);
 
     assert_eq!(
-        collect_runs(&mut p, AXIS_X, offset, TREE_DEPTH),
+        collect_runs(&mut p, Axis::X, offset, TREE_DEPTH),
         vec![(6, coords(offset), 1)]
     );
 }
@@ -365,15 +365,15 @@ fn fill_handles_extreme_material_values() {
     for material in [0, 1, u16::MAX, u16::MAX - 1, u16::MAX / 2] {
         let mut p = Planes::with_background(BACKGROUND);
         p.material()
-            .fill(AXIS_Y, Morton3D::from_xyz(0, 0, 0), Depth(1), material);
-        assert_only_area_changed(&p, AXIS_Y, 0, depth_area(1), material);
+            .fill(Axis::Y, Morton3D::from_xyz(0, 0, 0), Depth(1), material);
+        assert_only_area_changed(&p, Axis::Y, 0, depth_area(1), material);
     }
 }
 
 #[test]
 fn fill_overwrites_previous_content_of_the_area() {
     let mut p = Planes::new();
-    let axis = AXIS_X;
+    let axis = Axis::X;
     p.material()
         .fill(axis, Morton3D::from_xyz(0, 0, 0), Depth(1), 4);
     p.material()
@@ -415,14 +415,14 @@ fn fill_z_axis_bug_fix() {
     let mut p = Planes::new();
 
     let m0 = Morton3D::from(0);
-    p.material().fill(AXIS_Z, m0, Depth(4), 1);
+    p.material().fill(Axis::Z, m0, Depth(4), 1);
 
     let m1 = Morton3D::from(1);
-    p.material().fill(AXIS_Z, m1, Depth(4), 0);
+    p.material().fill(Axis::Z, m1, Depth(4), 0);
 
     let size = depth_area(4);
     assert_eq!(
-        collect_runs(&mut p, AXIS_Z, 0, 4),
+        collect_runs(&mut p, Axis::Z, 0, 4),
         vec![(1, coords(0), size)],
     );
 }
@@ -431,12 +431,12 @@ fn fill_z_axis_bug_fix() {
 fn filling_a_child_makes_the_parent_decompose() {
     let mut p = Planes::new();
     p.material()
-        .fill(AXIS_Z, Morton3D::from_xyz(0, 0, 0), Depth(0), 1);
+        .fill(Axis::Z, Morton3D::from_xyz(0, 0, 0), Depth(0), 1);
     p.material()
-        .fill(AXIS_Z, Morton3D::from_xyz(0, 0, 0), Depth(2), 2);
+        .fill(Axis::Z, Morton3D::from_xyz(0, 0, 0), Depth(2), 2);
 
-    let runs = collect_runs(&mut p, AXIS_Z, 0, 0);
-    assert_eq!(runs, reference_runs(p.plane(AXIS_Z), 0, PLANE_AREA));
+    let runs = collect_runs(&mut p, Axis::Z, 0, 0);
+    assert_eq!(runs, reference_runs(p.plane(Axis::Z), 0, PLANE_AREA));
     assert_eq!(runs[0], (2, coords(0), depth_area(2)));
     assert_eq!(runs.iter().map(|r| r.2).sum::<usize>(), PLANE_AREA);
 }

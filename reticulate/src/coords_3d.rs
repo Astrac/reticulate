@@ -34,22 +34,21 @@ impl Coords3D {
     #[inline(always)]
     pub const fn from_2d_projection(axis: Axis, axis_coord: u8, uv_coords: (u8, u8)) -> Coords3D {
         match axis {
-            AXIS_X => Coords3D {
+            Axis::X => Coords3D {
                 x: axis_coord,
                 y: uv_coords.1 as u8,
                 z: uv_coords.0 as u8,
             },
-            AXIS_Y => Coords3D {
+            Axis::Y => Coords3D {
                 x: uv_coords.0 as u8,
                 y: axis_coord,
                 z: uv_coords.1 as u8,
             },
-            AXIS_Z => Coords3D {
+            Axis::Z => Coords3D {
                 x: uv_coords.1 as u8,
                 y: uv_coords.0 as u8,
                 z: axis_coord,
             },
-            _ => unreachable!(),
         }
     }
 }

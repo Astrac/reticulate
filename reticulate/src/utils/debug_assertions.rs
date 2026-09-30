@@ -1,5 +1,5 @@
 use crate::{
-    axis::Axis,
+    axis::{AXES, Axis},
     meshing::{
         bitfields::{PLANE_SIDE, Parity},
         surface_layer::SurfaceLayer,
@@ -30,11 +30,7 @@ pub fn find_unclaimed_faces(
     occlusion: &crate::meshing::bitfields::Claims,
 ) -> Vec<(crate::axis::Axis, usize, crate::Coords2D)> {
     let mut missing = Vec::new();
-    for axis in [
-        crate::axis::AXIS_X,
-        crate::axis::AXIS_Y,
-        crate::axis::AXIS_Z,
-    ] {
+    for axis in AXES {
         for axis_coord in 0..crate::meshing::bitfields::PLANE_SIDE {
             for u in 0..crate::meshing::bitfields::PLANE_SIDE {
                 let mut bits = gather_footprint(&parity, axis, axis_coord, u);

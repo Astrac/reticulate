@@ -4,7 +4,7 @@ use crate::{
     meshing::{bitfields::MaterialId, triangulation::Triangle2D},
 };
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Triangle {
     pub face: Face,
     pub material: MaterialId,
@@ -36,10 +36,10 @@ impl Triangle {
     pub const fn outward_vertices(&self) -> [Coords3D; 3] {
         let [a, b, c] = self.vertices;
 
-        if self.face.0 & 0b1000 == 0 {
-            [a, c, b]
-        } else {
+        if self.face.is_positive() {
             [a, b, c]
+        } else {
+            [a, c, b]
         }
     }
 }

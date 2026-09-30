@@ -1,4 +1,4 @@
-use crate::{Depth, axis::*, coords_3d::Coords3D, morton_3d::Morton3D};
+use crate::{Depth, axis::Axis, coords_3d::Coords3D, morton_3d::Morton3D};
 
 #[test]
 fn test_roundtrip_zero() {
@@ -82,7 +82,7 @@ fn test_boundary_values() {
 fn test_drop_axis_axis_z() {
     let input_code = 0b101_011;
     let wrapper = Morton3D::from(input_code);
-    let projected_2d = wrapper.drop_axis(AXIS_Z);
+    let projected_2d = wrapper.drop_axis(Axis::Z);
     assert_eq!(projected_2d.0, 0b01_11);
 }
 
@@ -90,7 +90,7 @@ fn test_drop_axis_axis_z() {
 fn test_drop_axis_axis_z_deeper() {
     let input_code = 0b110_101_011;
     let wrapper = Morton3D::from(input_code);
-    let projected_2d = wrapper.drop_axis(AXIS_Z);
+    let projected_2d = wrapper.drop_axis(Axis::Z);
     assert_eq!(projected_2d.0, 0b10_01_11);
 }
 
@@ -98,7 +98,7 @@ fn test_drop_axis_axis_z_deeper() {
 fn test_drop_axis_axis_y() {
     let input_code = 0b010_101;
     let wrapper = Morton3D::from(input_code);
-    let projected_2d = wrapper.drop_axis(AXIS_Y);
+    let projected_2d = wrapper.drop_axis(Axis::Y);
     assert_eq!(projected_2d.0, 0b00_11);
 }
 
@@ -106,7 +106,7 @@ fn test_drop_axis_axis_y() {
 fn test_drop_axis_axis_y_deeper() {
     let input_code = 0b110_010_101;
     let wrapper = Morton3D::from(input_code);
-    let projected_2d = wrapper.drop_axis(AXIS_Y);
+    let projected_2d = wrapper.drop_axis(Axis::Y);
     assert_eq!(projected_2d.0, 0b01_00_11);
 }
 
@@ -114,7 +114,7 @@ fn test_drop_axis_axis_y_deeper() {
 fn test_drop_axis_axis_x() {
     let input_code = 0b101_110;
     let wrapper = Morton3D::from(input_code);
-    let projected_2d = wrapper.drop_axis(AXIS_X);
+    let projected_2d = wrapper.drop_axis(Axis::X);
     assert_eq!(projected_2d.0, 0b10_11);
 }
 
@@ -122,6 +122,6 @@ fn test_drop_axis_axis_x() {
 fn test_drop_axis_axis_x_deeper() {
     let input_code = 0b110_101_110;
     let wrapper = Morton3D::from(input_code);
-    let projected_2d = wrapper.drop_axis(AXIS_X);
+    let projected_2d = wrapper.drop_axis(Axis::X);
     assert_eq!(projected_2d.0, 0b11_10_11);
 }
