@@ -93,13 +93,13 @@ impl Morton3D {
     }
 
     #[inline(always)]
-    pub const fn projected_axis_morton(&self, axis: Axis) -> (Morton2D, u8) {
+    pub fn projected_axis_morton(&self, axis: Axis) -> (Morton2D, u8) {
         let ((u, v), layer) = self.projected_axis_uv(axis);
         (Morton2D::from_uv_and_depth(u, v, self.depth), layer)
     }
 
     #[inline(always)]
-    pub const fn drop_axis(&self, axis: Axis) -> Morton2D {
+    pub fn drop_axis(&self, axis: Axis) -> Morton2D {
         self.projected_axis_morton(axis).0
     }
 
