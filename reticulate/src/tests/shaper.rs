@@ -1,7 +1,7 @@
 use bitvec::prelude::*;
 
 use crate::{
-    Coords2D, DenseWalker, Depth, Morton3D,
+    Coords2D, DenseWalker, Morton3D,
     axis::*,
     face::*,
     meshing::{
@@ -36,7 +36,7 @@ impl Grid {
     fn new(voxels: &[((u8, u8, u8), MaterialId)]) -> Grid {
         let mut g = vec![EMPTY; CHUNK_VOLUME];
         for &((x, y, z), m) in voxels {
-            g[Morton3D::from_xyz(x, y, z).as_u32() as usize] = m;
+            g[Morton3D::from_xyz_max_depth(x, y, z).as_u32() as usize] = m;
         }
         Grid(g)
     }
@@ -47,7 +47,7 @@ impl Grid {
         if x < 0 || y < 0 || z < 0 || x >= side || y >= side || z >= side {
             return EMPTY;
         }
-        self.0[Morton3D::from_xyz(x as u8, y as u8, z as u8).as_u32() as usize]
+        self.0[Morton3D::from_xyz_max_depth(x as u8, y as u8, z as u8).as_u32() as usize]
     }
 }
 
@@ -135,7 +135,7 @@ fn dense_walk<W: DenseWalker<MaterialId>>(
     grid: &Grid,
     blocks: &[((u8, u8, u8), u8)],
 ) {
-    let starts: Vec<(u32, u8)> = blocks
+    let starts: Vec<Morton3D> = blocks
         .iter()
         .map(|&((x, y, z), d)| {
             let side = (PLANE_SIDE >> d) as u8;
@@ -143,7 +143,7 @@ fn dense_walk<W: DenseWalker<MaterialId>>(
                 x % side == 0 && y % side == 0 && z % side == 0,
                 "block must be aligned"
             );
-            (Morton3D::from_xyz(x, y, z).as_u32(), d)
+            Morton3D::from_xyz_and_depth(x, y, z, d.into())
         })
         .collect();
 
@@ -151,20 +151,23 @@ fn dense_walk<W: DenseWalker<MaterialId>>(
     while (code as usize) < CHUNK_VOLUME {
         let depth = starts
             .iter()
-            .find(|&&(s, _)| s == code)
-            .map_or(TREE_DEPTH, |&(_, d)| d as usize);
+            .find(|&&s| s.as_u32() == code)
+            .map_or(TREE_DEPTH, |&s| s.depth().as_usize());
+
         let shift = 3 * (TREE_DEPTH - depth) as u32;
         let span = 1u32 << shift;
         let material = grid.0[code as usize];
+
         assert!(
             (code..code + span).all(|i| grid.0[i as usize] == material),
             "block at Morton {code} is not uniform"
         );
-        let morton = Morton3D::from(code >> shift);
+
+        let morton = Morton3D::from_code(code >> shift, depth.into());
         if material == EMPTY {
-            walker.on_empty(Depth(depth as u8), morton);
+            walker.on_empty(morton);
         } else {
-            walker.on_leaf(Depth(depth as u8), morton, &material);
+            walker.on_leaf(morton, &material);
         }
         code += span;
     }

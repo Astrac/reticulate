@@ -1,7 +1,7 @@
 use core::panic;
 
 use crate::{
-    Coords2D, Depth, Morton2D, Morton3D,
+    Coords2D, Morton2D, Morton3D,
     axis::Axis,
     meshing::bitfields::{MATERIAL_BITS, MaterialId, PLANE_AREA, STORAGE_WORD, Slice},
 };
@@ -18,12 +18,11 @@ impl<'a> Material<'a> {
         &self,
         axis: Axis,
         morton: Morton2D,
-        depth: Depth,
         mut on_material: impl FnMut(MaterialId, Coords2D, usize),
     ) {
         let materials = self.material_plane(axis);
         let index = morton.as_usize();
-        let plane_size = depth.as_area();
+        let plane_size = morton.depth().as_area();
         let final_index = index + plane_size;
 
         let mut current_offset = index;
@@ -35,7 +34,7 @@ impl<'a> Material<'a> {
 
             on_material(
                 material,
-                Morton2D::from(current_offset).as_coords(),
+                Morton2D::from_code_max_depth(current_offset as u32).as_coords(),
                 scanned_length,
             );
 
@@ -46,9 +45,9 @@ impl<'a> Material<'a> {
 
     /// Fills an area with the given material
     #[inline(always)]
-    pub fn fill(&mut self, axis: Axis, morton: Morton3D, depth: Depth, material: u16) {
-        let (morton_2d, _) = morton.projected_axis_morton(axis, depth);
-        let plane_size = (PLANE_AREA >> (depth.as_usize() << 1)) * MATERIAL_BITS;
+    pub fn fill(&mut self, axis: Axis, morton: Morton3D, material: u16) {
+        let (morton_2d, _) = morton.projected_axis_morton(axis);
+        let plane_size = (PLANE_AREA >> (morton.depth.as_usize() << 1)) * MATERIAL_BITS;
         let material_splat64 = splat64(material);
         let index = morton_2d.as_usize() * MATERIAL_BITS;
         let plane_bits = &mut self.cells[axis.as_usize()][index..index + plane_size];

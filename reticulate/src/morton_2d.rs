@@ -1,55 +1,85 @@
-use crate::{Coords2D, utils::bitmasks};
+use crate::{Coords2D, Depth, utils::bitmasks};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Morton2D(pub u32);
+pub struct Morton2D {
+    code: u32,
+    depth: Depth,
+}
 
 impl Morton2D {
+    // TODO - Rename this to make it clear that depth is ignored
     #[inline(always)]
     pub const fn as_u32(&self) -> u32 {
-        self.0
+        self.code
+    }
+
+    #[inline(always)]
+    pub const fn depth(&self) -> Depth {
+        self.depth
     }
 
     #[inline(always)]
     pub const fn as_usize(&self) -> usize {
-        self.0 as usize
+        self.code as usize
     }
 
     #[inline(always)]
     pub const fn as_coords(&self) -> Coords2D {
-        let (u, v) = decode_morton(self.0);
+        let (u, v) = decode_morton(self.code);
         Coords2D { u, v }
     }
 
     #[inline(always)]
-    pub const fn from_uv(u: u32, v: u32) -> Morton2D {
-        Morton2D(encode_morton(u, v))
+    pub const fn from_uv_max_depth(u: u32, v: u32) -> Morton2D {
+        Morton2D {
+            code: encode_morton(u, v),
+            depth: Depth::MAX,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn from_uv_and_depth(u: u32, v: u32, depth: Depth) -> Morton2D {
+        Morton2D {
+            code: encode_morton(u, v),
+            depth,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn from_code_max_depth(code: u32) -> Morton2D {
+        Morton2D::from_code_and_depth(code, Depth::MAX)
+    }
+
+    #[inline(always)]
+    pub const fn from_code_and_depth(code: u32, depth: Depth) -> Morton2D {
+        Morton2D { code, depth }
     }
 }
 
-impl From<Morton2D> for Coords2D {
-    fn from(value: Morton2D) -> Self {
-        let (u, v) = decode_morton(value.0);
-        Coords2D { u, v }
-    }
-}
-
-impl From<Coords2D> for Morton2D {
-    fn from(value: Coords2D) -> Self {
-        Morton2D(encode_morton(value.u, value.v))
-    }
-}
-
-impl From<u32> for Morton2D {
-    fn from(value: u32) -> Self {
-        Morton2D(value)
-    }
-}
-
-impl From<usize> for Morton2D {
-    fn from(value: usize) -> Self {
-        Morton2D(value as u32)
-    }
-}
+// impl From<Morton2D> for Coords2D {
+//     fn from(value: Morton2D) -> Self {
+//         let (u, v) = decode_morton(value.0);
+//         Coords2D { u, v }
+//     }
+// }
+//
+// impl From<Coords2D> for Morton2D {
+//     fn from(value: Coords2D) -> Self {
+//         Morton2D(encode_morton(value.u, value.v))
+//     }
+// }
+//
+// impl From<u32> for Morton2D {
+//     fn from(value: u32) -> Self {
+//         Morton2D(value)
+//     }
+// }
+//
+// impl From<usize> for Morton2D {
+//     fn from(value: usize) -> Self {
+//         Morton2D(value as u32)
+//     }
+// }
 
 #[inline(always)]
 const fn encode_morton(x: u32, y: u32) -> u32 {

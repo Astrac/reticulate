@@ -12,7 +12,7 @@ fn depth_area(d: usize) -> usize {
 }
 
 fn coords(cell: usize) -> Coords2D {
-    Morton2D::from(cell).as_coords()
+    Morton2D::from_code_max_depth(cell as u32).as_coords()
 }
 
 fn is_power_of_four(n: usize) -> bool {
@@ -106,8 +106,7 @@ fn collect_runs(planes: &mut Planes, axis: Axis, offset: usize, d: usize) -> Vec
     let mut runs = Vec::new();
     planes.material().iterate_materials(
         axis,
-        Morton2D::from(offset),
-        Depth(d as u8),
+        Morton2D::from_code_and_depth(offset as u32, d.into()),
         |m, c, len| runs.push((m, c, len)),
     );
     runs
@@ -332,7 +331,7 @@ fn fill_at_origin_writes_exactly_the_node_at_every_depth() {
         for d in 0..=TREE_DEPTH {
             let mut p = Planes::with_background(BACKGROUND);
             p.material()
-                .fill(axis, Morton3D::from_xyz(0, 0, 0), Depth(d as u8), 2);
+                .fill(axis, Morton3D::from_xyz_and_depth(0, 0, 0, d.into()), 2);
             assert_only_area_changed(&p, axis, 0, depth_area(d), 2);
         }
     }
@@ -342,9 +341,9 @@ fn fill_at_origin_writes_exactly_the_node_at_every_depth() {
 fn fill_at_offset_node_writes_exactly_the_node_at_every_depth() {
     for axis in AXES {
         for d in 1..=TREE_DEPTH {
-            let m = Morton3D::from_xyz(1, 1, 1);
+            let m = Morton3D::from_xyz_and_depth(1, 1, 1, d.into());
             let size = depth_area(d);
-            let (morton_2d, _) = m.projected_axis_morton(axis, Depth(d as u8));
+            let (morton_2d, _) = m.projected_axis_morton(axis);
             let start = morton_2d.as_usize();
             assert_eq!(
                 start,
@@ -353,7 +352,7 @@ fn fill_at_offset_node_writes_exactly_the_node_at_every_depth() {
             );
 
             let mut p = Planes::with_background(BACKGROUND);
-            p.material().fill(axis, m, Depth(d as u8), 3);
+            p.material().fill(axis, m, 3);
 
             assert_only_area_changed(&p, axis, start, size, 3);
         }
@@ -364,8 +363,11 @@ fn fill_at_offset_node_writes_exactly_the_node_at_every_depth() {
 fn fill_handles_extreme_material_values() {
     for material in [0, 1, u16::MAX, u16::MAX - 1, u16::MAX / 2] {
         let mut p = Planes::with_background(BACKGROUND);
-        p.material()
-            .fill(Axis::Y, Morton3D::from_xyz(0, 0, 0), Depth(1), material);
+        p.material().fill(
+            Axis::Y,
+            Morton3D::from_xyz_and_depth(0, 0, 0, Depth(1)),
+            material,
+        );
         assert_only_area_changed(&p, Axis::Y, 0, depth_area(1), material);
     }
 }
@@ -375,9 +377,9 @@ fn fill_overwrites_previous_content_of_the_area() {
     let mut p = Planes::new();
     let axis = Axis::X;
     p.material()
-        .fill(axis, Morton3D::from_xyz(0, 0, 0), Depth(1), 4);
+        .fill(axis, Morton3D::from_xyz_and_depth(0, 0, 0, Depth(1)), 4);
     p.material()
-        .fill(axis, Morton3D::from_xyz(0, 0, 0), Depth(2), 5);
+        .fill(axis, Morton3D::from_xyz_and_depth(0, 0, 0, Depth(2)), 5);
 
     let inner = depth_area(2);
     let outer = depth_area(1);
@@ -397,8 +399,8 @@ fn fill_then_iterate_round_trips() {
     for axis in AXES {
         for d in 0..=TREE_DEPTH {
             let mut p = Planes::new();
-            let m = Morton3D::from_xyz(0, 0, 0);
-            p.material().fill(axis, m, Depth(d as u8), 6);
+            let m = Morton3D::from_xyz_and_depth(0, 0, 0, d.into());
+            p.material().fill(axis, m, 6);
 
             let offset = m.drop_axis(axis).as_usize();
             assert_eq!(
@@ -414,11 +416,11 @@ fn fill_then_iterate_round_trips() {
 fn fill_z_axis_bug_fix() {
     let mut p = Planes::new();
 
-    let m0 = Morton3D::from(0);
-    p.material().fill(Axis::Z, m0, Depth(4), 1);
+    let m0 = Morton3D::from_code(0, Depth(4));
+    p.material().fill(Axis::Z, m0, 1);
 
-    let m1 = Morton3D::from(1);
-    p.material().fill(Axis::Z, m1, Depth(4), 0);
+    let m1 = Morton3D::from_code(1, Depth(4));
+    p.material().fill(Axis::Z, m1, 0);
 
     let size = depth_area(4);
     assert_eq!(
@@ -431,9 +433,9 @@ fn fill_z_axis_bug_fix() {
 fn filling_a_child_makes_the_parent_decompose() {
     let mut p = Planes::new();
     p.material()
-        .fill(Axis::Z, Morton3D::from_xyz(0, 0, 0), Depth(0), 1);
+        .fill(Axis::Z, Morton3D::from_xyz_and_depth(0, 0, 0, Depth(0)), 1);
     p.material()
-        .fill(Axis::Z, Morton3D::from_xyz(0, 0, 0), Depth(2), 2);
+        .fill(Axis::Z, Morton3D::from_xyz_and_depth(0, 0, 0, Depth(2)), 2);
 
     let runs = collect_runs(&mut p, Axis::Z, 0, 0);
     assert_eq!(runs, reference_runs(p.plane(Axis::Z), 0, PLANE_AREA));
@@ -453,4 +455,21 @@ fn clear_material_planes_on_empty_planes_is_a_no_op() {
     let mut p = Planes::new();
     p.material().clear();
     assert!(p.bits.iter().all(|b| b.not_any()));
+}
+
+#[test]
+fn projected_node_iterates_its_whole_area() {
+    for axis in AXES {
+        for d in 0..=TREE_DEPTH {
+            let node = Morton3D::from_xyz_and_depth(0, 0, 0, d.into());
+            let (area, _) = node.projected_axis_morton(axis);
+
+            let mut p = Planes::new();
+            let mut cells = 0;
+            p.material()
+                .iterate_materials(axis, area, |_, _, len| cells += len);
+
+            assert_eq!(cells, depth_area(d), "{axis:?}, depth {d}");
+        }
+    }
 }

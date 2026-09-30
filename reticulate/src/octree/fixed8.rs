@@ -17,7 +17,7 @@ impl<Data: Clone + PartialEq> Fixed8Octree<Data> {
     }
 
     pub fn get(&self, coords: Coords3D) -> Option<&Data> {
-        let morton_code: Morton3D = coords.into();
+        let morton_code = Morton3D::from_coords_max_depth(coords);
 
         log::debug!(
             "Getting {coords:?} (morton = {:0>32b})",
@@ -62,7 +62,7 @@ impl<Data: Clone + PartialEq> Fixed8Octree<Data> {
     }
 
     pub fn update(&mut self, coords: Coords3D, data: Option<Data>) {
-        let morton_code: Morton3D = coords.into();
+        let morton_code = Morton3D::from_coords_max_depth(coords);
 
         log::debug!(
             "Updating {coords:?} (morton = {:0>32b})",

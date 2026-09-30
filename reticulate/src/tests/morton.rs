@@ -1,18 +1,18 @@
-use crate::{Depth, axis::Axis, coords_3d::Coords3D, morton_3d::Morton3D};
+use crate::{axis::Axis, coords_3d::Coords3D, morton_3d::Morton3D};
 
 #[test]
 fn test_roundtrip_zero() {
     let c = Coords3D { x: 0, y: 0, z: 0 };
-    let m: Morton3D = c.into();
-    let decoded: Coords3D = Coords3D::from_morton(m, Depth(5));
+    let m = Morton3D::from_coords_max_depth(c);
+    let decoded: Coords3D = Coords3D::from_morton(m);
     assert_eq!(c, decoded, "Roundtrip failed for zero");
 }
 
 #[test]
 fn test_roundtrip_one() {
     let c = Coords3D { x: 1, y: 1, z: 1 };
-    let m: Morton3D = c.into();
-    let decoded: Coords3D = Coords3D::from_morton(m, Depth(5));
+    let m = Morton3D::from_coords_max_depth(c);
+    let decoded: Coords3D = Coords3D::from_morton(m);
     assert_eq!(c, decoded, "Roundtrip failed for one");
 }
 
@@ -23,8 +23,8 @@ fn test_roundtrip_max() {
         y: 255,
         z: 255,
     };
-    let m: Morton3D = c.into();
-    let decoded: Coords3D = Coords3D::from_morton(m, Depth(5));
+    let m = Morton3D::from_coords_max_depth(c);
+    let decoded: Coords3D = Coords3D::from_morton(m);
     assert_eq!(c, decoded, "Roundtrip failed for max");
 }
 
@@ -35,8 +35,8 @@ fn test_roundtrip_mixed() {
         y: 20,
         z: 30,
     };
-    let m: Morton3D = c.into();
-    let decoded: Coords3D = Coords3D::from_morton(m, Depth(5));
+    let m = Morton3D::from_coords_max_depth(c);
+    let decoded: Coords3D = Coords3D::from_morton(m);
     assert_eq!(c, decoded, "Roundtrip failed for mixed values");
 }
 
@@ -47,9 +47,9 @@ fn test_uniqueness() {
     let c2 = Coords3D { x: 2, y: 1, z: 3 };
     let c3 = Coords3D { x: 3, y: 2, z: 1 };
 
-    let m1: Morton3D = c1.into();
-    let m2: Morton3D = c2.into();
-    let m3: Morton3D = c3.into();
+    let m1: Morton3D = Morton3D::from_coords_max_depth(c1);
+    let m2: Morton3D = Morton3D::from_coords_max_depth(c2);
+    let m3: Morton3D = Morton3D::from_coords_max_depth(c3);
 
     assert_ne!(m1, m2, "Distinct coords c1 and c2 produced same code");
     assert_ne!(m2, m3, "Distinct coords c2 and c3 produced same code");
@@ -72,8 +72,8 @@ fn test_boundary_values() {
     ];
 
     for c in cases {
-        let m: Morton3D = c.into();
-        let decoded: Coords3D = Coords3D::from_morton(m, Depth(5));
+        let m = Morton3D::from_coords_max_depth(c);
+        let decoded: Coords3D = Coords3D::from_morton(m);
         assert_eq!(c, decoded, "Roundtrip failed for {:?}", c);
     }
 }
@@ -81,47 +81,47 @@ fn test_boundary_values() {
 #[test]
 fn test_drop_axis_axis_z() {
     let input_code = 0b101_011;
-    let wrapper = Morton3D::from(input_code);
+    let wrapper = Morton3D::from_code_max_depth(input_code);
     let projected_2d = wrapper.drop_axis(Axis::Z);
-    assert_eq!(projected_2d.0, 0b01_11);
+    assert_eq!(projected_2d.as_u32(), 0b01_11);
 }
 
 #[test]
 fn test_drop_axis_axis_z_deeper() {
     let input_code = 0b110_101_011;
-    let wrapper = Morton3D::from(input_code);
+    let wrapper = Morton3D::from_code_max_depth(input_code);
     let projected_2d = wrapper.drop_axis(Axis::Z);
-    assert_eq!(projected_2d.0, 0b10_01_11);
+    assert_eq!(projected_2d.as_u32(), 0b10_01_11);
 }
 
 #[test]
 fn test_drop_axis_axis_y() {
     let input_code = 0b010_101;
-    let wrapper = Morton3D::from(input_code);
+    let wrapper = Morton3D::from_code_max_depth(input_code);
     let projected_2d = wrapper.drop_axis(Axis::Y);
-    assert_eq!(projected_2d.0, 0b00_11);
+    assert_eq!(projected_2d.as_u32(), 0b00_11);
 }
 
 #[test]
 fn test_drop_axis_axis_y_deeper() {
     let input_code = 0b110_010_101;
-    let wrapper = Morton3D::from(input_code);
+    let wrapper = Morton3D::from_code_max_depth(input_code);
     let projected_2d = wrapper.drop_axis(Axis::Y);
-    assert_eq!(projected_2d.0, 0b01_00_11);
+    assert_eq!(projected_2d.as_u32(), 0b01_00_11);
 }
 
 #[test]
 fn test_drop_axis_axis_x() {
     let input_code = 0b101_110;
-    let wrapper = Morton3D::from(input_code);
+    let wrapper = Morton3D::from_code_max_depth(input_code);
     let projected_2d = wrapper.drop_axis(Axis::X);
-    assert_eq!(projected_2d.0, 0b10_11);
+    assert_eq!(projected_2d.as_u32(), 0b10_11);
 }
 
 #[test]
 fn test_drop_axis_axis_x_deeper() {
     let input_code = 0b110_101_110;
-    let wrapper = Morton3D::from(input_code);
+    let wrapper = Morton3D::from_code_max_depth(input_code);
     let projected_2d = wrapper.drop_axis(Axis::X);
-    assert_eq!(projected_2d.0, 0b11_10_11);
+    assert_eq!(projected_2d.as_u32(), 0b11_10_11);
 }

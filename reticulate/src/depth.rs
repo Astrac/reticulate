@@ -1,12 +1,17 @@
 use std::ops::{Add, Sub};
 
-use crate::meshing::bitfields::{PLANE_AREA, PLANE_SIDE};
+use crate::{
+    meshing::bitfields::{PLANE_AREA, PLANE_SIDE},
+    octree::TREE_DEPTH,
+};
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct Depth(pub u8);
 
 impl Depth {
+    pub const MAX: Depth = Depth(TREE_DEPTH as u8);
+
     #[inline(always)]
     pub const fn as_usize(&self) -> usize {
         self.0 as usize

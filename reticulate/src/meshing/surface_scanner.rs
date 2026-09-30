@@ -1,7 +1,7 @@
 #[cfg(debug_assertions)]
 use crate::utils::debug_assertions::debug_assert_within_footprint;
 use crate::{
-    Depth, Morton3D,
+    Morton3D,
     face::Face,
     meshing::{
         Triangle,
@@ -38,18 +38,17 @@ where
         &mut self,
         face: Face,
         morton: Morton3D,
-        depth: Depth,
         current_material: MaterialId,
         materials: &Material<'a>,
     ) {
         let axis = face.axis();
-        let (morton, axis_coord) = morton.projected_axis_morton(axis, depth);
+        let (morton, axis_coord) = morton.projected_axis_morton(axis);
         let layer = SurfaceLayer::new(axis, axis_coord);
 
         let discoverer = Discoverer::new(&self.parity, layer);
         let scanner = Weaver::new(discoverer);
 
-        materials.iterate_materials(axis, morton, depth, |material, coords, _| {
+        materials.iterate_materials(axis, morton, |material, coords, _| {
             if material == current_material
                 || (material != 0 && current_material != 0)
                 || !self.claims.is_unclaimed(layer, coords)

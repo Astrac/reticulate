@@ -1,5 +1,5 @@
 use crate::{
-    DenseWalker, Depth, Morton3D,
+    DenseWalker, Morton3D,
     axis::Axis,
     face::Face,
     meshing::{
@@ -37,51 +37,36 @@ where
     F: FnMut(Triangle),
     M: Fn(&Data) -> MaterialId,
 {
-    fn on_branch_start(&mut self, _depth: Depth, _morton: Morton3D, _children_mask: u8) {}
-    fn on_branch_end(&mut self, _depth: Depth, _morton: Morton3D) {}
+    fn on_branch_start(&mut self, _morton: Morton3D, _children_mask: u8) {}
+    fn on_branch_end(&mut self, _morton: Morton3D) {}
 
-    fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &Data) {
+    fn on_leaf(&mut self, morton: Morton3D, data: &Data) {
         let material = (self.to_material)(data);
 
-        self.surface_scanner.scan(
-            Face::Negative(Axis::X),
-            morton,
-            depth,
-            material,
-            &self.materials,
-        );
-        self.surface_scanner.scan(
-            Face::Negative(Axis::Y),
-            morton,
-            depth,
-            material,
-            &self.materials,
-        );
-        self.surface_scanner.scan(
-            Face::Negative(Axis::Z),
-            morton,
-            depth,
-            material,
-            &self.materials,
-        );
+        self.surface_scanner
+            .scan(Face::Negative(Axis::X), morton, material, &self.materials);
+        self.surface_scanner
+            .scan(Face::Negative(Axis::Y), morton, material, &self.materials);
+        self.surface_scanner
+            .scan(Face::Negative(Axis::Z), morton, material, &self.materials);
 
-        self.materials.fill(Axis::X, morton, depth, material);
-        self.materials.fill(Axis::Y, morton, depth, material);
-        self.materials.fill(Axis::Z, morton, depth, material);
+        self.materials.fill(Axis::X, morton, material);
+        self.materials.fill(Axis::Y, morton, material);
+        self.materials.fill(Axis::Z, morton, material);
     }
 
-    fn on_empty(&mut self, depth: Depth, morton: Morton3D) {
+    fn on_empty(&mut self, morton: Morton3D) {
         let material = 0;
 
         self.surface_scanner
-            .scan(Face::Positive(Axis::X), morton, depth, 0, &self.materials);
+            .scan(Face::Positive(Axis::X), morton, 0, &self.materials);
         self.surface_scanner
-            .scan(Face::Positive(Axis::Y), morton, depth, 0, &self.materials);
+            .scan(Face::Positive(Axis::Y), morton, 0, &self.materials);
         self.surface_scanner
-            .scan(Face::Positive(Axis::Z), morton, depth, 0, &self.materials);
+            .scan(Face::Positive(Axis::Z), morton, 0, &self.materials);
 
-        self.materials.fill(Axis::X, morton, depth, material);
-        self.materials.fill(Axis::Y, morton, depth, material);
-        self.materials.fill(Axis::Z, morton, depth, material);
+        self.materials.fill(Axis::X, morton, material);
+        self.materials.fill(Axis::Y, morton, material);
+        self.materials.fill(Axis::Z, morton, material);
     }
 }

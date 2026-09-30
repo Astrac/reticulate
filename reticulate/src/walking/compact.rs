@@ -1,5 +1,5 @@
 use crate::{
-    CompactOctree, DenseWalk, DenseWalker, Walk, Walker,
+    CompactOctree, DenseWalk, DenseWalker, Morton3D, Walk, Walker,
     octree::{CompactOctreeNode, TREE_DEPTH},
 };
 
@@ -27,12 +27,15 @@ impl<Data> Walk<Data> for CompactOctree<Data> {
                     current_branch_mask = *mask;
                     current_morton = node_morton;
 
-                    walker.on_branch_start((depth - 1).into(), node_morton.into(), *mask);
+                    walker.on_branch_start(
+                        Morton3D::from_code(node_morton, (depth - 1).into()),
+                        *mask,
+                    );
                 }
                 CompactOctreeNode::Leaf(data) => {
                     current_branch_mask &= current_branch_mask - 1;
 
-                    walker.on_leaf(depth.into(), node_morton.into(), data);
+                    walker.on_leaf(Morton3D::from_code(node_morton, depth.into()), data);
                 }
             }
 
@@ -45,7 +48,7 @@ impl<Data> Walk<Data> for CompactOctree<Data> {
 
                 current_branch_mask = mask & (mask - 1);
 
-                walker.on_branch_end(depth.into(), branch_morton.into());
+                walker.on_branch_end(Morton3D::from_code(branch_morton, depth.into()));
             }
         }
     }
@@ -68,7 +71,7 @@ impl<Data> DenseWalk<Data> for CompactOctree<Data> {
             // was skipped in the mask, i.e. it's empty.
             for empty_octant in cursor..octant {
                 let empty_morton = (current_morton << 3) | empty_octant as u32;
-                walker.on_empty(depth.into(), empty_morton.into());
+                walker.on_empty(Morton3D::from_code(empty_morton, depth.into()));
             }
 
             match node {
@@ -83,12 +86,15 @@ impl<Data> DenseWalk<Data> for CompactOctree<Data> {
                     current_branch_mask = *mask;
                     current_morton = node_morton;
                     cursor = 0;
-                    walker.on_branch_start((depth - 1).into(), node_morton.into(), *mask);
+                    walker.on_branch_start(
+                        Morton3D::from_code(node_morton, (depth - 1).into()),
+                        *mask,
+                    );
                 }
                 CompactOctreeNode::Leaf(data) => {
                     current_branch_mask &= current_branch_mask - 1;
                     cursor = octant + 1;
-                    walker.on_leaf(depth.into(), node_morton.into(), data);
+                    walker.on_leaf(Morton3D::from_code(node_morton, depth.into()), data);
                 }
             }
 
@@ -97,7 +103,7 @@ impl<Data> DenseWalk<Data> for CompactOctree<Data> {
                 // also empty and must be reported before closing the branch.
                 for empty_octant in cursor..8 {
                     let empty_morton = (current_morton << 3) | empty_octant as u32;
-                    walker.on_empty(depth.into(), empty_morton.into());
+                    walker.on_empty(Morton3D::from_code(empty_morton, depth.into()));
                 }
 
                 depth -= 1;
@@ -106,7 +112,7 @@ impl<Data> DenseWalk<Data> for CompactOctree<Data> {
                 current_morton >>= 3;
                 current_branch_mask = mask & (mask - 1);
                 cursor = pending_cursor[depth];
-                walker.on_branch_end(depth.into(), branch_morton.into());
+                walker.on_branch_end(Morton3D::from_code(branch_morton, depth.into()));
             }
         }
     }

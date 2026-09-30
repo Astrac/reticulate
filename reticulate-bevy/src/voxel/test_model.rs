@@ -203,7 +203,7 @@ fn add_fractal_staircase(octree: &mut Fixed8Octree<()>) {
     let total_voxels_to_populate = max_stress_code + 1;
 
     for code in 0..total_voxels_to_populate {
-        let coords = Coords3D::from_morton_unscaled(Morton3D::from(code));
+        let coords = Coords3D::from_morton_unscaled(Morton3D::from_code_max_depth(code));
         octree.update(coords, Some(()));
     }
 }

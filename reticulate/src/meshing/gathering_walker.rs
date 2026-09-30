@@ -1,5 +1,5 @@
 use crate::{
-    DenseWalker, Depth, Morton3D,
+    DenseWalker, Morton3D,
     axis::*,
     meshing::bitfields::{Bitfields, MaterialId},
 };
@@ -17,18 +17,11 @@ impl<'a, M> GatheringWalker<'a, M> {
         }
     }
 
-    fn set_transitions(
-        &mut self,
-        axis: Axis,
-        morton: Morton3D,
-        depth: Depth,
-        material: MaterialId,
-    ) {
-        let (morton_2d, layer) = morton.projected_axis_morton(axis, depth);
+    fn set_transitions(&mut self, axis: Axis, morton: Morton3D, material: MaterialId) {
+        let (morton_2d, layer) = morton.projected_axis_morton(axis);
         self.bitfields.material.iterate_materials(
             axis,
             morton_2d,
-            depth,
             |existing_material, coords, area| {
                 if existing_material != material {
                     self.bitfields
@@ -38,7 +31,7 @@ impl<'a, M> GatheringWalker<'a, M> {
             },
         );
 
-        self.bitfields.material.fill(axis, morton, depth, material);
+        self.bitfields.material.fill(axis, morton, material);
     }
 }
 
@@ -46,20 +39,20 @@ impl<'a, M, Data> DenseWalker<Data> for GatheringWalker<'a, M>
 where
     M: Fn(&Data) -> MaterialId,
 {
-    fn on_branch_start(&mut self, _depth: Depth, _morton: Morton3D, _children_mask: u8) {}
+    fn on_branch_start(&mut self, _morton: Morton3D, _children_mask: u8) {}
 
-    fn on_branch_end(&mut self, _depth: Depth, _morton: Morton3D) {}
+    fn on_branch_end(&mut self, _morton: Morton3D) {}
 
-    fn on_leaf(&mut self, depth: Depth, morton: Morton3D, data: &Data) {
+    fn on_leaf(&mut self, morton: Morton3D, data: &Data) {
         let material = (self.to_material)(data);
-        self.set_transitions(Axis::X, morton, depth, material);
-        self.set_transitions(Axis::Y, morton, depth, material);
-        self.set_transitions(Axis::Z, morton, depth, material);
+        self.set_transitions(Axis::X, morton, material);
+        self.set_transitions(Axis::Y, morton, material);
+        self.set_transitions(Axis::Z, morton, material);
     }
 
-    fn on_empty(&mut self, depth: Depth, morton: Morton3D) {
-        self.set_transitions(Axis::X, morton, depth, 0);
-        self.set_transitions(Axis::Y, morton, depth, 0);
-        self.set_transitions(Axis::Z, morton, depth, 0);
+    fn on_empty(&mut self, morton: Morton3D) {
+        self.set_transitions(Axis::X, morton, 0);
+        self.set_transitions(Axis::Y, morton, 0);
+        self.set_transitions(Axis::Z, morton, 0);
     }
 }
