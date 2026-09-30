@@ -437,3 +437,35 @@ fn weave(cells: &[u32]) -> Vec<Triangle2D> {
     }
     out
 }
+
+/// A collinear bottom chain, (1,0) and (2,1), under an apex at (3,2). Without
+/// the skip in the zipper this emits the zero-area triangle (3,2),(1,0),(2,1).
+#[test]
+fn collinear_bottom_vertex_is_skipped_not_connected() {
+    let cells = [0b0010, 0b1110, 0b0110]; // .x.. / .xxx / .xx.
+    let tris = weave(&cells);
+    assert_covers_exactly(&tris, &cells);
+    assert!(
+        tris.iter().all(|t| area2(t) != 0),
+        "zero-area triangle: {tris:?}"
+    );
+}
+
+/// A staircase growing to the left leaves a pending diagonal, (6,1)-(7,0), and
+/// no top vertex to close it. Without the break this emits the zero-area
+/// triangle (3,2),(4,1),(5,0).
+#[test]
+fn pending_diagonal_is_left_for_a_later_strip() {
+    let cells = [0b100, 0b110, 0b111].map(|m: u32| m << 2); // ..x / .xx / xxx, moved right
+    let tris = weave(&cells);
+    assert_covers_exactly(&tris, &cells);
+    assert!(
+        tris.iter().all(|t| area2(t) != 0),
+        "zero-area triangle: {tris:?}"
+    );
+}
+
+fn area2(t: &Triangle2D) -> i32 {
+    let [(x0, y0), (x1, y1), (x2, y2)] = t.vertices.map(|(c, r)| (c as i32, r as i32));
+    (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)
+}

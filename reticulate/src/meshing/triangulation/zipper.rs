@@ -1,4 +1,6 @@
-use crate::meshing::triangulation::{Triangle2D, stepper::INACTIVE_VERTEX};
+use crate::meshing::triangulation::Triangle2D;
+
+const INACTIVE_VERTEX_U32: u32 = u32::MAX;
 
 #[derive(Clone, Debug, Default)]
 pub struct Zipper {
@@ -9,82 +11,66 @@ pub struct Zipper {
 impl Zipper {
     pub fn zip(
         &mut self,
-        run_mask: u32,
+        run_scan_mask: u32,
         top_height: usize,
         top_columns_mask: u32,
         on_triangle: &mut impl FnMut(Triangle2D),
     ) {
-        let mut triangle = Triangle2D::default();
-        let mut bottom_u_mask = self.bottom_columns_mask & run_mask;
-        let mut top_u_mask = top_columns_mask & run_mask;
+        let mut top_mask = top_columns_mask & run_scan_mask;
+        let mut bottom_mask = self.bottom_columns_mask & run_scan_mask;
 
-        let (Some(mut top_u), Some(mut bottom_u)) =
-            (top_u_mask.lowest_one(), bottom_u_mask.lowest_one())
+        let (Some(mut top), Some(mut bottom)) = (top_mask.lowest_one(), bottom_mask.lowest_one())
         else {
             return;
         };
 
-        top_u_mask -= top_u_mask.isolate_lowest_one();
-        bottom_u_mask -= bottom_u_mask.isolate_lowest_one();
+        top_mask &= top_mask - 1;
+        bottom_mask &= bottom_mask - 1;
+
+        let height = |column: u32| self.bottom_column_heights[column as usize];
 
         loop {
-            triangle.vertices[0] = (top_u as u8, top_height as u8);
-            triangle.vertices[1] = (
-                bottom_u as u8,
-                self.bottom_column_heights[bottom_u as usize],
-            );
+            let (next_top, next_bottom) = (top_mask.lowest_one(), bottom_mask.lowest_one());
+            let next_top = next_top.unwrap_or(INACTIVE_VERTEX_U32);
+            let next_bottom = next_bottom.unwrap_or(INACTIVE_VERTEX_U32);
 
-            let next_top = top_u_mask
-                .lowest_one()
-                .map(|v| v as u8)
-                .unwrap_or(INACTIVE_VERTEX);
-            let next_bottom = bottom_u_mask
-                .lowest_one()
-                .map(|v| v as u8)
-                .unwrap_or(INACTIVE_VERTEX);
-
-            // A cliff is when the next bottom vertex is below the current one
-            let is_bottom_cliff = next_bottom != INACTIVE_VERTEX
-                && self.bottom_column_heights[next_bottom as usize]
-                    < self.bottom_column_heights[bottom_u as usize];
-
-            if next_bottom == INACTIVE_VERTEX && next_top == INACTIVE_VERTEX {
-                // No vertices remaining
+            if next_top == INACTIVE_VERTEX_U32 && next_bottom == INACTIVE_VERTEX_U32 {
                 break;
-            } else if next_top != INACTIVE_VERTEX && (next_top < next_bottom || is_bottom_cliff) {
-                // Choose next_top if it is closer or if next bottom is a cliff
-                top_u_mask -= top_u_mask.isolate_lowest_one();
-                top_u = next_top as u32;
+            }
 
-                // Emit triangle
-                triangle.vertices[2] = (top_u as u8, top_height as u8);
-                on_triangle(triangle);
-            } else if is_bottom_cliff && bottom_u > top_u {
-                // TODO - This is a new valley, it should trigger discovery
+            let diagonal_ahead =
+                next_bottom != INACTIVE_VERTEX_U32 && height(next_bottom) < height(bottom);
+
+            if next_top != INACTIVE_VERTEX_U32 && (next_top < next_bottom || diagonal_ahead) {
+                top_mask &= top_mask - 1;
+                on_triangle(Triangle2D {
+                    vertices: [
+                        (top as u8, top_height as u8),
+                        (bottom as u8, height(bottom)),
+                        (next_top as u8, top_height as u8),
+                    ],
+                });
+                top = next_top;
+            } else if diagonal_ahead && bottom > top {
                 break;
-            } else if !is_bottom_cliff && (next_bottom as u32) < top_u {
-                // Skip bottom vertices that are not needed on this run but don't remove
-                // them from present/vertices
-                bottom_u_mask -= bottom_u_mask.isolate_lowest_one();
-                bottom_u = next_bottom as u32;
             } else {
-                // Otherwise choose next_bottom
-                bottom_u_mask -= bottom_u_mask.isolate_lowest_one();
-                bottom_u = next_bottom as u32;
-
-                // Remove this vertex
-                self.bottom_columns_mask &= !(1 << bottom_u);
-
-                // Emit triangle
-                triangle.vertices[2] = (
-                    bottom_u as u8,
-                    self.bottom_column_heights[bottom_u as usize],
-                );
-                on_triangle(triangle);
+                let skip = !diagonal_ahead && next_bottom < top;
+                bottom_mask &= bottom_mask - 1;
+                if !skip {
+                    self.bottom_columns_mask &= !(1 << next_bottom);
+                    on_triangle(Triangle2D {
+                        vertices: [
+                            (top as u8, top_height as u8),
+                            (bottom as u8, height(bottom)),
+                            (next_bottom as u8, height(next_bottom)),
+                        ],
+                    });
+                }
+                bottom = next_bottom;
             }
         }
 
-        self.bottom_columns_mask |= 1 << bottom_u;
+        self.bottom_columns_mask |= 1 << bottom;
     }
 
     #[inline(always)]
