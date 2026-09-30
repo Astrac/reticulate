@@ -19,5 +19,7 @@ pub use morton_3d::Morton3D;
 pub use octree::{CompactOctree, Fixed8Octree};
 pub use walking::{DenseWalk, DenseWalker, Walk, Walker};
 
+pub type ChunkCoord = u8;
+
 #[cfg(test)]
 mod tests;

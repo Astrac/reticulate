@@ -1,5 +1,5 @@
 use crate::{
-    Coords3D,
+    ChunkCoord, Coords3D,
     face::Face,
     meshing::{bitfields::MaterialId, triangulation::Triangle2D},
 };
@@ -15,7 +15,7 @@ impl Triangle {
     #[inline(always)]
     pub const fn from_strip_triangle(
         face: Face,
-        axis_coord: u8,
+        axis_coord: ChunkCoord,
         strip_triangle: Triangle2D,
         material: MaterialId,
     ) -> Triangle {

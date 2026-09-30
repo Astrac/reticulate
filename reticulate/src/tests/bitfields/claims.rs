@@ -1,5 +1,5 @@
 use crate::{
-    Coords2D,
+    ChunkCoord, Coords2D,
     axis::{AXES, Axis},
     meshing::{
         bitfields::{Claims, ClaimsMask, PLANE_SIDE},
@@ -24,7 +24,10 @@ fn build(s: &mut [Vec<u64>; 3]) -> Claims<'_> {
 }
 
 fn uv(u: u32, v: u32) -> Coords2D {
-    Coords2D { u, v }
+    Coords2D {
+        u: u as ChunkCoord,
+        v: v as ChunkCoord,
+    }
 }
 
 fn shape_with(cells: &[(usize, usize)]) -> [u32; PLANE_SIDE] {

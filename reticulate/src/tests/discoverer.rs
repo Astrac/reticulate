@@ -64,8 +64,8 @@ fn fixture(solid: &[(usize, usize, usize)]) -> Fixture {
                 let (xi, yi, zi) = (x as isize, y as isize, z as isize);
                 let here = at(xi, yi, zi);
                 let uv = |u: usize, v: usize| Coords2D {
-                    u: u as u32,
-                    v: v as u32,
+                    u: u as u8,
+                    v: v as u8,
                 };
                 if here != at(xi - 1, yi, zi) {
                     parity.set_transition(Axis::X, x, uv(y, z), 1);
@@ -103,8 +103,8 @@ fn discover(f: &mut Fixture, axis: Axis, axis_coord: usize, seed: (u32, u32)) ->
         SurfaceLayer::new(axis, axis_coord),
         &claims,
         Coords2D {
-            u: seed.0,
-            v: seed.1,
+            u: seed.0 as u8,
+            v: seed.1 as u8,
         },
     )
 }

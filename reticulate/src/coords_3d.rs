@@ -1,21 +1,23 @@
-use crate::{Morton3D, axis::Axis, octree::TREE_DEPTH, utils::bitmasks::take_one_every_3_bits};
+use crate::{
+    ChunkCoord, Morton3D, axis::Axis, octree::TREE_DEPTH, utils::bitmasks::take_one_every_3_bits,
+};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Coords3D {
-    pub x: u8,
-    pub y: u8,
-    pub z: u8,
+    pub x: ChunkCoord,
+    pub y: ChunkCoord,
+    pub z: ChunkCoord,
 }
 
 impl Coords3D {
     #[inline(always)]
     pub const fn from_morton(value: Morton3D) -> Self {
         let morton = value.code;
-        let depth_shift = (TREE_DEPTH as u8 - value.depth().0) * 3;
+        let depth_shift = (TREE_DEPTH as ChunkCoord - value.depth().0) * 3;
         Coords3D {
-            x: take_one_every_3_bits(morton << depth_shift) as u8,
-            y: take_one_every_3_bits(morton << depth_shift >> 1) as u8,
-            z: take_one_every_3_bits(morton << depth_shift >> 2) as u8,
+            x: take_one_every_3_bits(morton << depth_shift) as ChunkCoord,
+            y: take_one_every_3_bits(morton << depth_shift >> 1) as ChunkCoord,
+            z: take_one_every_3_bits(morton << depth_shift >> 2) as ChunkCoord,
         }
     }
 
@@ -23,9 +25,9 @@ impl Coords3D {
     pub const fn from_morton_unscaled(value: Morton3D) -> Self {
         let morton = value.code;
         Coords3D {
-            x: take_one_every_3_bits(morton) as u8,
-            y: take_one_every_3_bits(morton >> 1) as u8,
-            z: take_one_every_3_bits(morton >> 2) as u8,
+            x: take_one_every_3_bits(morton) as ChunkCoord,
+            y: take_one_every_3_bits(morton >> 1) as ChunkCoord,
+            z: take_one_every_3_bits(morton >> 2) as ChunkCoord,
         }
     }
 
@@ -34,17 +36,17 @@ impl Coords3D {
         match axis {
             Axis::X => Coords3D {
                 x: axis_coord,
-                y: uv_coords.1 as u8,
-                z: uv_coords.0 as u8,
+                y: uv_coords.1 as ChunkCoord,
+                z: uv_coords.0 as ChunkCoord,
             },
             Axis::Y => Coords3D {
-                x: uv_coords.0 as u8,
+                x: uv_coords.0 as ChunkCoord,
                 y: axis_coord,
-                z: uv_coords.1 as u8,
+                z: uv_coords.1 as ChunkCoord,
             },
             Axis::Z => Coords3D {
-                x: uv_coords.1 as u8,
-                y: uv_coords.0 as u8,
+                x: uv_coords.1 as ChunkCoord,
+                y: uv_coords.0 as ChunkCoord,
                 z: axis_coord,
             },
         }

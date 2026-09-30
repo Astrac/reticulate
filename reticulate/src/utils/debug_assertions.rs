@@ -37,7 +37,10 @@ pub fn find_unclaimed_faces(
                 while bits != 0 {
                     let v = bits.trailing_zeros();
                     bits &= bits - 1;
-                    let coords = crate::Coords2D { u: u as u32, v };
+                    let coords = crate::Coords2D {
+                        u: u as u8,
+                        v: v as u8,
+                    };
                     if occlusion.is_unclaimed(SurfaceLayer::new(axis, axis_coord), coords) {
                         missing.push((axis, axis_coord, coords));
                     }

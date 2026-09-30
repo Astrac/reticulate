@@ -1,4 +1,4 @@
-use crate::{Coords2D, Depth, utils::bitmasks};
+use crate::{ChunkCoord, Coords2D, Depth, utils::bitmasks};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Morton2D {
@@ -26,21 +26,24 @@ impl Morton2D {
     #[inline(always)]
     pub const fn as_coords(&self) -> Coords2D {
         let (u, v) = decode_morton(self.code);
-        Coords2D { u, v }
+        Coords2D {
+            u: u as ChunkCoord,
+            v: v as ChunkCoord,
+        }
     }
 
     #[inline(always)]
-    pub const fn from_uv_max_depth(u: u32, v: u32) -> Morton2D {
+    pub const fn from_uv_max_depth(u: ChunkCoord, v: ChunkCoord) -> Morton2D {
         Morton2D {
-            code: encode_morton(u, v),
+            code: encode_morton(u as u32, v as u32),
             depth: Depth::MAX,
         }
     }
 
     #[inline(always)]
-    pub const fn from_uv_and_depth(u: u32, v: u32, depth: Depth) -> Morton2D {
+    pub const fn from_uv_and_depth(u: ChunkCoord, v: ChunkCoord, depth: Depth) -> Morton2D {
         Morton2D {
-            code: encode_morton(u, v),
+            code: encode_morton(u as u32, v as u32),
             depth,
         }
     }

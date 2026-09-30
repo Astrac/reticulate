@@ -117,8 +117,8 @@ fn fixture(voxels: &[((u8, u8, u8), MaterialId)]) -> Fixture {
                     let here = f.grid.at(voxel(a, c, u, v));
                     if below != here {
                         let uv = Coords2D {
-                            u: u as u32,
-                            v: v as u32,
+                            u: u as u8,
+                            v: v as u8,
                         };
                         parity.set_transition(AXES[a], c as usize, uv, 1);
                     }

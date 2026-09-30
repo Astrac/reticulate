@@ -1,5 +1,5 @@
 use crate::{
-    Coords2D, Coords3D, Depth, axis::Axis, morton_2d::Morton2D, octree::TREE_DEPTH,
+    ChunkCoord, Coords2D, Coords3D, Depth, axis::Axis, morton_2d::Morton2D, octree::TREE_DEPTH,
     utils::bitmasks::*,
 };
 
@@ -11,7 +11,12 @@ pub struct Morton3D {
 
 impl Morton3D {
     #[inline(always)]
-    pub const fn from_xyz_and_depth(x: u8, y: u8, z: u8, depth: Depth) -> Morton3D {
+    pub const fn from_xyz_and_depth(
+        x: ChunkCoord,
+        y: ChunkCoord,
+        z: ChunkCoord,
+        depth: Depth,
+    ) -> Morton3D {
         Morton3D {
             code: (interleave_two_zeroes(z) << 2)
                 | (interleave_two_zeroes(y) << 1)
@@ -21,7 +26,7 @@ impl Morton3D {
     }
 
     #[inline(always)]
-    pub const fn from_xyz_max_depth(x: u8, y: u8, z: u8) -> Morton3D {
+    pub const fn from_xyz_max_depth(x: ChunkCoord, y: ChunkCoord, z: ChunkCoord) -> Morton3D {
         Morton3D {
             code: (interleave_two_zeroes(z) << 2)
                 | (interleave_two_zeroes(y) << 1)
@@ -74,7 +79,7 @@ impl Morton3D {
     }
 
     #[inline(always)]
-    pub const fn child_octant(&self, octant: u8) -> Morton3D {
+    pub const fn child_octant(&self, octant: ChunkCoord) -> Morton3D {
         Morton3D {
             code: (self.code << 3) | (octant as u32),
             depth: Depth(self.depth.0 + 1),
@@ -90,7 +95,10 @@ impl Morton3D {
     #[inline(always)]
     pub const fn projected_axis_morton(&self, axis: Axis) -> (Morton2D, usize) {
         let ((u, v), layer) = self.projected_axis_uv(axis);
-        (Morton2D::from_uv_and_depth(u, v, self.depth), layer as usize)
+        (
+            Morton2D::from_uv_and_depth(u, v, self.depth),
+            layer as usize,
+        )
     }
 
     #[inline(always)]
@@ -99,7 +107,7 @@ impl Morton3D {
     }
 
     #[inline(always)]
-    const fn projected_axis_uv(&self, axis: Axis) -> ((u32, u32), usize) {
+    const fn projected_axis_uv(&self, axis: Axis) -> ((ChunkCoord, ChunkCoord), usize) {
         let morton_3d = self.code << ((TREE_DEPTH - self.depth.as_usize()) * 3);
         let (u, v, layer) = match axis {
             Axis::X => (
@@ -119,6 +127,6 @@ impl Morton3D {
             ),
         };
 
-        ((u, v), layer as usize)
+        ((u as ChunkCoord, v as ChunkCoord), layer as usize)
     }
 }

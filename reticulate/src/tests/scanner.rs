@@ -75,8 +75,8 @@ fn fixture_with_materials(voxels: &[((usize, usize, usize), MaterialId)]) -> Fix
                 let (xi, yi, zi) = (x as isize, y as isize, z as isize);
                 let here = at(xi, yi, zi);
                 let uv = |u: usize, v: usize| Coords2D {
-                    u: u as u32,
-                    v: v as u32,
+                    u: u as u8,
+                    v: v as u8,
                 };
                 if here != at(xi - 1, yi, zi) {
                     parity.set_transition(Axis::X, x, uv(y, z), 1);
@@ -119,8 +119,8 @@ fn scan(
         &claims,
         SurfaceLayer::new(axis, axis_coord),
         Coords2D {
-            u: seed.0,
-            v: seed.1,
+            u: seed.0 as u8,
+            v: seed.1 as u8,
         },
         |t| tris.push(t),
     );
