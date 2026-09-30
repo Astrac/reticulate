@@ -1,5 +1,5 @@
 use crate::{
-    Coords2D,
+    ChunkCoord, Coords2D,
     axis::Axis,
     meshing::{
         bitfields::{Claims, ClaimsMask, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
@@ -68,13 +68,13 @@ fn fixture(solid: &[(usize, usize, usize)]) -> Fixture {
                     v: v as u8,
                 };
                 if here != at(xi - 1, yi, zi) {
-                    parity.set_transition(Axis::X, x, uv(y, z), 1);
+                    parity.set_transition(SurfaceLayer::new(Axis::X, x as ChunkCoord), uv(y, z), 1);
                 }
                 if here != at(xi, yi - 1, zi) {
-                    parity.set_transition(Axis::Y, y, uv(z, x), 1);
+                    parity.set_transition(SurfaceLayer::new(Axis::Y, y as ChunkCoord), uv(z, x), 1);
                 }
                 if here != at(xi, yi, zi - 1) {
-                    parity.set_transition(Axis::Z, z, uv(x, y), 1);
+                    parity.set_transition(SurfaceLayer::new(Axis::Z, z as ChunkCoord), uv(x, y), 1);
                 }
             }
         }
@@ -96,7 +96,7 @@ fn plane_fixture(cells_rc: &[(usize, usize)]) -> Fixture {
     fixture(&voxels)
 }
 
-fn discover(f: &mut Fixture, axis: Axis, axis_coord: usize, seed: (u32, u32)) -> [u32; PLANE_SIDE] {
+fn discover(f: &mut Fixture, axis: Axis, axis_coord: u8, seed: (u32, u32)) -> [u32; PLANE_SIDE] {
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
     Discoverer::new(&parity, SurfaceLayer::new(axis, axis_coord)).discover(

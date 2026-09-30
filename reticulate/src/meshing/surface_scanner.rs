@@ -44,7 +44,6 @@ where
         let axis = face.axis();
         let (morton, axis_coord) = morton.projected_axis_morton(axis);
         let layer = SurfaceLayer::new(axis, axis_coord);
-
         let discoverer = Discoverer::new(&self.parity, layer);
         let scanner = Weaver::new(discoverer);
 
@@ -67,7 +66,7 @@ where
             });
 
             #[cfg(debug_assertions)]
-            debug_assert_within_footprint(&self.parity, axis, layer.layer, &filled);
+            debug_assert_within_footprint(&self.parity, layer, &filled);
 
             self.claims.claim(layer, &filled);
         });

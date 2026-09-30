@@ -1,4 +1,8 @@
-use crate::{Coords2D, axis::*, meshing::bitfields::PLANE_SIDE};
+use crate::{
+    Coords2D,
+    axis::*,
+    meshing::{bitfields::PLANE_SIDE, surface_layer::SurfaceLayer},
+};
 
 #[repr(transparent)]
 #[derive(Debug)]
@@ -35,16 +39,10 @@ pub struct Parity<'a> {
 
 impl<'a> Parity<'a> {
     #[inline(always)]
-    pub fn set_transition(
-        &mut self,
-        axis: Axis,
-        axis_coord: usize,
-        area_coords: Coords2D,
-        area_size: usize,
-    ) {
-        let target = self.masks[axis.as_usize()].0.as_mut();
+    pub fn set_transition(&mut self, layer: SurfaceLayer, area_coords: Coords2D, area_size: usize) {
+        let target = self.masks[layer.axis.as_usize()].0.as_mut();
         let side = area_size.isqrt();
-        let axis_coord = axis_coord as u32;
+        let axis_coord = layer.layer as u32;
         let bit = 1u32 << axis_coord;
         let u = area_coords.u as usize;
         let v = area_coords.v as usize;
@@ -57,10 +55,11 @@ impl<'a> Parity<'a> {
     }
 
     #[inline(always)]
-    pub fn gather_edges(&self, axis: Axis, layer: usize) -> &[u32] {
-        self.masks[axis.as_usize()].get_layer(layer)
+    pub fn gather_edges(&self, layer: SurfaceLayer) -> &[u32] {
+        self.masks[layer.axis.as_usize()].get_layer(layer.layer as usize)
     }
 
+    // TODO - Too many usizes here, this is error-prone, find a better way
     #[inline(always)]
     pub fn gather_guard(
         &self,

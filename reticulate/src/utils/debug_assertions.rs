@@ -1,5 +1,5 @@
 use crate::{
-    axis::{AXES, Axis},
+    axis::AXES,
     meshing::{
         bitfields::{PLANE_SIDE, Parity},
         surface_layer::SurfaceLayer,
@@ -8,17 +8,16 @@ use crate::{
 
 pub fn debug_assert_within_footprint(
     parity: &Parity,
-    axis: Axis,
-    layer: usize,
+    layer: SurfaceLayer,
     filled: &[u32; PLANE_SIDE],
 ) {
     for (u, &claimed) in filled.iter().enumerate() {
-        let footprint = gather_footprint(parity, axis, layer, u);
+        let footprint = gather_footprint(parity, layer, u);
         debug_assert!(
             claimed & !footprint == 0,
             "strip claimed non-face cells on {:?}@{}, row {u}: {:032b}",
-            axis,
-            layer,
+            layer.axis,
+            layer.layer,
             claimed & !footprint
         );
     }
@@ -33,7 +32,8 @@ pub fn find_unclaimed_faces(
     for axis in AXES {
         for axis_coord in 0..crate::meshing::bitfields::PLANE_SIDE {
             for u in 0..crate::meshing::bitfields::PLANE_SIDE {
-                let mut bits = gather_footprint(&parity, axis, axis_coord, u);
+                let mut bits =
+                    gather_footprint(&parity, SurfaceLayer::new(axis, axis_coord as u8), u);
                 while bits != 0 {
                     let v = bits.trailing_zeros();
                     bits &= bits - 1;
@@ -41,7 +41,7 @@ pub fn find_unclaimed_faces(
                         u: u as u8,
                         v: v as u8,
                     };
-                    if occlusion.is_unclaimed(SurfaceLayer::new(axis, axis_coord), coords) {
+                    if occlusion.is_unclaimed(SurfaceLayer::new(axis, axis_coord as u8), coords) {
                         missing.push((axis, axis_coord, coords));
                     }
                 }
@@ -51,11 +51,11 @@ pub fn find_unclaimed_faces(
     missing
 }
 
-fn gather_footprint(parity: &Parity, axis: Axis, axis_coord: usize, u: usize) -> u32 {
-    let words = parity.masks[axis.as_usize()].get_layer(u);
+fn gather_footprint(parity: &Parity, layer: SurfaceLayer, u: usize) -> u32 {
+    let words = parity.masks[layer.axis.as_usize()].get_layer(u);
     let mut row = 0u32;
     for v in 0..PLANE_SIDE {
-        row |= ((words[v] >> axis_coord) & 1) << v;
+        row |= ((words[v] >> layer.layer) & 1) << v;
     }
     row
 }

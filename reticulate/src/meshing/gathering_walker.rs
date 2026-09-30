@@ -1,7 +1,10 @@
 use crate::{
     DenseWalker, Morton3D,
     axis::*,
-    meshing::bitfields::{Bitfields, MaterialId},
+    meshing::{
+        bitfields::{Bitfields, MaterialId},
+        surface_layer::SurfaceLayer,
+    },
 };
 
 pub struct GatheringWalker<'a, M> {
@@ -24,9 +27,11 @@ impl<'a, M> GatheringWalker<'a, M> {
             morton_2d,
             |existing_material, coords, area| {
                 if existing_material != material {
-                    self.bitfields
-                        .parity
-                        .set_transition(axis, layer, coords, area);
+                    self.bitfields.parity.set_transition(
+                        SurfaceLayer::new(axis, layer),
+                        coords,
+                        area,
+                    );
                 }
             },
         );

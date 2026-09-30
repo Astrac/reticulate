@@ -1,5 +1,6 @@
 use crate::{
-    ChunkCoord, Morton3D, axis::Axis, octree::TREE_DEPTH, utils::bitmasks::take_one_every_3_bits,
+    ChunkCoord, Morton3D, axis::Axis, meshing::surface_layer::SurfaceLayer, octree::TREE_DEPTH,
+    utils::bitmasks::take_one_every_3_bits,
 };
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -32,22 +33,22 @@ impl Coords3D {
     }
 
     #[inline(always)]
-    pub const fn from_2d_projection(axis: Axis, axis_coord: u8, uv_coords: (u8, u8)) -> Coords3D {
-        match axis {
+    pub const fn from_2d_projection(layer: SurfaceLayer, uv_coords: (u8, u8)) -> Coords3D {
+        match layer.axis {
             Axis::X => Coords3D {
-                x: axis_coord,
+                x: layer.layer as ChunkCoord,
                 y: uv_coords.1 as ChunkCoord,
                 z: uv_coords.0 as ChunkCoord,
             },
             Axis::Y => Coords3D {
                 x: uv_coords.0 as ChunkCoord,
-                y: axis_coord,
+                y: layer.layer as ChunkCoord,
                 z: uv_coords.1 as ChunkCoord,
             },
             Axis::Z => Coords3D {
                 x: uv_coords.1 as ChunkCoord,
                 y: uv_coords.0 as ChunkCoord,
-                z: axis_coord,
+                z: layer.layer as ChunkCoord,
             },
         }
     }

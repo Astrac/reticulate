@@ -87,18 +87,15 @@ impl Morton3D {
     }
 
     #[inline(always)]
-    pub const fn projected_axis_coords(&self, axis: Axis) -> (Coords2D, usize) {
+    pub const fn projected_axis_coords(&self, axis: Axis) -> (Coords2D, u8) {
         let ((u, v), layer) = self.projected_axis_uv(axis);
-        (Coords2D { u, v }, layer as usize)
+        (Coords2D { u, v }, layer)
     }
 
     #[inline(always)]
-    pub const fn projected_axis_morton(&self, axis: Axis) -> (Morton2D, usize) {
+    pub const fn projected_axis_morton(&self, axis: Axis) -> (Morton2D, u8) {
         let ((u, v), layer) = self.projected_axis_uv(axis);
-        (
-            Morton2D::from_uv_and_depth(u, v, self.depth),
-            layer as usize,
-        )
+        (Morton2D::from_uv_and_depth(u, v, self.depth), layer)
     }
 
     #[inline(always)]
@@ -107,7 +104,7 @@ impl Morton3D {
     }
 
     #[inline(always)]
-    const fn projected_axis_uv(&self, axis: Axis) -> ((ChunkCoord, ChunkCoord), usize) {
+    const fn projected_axis_uv(&self, axis: Axis) -> ((ChunkCoord, ChunkCoord), u8) {
         let morton_3d = self.code << ((TREE_DEPTH - self.depth.as_usize()) * 3);
         let (u, v, layer) = match axis {
             Axis::X => (
@@ -127,6 +124,6 @@ impl Morton3D {
             ),
         };
 
-        ((u as ChunkCoord, v as ChunkCoord), layer as usize)
+        ((u as ChunkCoord, v as ChunkCoord), layer as ChunkCoord)
     }
 }

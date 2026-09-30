@@ -16,14 +16,14 @@ impl<'a> ClaimsMask<'a> {
     }
 
     #[inline(always)]
-    fn plane(&self, axis_coord: usize) -> &[u32] {
-        let i = axis_coord * PLANE_SIDE;
+    fn plane(&self, index: usize) -> &[u32] {
+        let i = index * PLANE_SIDE;
         &self.0[i..i + PLANE_SIDE]
     }
 
     #[inline(always)]
-    fn plane_mut(&mut self, axis_coord: usize) -> &mut [u32] {
-        let i = axis_coord * PLANE_SIDE;
+    fn plane_mut(&mut self, index: usize) -> &mut [u32] {
+        let i = index * PLANE_SIDE;
         &mut self.0[i..i + PLANE_SIDE]
     }
 }
@@ -36,7 +36,7 @@ pub struct Claims<'a> {
 impl<'a> Claims<'a> {
     /// Adds `shape` (row u, bits over v) to the claimed cells of this plane.
     pub fn claim(&mut self, layer: SurfaceLayer, shape: &[u32; PLANE_SIDE]) {
-        let plane = self.masks[layer.axis.as_usize()].plane_mut(layer.layer);
+        let plane = self.masks[layer.axis.as_usize()].plane_mut(layer.layer as usize);
         for (word, &row) in plane.iter_mut().zip(shape.iter()) {
             debug_assert!(
                 *word & row == 0,
@@ -50,7 +50,7 @@ impl<'a> Claims<'a> {
     /// Claimed cells of row u, bits over v. A single word read, for step 2's guard.
     #[inline(always)]
     pub fn claimed_row(&self, layer: SurfaceLayer, u: usize) -> u32 {
-        self.masks[layer.axis.as_usize()].plane(layer.layer)[u]
+        self.masks[layer.axis.as_usize()].plane(layer.layer as usize)[u]
     }
 
     #[inline(always)]

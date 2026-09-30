@@ -1,7 +1,7 @@
 use bitvec::prelude::*;
 
 use crate::{
-    Coords2D, DenseWalker, Morton3D,
+    ChunkCoord, Coords2D, DenseWalker, Morton3D,
     axis::*,
     face::*,
     meshing::{
@@ -10,6 +10,7 @@ use crate::{
             CHUNK_VOLUME, Claims, ClaimsMask, MATERIAL_WORDS, Material, MaterialId, PARITY_WORDS,
             PLANE_SIDE, Parity, ParityMask,
         },
+        surface_layer::SurfaceLayer,
         surface_scanner::SurfaceScanner,
         surface_walker::SurfaceWalker,
     },
@@ -117,10 +118,10 @@ fn fixture(voxels: &[((u8, u8, u8), MaterialId)]) -> Fixture {
                     let here = f.grid.at(voxel(a, c, u, v));
                     if below != here {
                         let uv = Coords2D {
-                            u: u as u8,
-                            v: v as u8,
+                            u: u as ChunkCoord,
+                            v: v as ChunkCoord,
                         };
-                        parity.set_transition(AXES[a], c as usize, uv, 1);
+                        parity.set_transition(SurfaceLayer::new(AXES[a], c as ChunkCoord), uv, 1);
                     }
                 }
             }

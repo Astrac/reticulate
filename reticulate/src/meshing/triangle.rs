@@ -1,7 +1,7 @@
 use crate::{
     ChunkCoord, Coords3D,
     face::Face,
-    meshing::{bitfields::MaterialId, triangulation::Triangle2D},
+    meshing::{bitfields::MaterialId, surface_layer::SurfaceLayer, triangulation::Triangle2D},
 };
 
 #[derive(Clone, Debug)]
@@ -25,9 +25,18 @@ impl Triangle {
             face,
             material,
             vertices: [
-                Coords3D::from_2d_projection(axis, axis_coord, strip_triangle.vertices[0]),
-                Coords3D::from_2d_projection(axis, axis_coord, strip_triangle.vertices[1]),
-                Coords3D::from_2d_projection(axis, axis_coord, strip_triangle.vertices[2]),
+                Coords3D::from_2d_projection(
+                    SurfaceLayer::new(axis, axis_coord),
+                    strip_triangle.vertices[0],
+                ),
+                Coords3D::from_2d_projection(
+                    SurfaceLayer::new(axis, axis_coord),
+                    strip_triangle.vertices[1],
+                ),
+                Coords3D::from_2d_projection(
+                    SurfaceLayer::new(axis, axis_coord),
+                    strip_triangle.vertices[2],
+                ),
             ],
         }
     }

@@ -21,8 +21,9 @@ impl<'a> Discoverer<'a> {
         let rows_axis = columns_axis.next();
         Discoverer {
             parity,
-            edges: parity.gather_edges(rows_axis, layer.layer),
-            prev_edges: (layer.layer > 0).then(|| parity.gather_edges(rows_axis, layer.layer - 1)),
+            edges: parity.gather_edges(SurfaceLayer::new(rows_axis, layer.layer)),
+            prev_edges: (layer.layer > 0)
+                .then(|| parity.gather_edges(SurfaceLayer::new(rows_axis, layer.layer - 1))),
         }
     }
 
@@ -89,13 +90,17 @@ impl<'a> Discoverer<'a> {
         let columns_axis = layer.axis.next();
         let start = mask.trailing_zeros() as usize;
         let end = (32 - mask.leading_zeros()) as usize;
-        let mut g = self
-            .parity
-            .gather_guard(columns_axis, layer.layer, boundary, start, end);
+        let mut g =
+            self.parity
+                .gather_guard(columns_axis, layer.layer as usize, boundary, start, end);
         if layer.layer > 0 {
-            g |= self
-                .parity
-                .gather_guard(columns_axis, layer.layer - 1, boundary, start, end);
+            g |= self.parity.gather_guard(
+                columns_axis,
+                layer.layer as usize - 1,
+                boundary,
+                start,
+                end,
+            );
         }
         g & mask
     }

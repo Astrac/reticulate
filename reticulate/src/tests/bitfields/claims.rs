@@ -46,7 +46,7 @@ fn fresh_storage_is_all_pending() {
         for coord in 0..PLANE_SIDE {
             for u in 0..PLANE_SIDE as u32 {
                 for v in 0..PLANE_SIDE as u32 {
-                    assert!(c.is_unclaimed(SurfaceLayer::new(axis, coord), uv(u, v)));
+                    assert!(c.is_unclaimed(SurfaceLayer::new(axis, coord as ChunkCoord), uv(u, v)));
                 }
             }
         }

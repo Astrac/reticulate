@@ -1,5 +1,5 @@
 use crate::{
-    Coords2D,
+    ChunkCoord, Coords2D,
     axis::Axis,
     meshing::{
         bitfields::{Claims, ClaimsMask, MaterialId, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
@@ -75,17 +75,17 @@ fn fixture_with_materials(voxels: &[((usize, usize, usize), MaterialId)]) -> Fix
                 let (xi, yi, zi) = (x as isize, y as isize, z as isize);
                 let here = at(xi, yi, zi);
                 let uv = |u: usize, v: usize| Coords2D {
-                    u: u as u8,
-                    v: v as u8,
+                    u: u as ChunkCoord,
+                    v: v as ChunkCoord,
                 };
                 if here != at(xi - 1, yi, zi) {
-                    parity.set_transition(Axis::X, x, uv(y, z), 1);
+                    parity.set_transition(SurfaceLayer::new(Axis::X, x as ChunkCoord), uv(y, z), 1);
                 }
                 if here != at(xi, yi - 1, zi) {
-                    parity.set_transition(Axis::Y, y, uv(z, x), 1);
+                    parity.set_transition(SurfaceLayer::new(Axis::Y, y as ChunkCoord), uv(z, x), 1);
                 }
                 if here != at(xi, yi, zi - 1) {
-                    parity.set_transition(Axis::Z, z, uv(x, y), 1);
+                    parity.set_transition(SurfaceLayer::new(Axis::Z, z as ChunkCoord), uv(x, y), 1);
                 }
             }
         }
@@ -105,7 +105,7 @@ fn fixture(solid: &[(usize, usize, usize)]) -> Fixture {
 fn scan(
     f: &mut Fixture,
     axis: Axis,
-    axis_coord: usize,
+    axis_coord: ChunkCoord,
     seed: (u32, u32),
 ) -> ([u32; PLANE_SIDE], Vec<Triangle2D>) {
     let parity = parity_of(&mut f.parity);
@@ -115,16 +115,17 @@ fn scan(
         SurfaceLayer::new(axis, axis_coord),
     ));
     let mut tris = Vec::new();
+    let layer = SurfaceLayer::new(axis, axis_coord);
     let filled = scanner.from_seed(
         &claims,
-        SurfaceLayer::new(axis, axis_coord),
+        layer,
         Coords2D {
             u: seed.0 as u8,
             v: seed.1 as u8,
         },
         |t| tris.push(t),
     );
-    debug_assert_within_footprint(&parity, axis, axis_coord, &filled);
+    debug_assert_within_footprint(&parity, layer, &filled);
     (filled, tris)
 }
 
@@ -286,7 +287,7 @@ fn face_touching_chunk_top_closes_cleanly() {
 fn footprint_assertion_catches_non_face_cells() {
     let mut f = fixture(&[(2, 5, 9)]);
     let parity = parity_of(&mut f.parity);
-    debug_assert_within_footprint(&parity, Axis::X, 2, &cells(&[(5, 9), (5, 10)]));
+    debug_assert_within_footprint(&parity, SurfaceLayer::new(Axis::X, 2), &cells(&[(5, 9), (5, 10)]));
 }
 
 #[test]
