@@ -4,7 +4,7 @@ use crate::{
     meshing::{
         bitfields::{Claims, ClaimsMask, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
         surface_layer::SurfaceLayer,
-        triangulation::{discoverer::Discoverer, edges::Edges},
+        triangulation::{filler::Filler, edges::Edges},
     },
 };
 
@@ -101,9 +101,8 @@ fn discover(f: &mut Fixture, axis: Axis, axis_coord: u8, seed: (u32, u32)) -> [u
     let claims = claims_of(&mut f.claims);
     let layer = SurfaceLayer::new(axis, axis_coord);
     let edges = Edges::from_parity(&parity, layer);
-    Discoverer::new(&parity).discover(
+    Filler::new(&claims, &parity).fill_region(
         layer,
-        &claims,
         &edges,
         Coords2D {
             u: seed.0 as u8,

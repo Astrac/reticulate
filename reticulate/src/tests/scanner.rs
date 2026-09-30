@@ -5,7 +5,7 @@ use crate::{
         bitfields::{Claims, ClaimsMask, MaterialId, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
         surface_layer::SurfaceLayer,
         triangulation::{
-            Triangle2D, discoverer::Discoverer, edges::Edges, stepper::Stepper, weaver::Weaver,
+            Triangle2D, filler::Filler, edges::Edges, stepper::Stepper, weaver::Weaver,
         },
     },
     tests::assert_covers_exactly,
@@ -112,19 +112,24 @@ fn scan(
 ) -> ([u32; PLANE_SIDE], Vec<Triangle2D>) {
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
-    let scanner = Weaver::new(&parity, Discoverer::new(&parity));
+    let scanner = Weaver::new(&parity);
     let mut tris = Vec::new();
     let layer = SurfaceLayer::new(axis, axis_coord);
-    let filled = scanner.from_seed(
-        &claims,
+    let discoverer = Filler::new(&claims, &parity);
+    let edges = Edges::from_parity(&parity, layer);
+
+    let filled = discoverer.fill_region(
         layer,
+        &edges,
         Coords2D {
             u: seed.0 as u8,
             v: seed.1 as u8,
         },
-        |t| tris.push(t),
     );
+
+    scanner.weave_region(layer, &filled, |t| tris.push(t));
     debug_assert_within_footprint(&parity, layer, &filled);
+
     (filled, tris)
 }
 
@@ -437,19 +442,17 @@ fn scanner_weave_matches_reference_weave() {
     let mut f = plane_fixture(&shape);
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
-    let scanner = Weaver::new(&parity, Discoverer::new(&parity));
+    let scanner = Weaver::new(&parity);
     let seed = Coords2D { u: 0, v: 1 };
     let layer = SurfaceLayer::new(Axis::Y, 0);
     let edges = Edges::from_parity(&parity, layer);
-    let discoverer = Discoverer::new(&parity);
+    let discoverer = Filler::new(&claims, &parity);
 
-    let region = discoverer.discover(layer, &claims, &edges, seed);
+    let region = discoverer.fill_region(layer, &edges, seed);
     let reference = weave(&region); // the helper the stepper tests use
 
     let mut tris = Vec::new();
-    scanner.from_seed(&claims, SurfaceLayer::new(Axis::Y, 0), seed, |t| {
-        tris.push(t)
-    });
+    scanner.weave_region(SurfaceLayer::new(Axis::Y, 0), &region, |t| tris.push(t));
     assert_eq!(tris, reference);
 }
 

@@ -1,34 +1,29 @@
 use crate::{
-    Coords2D,
     meshing::{
-        bitfields::{Claims, PLANE_SIDE, Parity},
+        bitfields::{PLANE_SIDE, Parity},
         surface_layer::SurfaceLayer,
-        triangulation::{Triangle2D, discoverer::Discoverer, edges::Edges, stepper::Stepper},
+        triangulation::{Triangle2D, edges::Edges, stepper::Stepper},
     },
     utils::bitmasks,
 };
 
 pub struct Weaver<'a> {
     parity: &'a Parity<'a>,
-    discoverer: Discoverer<'a>,
 }
 
 impl<'a> Weaver<'a> {
-    pub fn new(parity: &'a Parity<'a>, discoverer: Discoverer<'a>) -> Self {
-        Weaver { parity, discoverer }
+    pub fn new(parity: &'a Parity<'a>) -> Self {
+        Weaver { parity }
     }
 
-    pub fn from_seed(
+    pub fn weave_region(
         &self,
-        claims: &Claims,
         layer: SurfaceLayer,
-        seed: Coords2D,
+        region: &[u32; PLANE_SIDE],
         mut emit: impl FnMut(Triangle2D),
-    ) -> [u32; PLANE_SIDE] {
+    ) {
         let edges = Edges::from_parity(&self.parity, layer);
-        let region = self.discoverer.discover(layer, claims, &edges, seed);
         self.weave(layer, &edges, &region, &mut emit);
-        region
     }
 
     fn weave(
