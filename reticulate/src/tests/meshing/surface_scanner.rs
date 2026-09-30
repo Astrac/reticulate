@@ -155,4 +155,3 @@ fn valley_below_seed_is_claimed() {
         ],
     );
 }
-

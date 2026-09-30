@@ -49,10 +49,7 @@ fn first_step_records_start_row() {
 
 #[test]
 fn weave_strip_simple_rectangle() {
-    let grid = AsciiGrid::parse(&[
-        "........................",
-        "..................xxxxx.",
-    ]);
+    let grid = AsciiGrid::parse(&["........................", "..................xxxxx."]);
 
     assert_eq!(
         grid.weave_triangles(),

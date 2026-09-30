@@ -3,6 +3,9 @@ mod print_walker;
 
 pub mod bitmasks;
 
+#[cfg(test)]
+pub mod testing;
+
 #[cfg(debug_assertions)]
 pub mod debug_assertions;
 

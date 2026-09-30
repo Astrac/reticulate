@@ -44,10 +44,7 @@ fn is_pending_is_not_transposed() {
 fn mark_done_accumulates() {
     let mut s = storage();
     let mut c = claims_of(&mut s);
-    c.claim(
-        SurfaceLayer::new(Axis::X, 0),
-        &cells(&[(1, 0), (1, 1)]),
-    );
+    c.claim(SurfaceLayer::new(Axis::X, 0), &cells(&[(1, 0), (1, 1)]));
     c.claim(SurfaceLayer::new(Axis::X, 0), &cells(&[(0, 5)]));
     assert!(!c.is_unclaimed(SurfaceLayer::new(Axis::X, 0), uv(1, 0)));
     assert!(!c.is_unclaimed(SurfaceLayer::new(Axis::X, 0), uv(1, 1)));

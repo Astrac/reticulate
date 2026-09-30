@@ -84,7 +84,10 @@ fn from_xyz_matches_from_coords() {
 #[test]
 fn constructors_record_the_depth() {
     assert_eq!(Morton3D::from_xyz_max_depth(1, 2, 3).depth(), Depth::MAX);
-    assert_eq!(Morton3D::from_xyz_and_depth(1, 2, 3, Depth(2)).depth(), Depth(2));
+    assert_eq!(
+        Morton3D::from_xyz_and_depth(1, 2, 3, Depth(2)).depth(),
+        Depth(2)
+    );
     assert_eq!(Morton3D::from_code_max_depth(5).depth(), Depth::MAX);
     assert_eq!(Morton3D::from_code(5, Depth(1)).depth(), Depth(1));
     assert_eq!(Morton3D::from_code(5, Depth(1)).as_u32(), 5);
@@ -126,9 +129,18 @@ fn projected_axis_coords_follow_the_plane_conventions() {
     let point = Morton3D::from_xyz_max_depth(9, 21, 14);
 
     // X plane: u is y, v is z. Y plane: u is z, v is x. Z plane: u is x, v is y.
-    assert_eq!(point.projected_axis_coords(Axis::X), (Coords2D { u: 21, v: 14 }, 9));
-    assert_eq!(point.projected_axis_coords(Axis::Y), (Coords2D { u: 14, v: 9 }, 21));
-    assert_eq!(point.projected_axis_coords(Axis::Z), (Coords2D { u: 9, v: 21 }, 14));
+    assert_eq!(
+        point.projected_axis_coords(Axis::X),
+        (Coords2D { u: 21, v: 14 }, 9)
+    );
+    assert_eq!(
+        point.projected_axis_coords(Axis::Y),
+        (Coords2D { u: 14, v: 9 }, 21)
+    );
+    assert_eq!(
+        point.projected_axis_coords(Axis::Z),
+        (Coords2D { u: 9, v: 21 }, 14)
+    );
 }
 
 #[test]

@@ -12,14 +12,14 @@ fn leaf_node(val: i32) -> Fixed8OctreeNode<i32> {
 }
 
 #[test]
-fn test_empty_tree() {
+fn empty_tree() {
     let tree: Fixed8Octree<i32> = Fixed8Octree { nodes: Vec::new() };
     let compact = CompactOctree::from_fixed8(&tree);
     assert!(compact.nodes.is_empty());
 }
 
 #[test]
-fn test_single_root_leaf() {
+fn single_root_leaf() {
     let tree = Fixed8Octree {
         nodes: vec![leaf_node(42)],
     };
@@ -33,7 +33,7 @@ fn test_single_root_leaf() {
 }
 
 #[test]
-fn test_root_empty_leaf_pruned() {
+fn root_empty_leaf_pruned() {
     let tree = Fixed8Octree {
         nodes: vec![empty_node()],
     };
@@ -42,7 +42,7 @@ fn test_root_empty_leaf_pruned() {
 }
 
 #[test]
-fn test_branch_compression_and_mask() {
+fn branch_compression_and_mask() {
     let mut nodes = vec![Fixed8OctreeNode::Branch {
         children_index: 1,
         children_mask: 0xff,
@@ -77,7 +77,7 @@ fn test_branch_compression_and_mask() {
 }
 
 #[test]
-fn test_coalescing_identical_leaves() {
+fn coalescing_identical_leaves() {
     let mut nodes = vec![Fixed8OctreeNode::Branch {
         children_index: 1,
         children_mask: 0xff,
@@ -97,7 +97,7 @@ fn test_coalescing_identical_leaves() {
 }
 
 #[test]
-fn test_no_coalescing_on_mixed_values() {
+fn no_coalescing_on_mixed_values() {
     let mut nodes = vec![Fixed8OctreeNode::Branch {
         children_index: 1,
         children_mask: 0xff,
@@ -118,7 +118,7 @@ fn test_no_coalescing_on_mixed_values() {
 }
 
 #[test]
-fn test_empty_branch_pruned() {
+fn empty_branch_pruned() {
     let mut nodes = vec![Fixed8OctreeNode::Branch {
         children_index: 1,
         children_mask: 0xff,

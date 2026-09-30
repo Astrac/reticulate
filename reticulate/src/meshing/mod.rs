@@ -1,4 +1,4 @@
-mod gathering_walker;
+pub(crate) mod gathering_walker;
 mod triangle;
 mod triangulator;
 

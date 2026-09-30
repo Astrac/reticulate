@@ -283,7 +283,10 @@ fn boundary_guard_is_limited_to_the_mask() {
     let plane = SurfaceLayer::new(Axis::Y, 7);
     assert_eq!(p.boundary_guard(plane, 9, 1 << 5), 1 << 5);
     assert_eq!(p.boundary_guard(plane, 9, 1 << 12), 1 << 12);
-    assert_eq!(p.boundary_guard(plane, 9, (1 << 5) | (1 << 12)), (1 << 5) | (1 << 12));
+    assert_eq!(
+        p.boundary_guard(plane, 9, (1 << 5) | (1 << 12)),
+        (1 << 5) | (1 << 12)
+    );
     assert_eq!(p.boundary_guard(plane, 9, 1 << 6), 0);
 }
 
