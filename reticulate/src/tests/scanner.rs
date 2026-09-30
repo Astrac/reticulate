@@ -4,7 +4,9 @@ use crate::{
     meshing::{
         bitfields::{Claims, ClaimsMask, MaterialId, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
         surface_layer::SurfaceLayer,
-        triangulation::{Triangle2D, discoverer::Discoverer, stepper::Stepper, weaver::Weaver},
+        triangulation::{
+            Triangle2D, discoverer::Discoverer, edges::Edges, stepper::Stepper, weaver::Weaver,
+        },
     },
     tests::assert_covers_exactly,
     utils::{bitmasks, debug_assertions::debug_assert_within_footprint},
@@ -110,10 +112,7 @@ fn scan(
 ) -> ([u32; PLANE_SIDE], Vec<Triangle2D>) {
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
-    let scanner = Weaver::new(Discoverer::new(
-        &parity,
-        SurfaceLayer::new(axis, axis_coord),
-    ));
+    let scanner = Weaver::new(&parity, Discoverer::new(&parity));
     let mut tris = Vec::new();
     let layer = SurfaceLayer::new(axis, axis_coord);
     let filled = scanner.from_seed(
@@ -287,7 +286,11 @@ fn face_touching_chunk_top_closes_cleanly() {
 fn footprint_assertion_catches_non_face_cells() {
     let mut f = fixture(&[(2, 5, 9)]);
     let parity = parity_of(&mut f.parity);
-    debug_assert_within_footprint(&parity, SurfaceLayer::new(Axis::X, 2), &cells(&[(5, 9), (5, 10)]));
+    debug_assert_within_footprint(
+        &parity,
+        SurfaceLayer::new(Axis::X, 2),
+        &cells(&[(5, 9), (5, 10)]),
+    );
 }
 
 #[test]
@@ -434,12 +437,13 @@ fn scanner_weave_matches_reference_weave() {
     let mut f = plane_fixture(&shape);
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
-    let scanner = Weaver::new(Discoverer::new(&parity, SurfaceLayer::new(Axis::Y, 0)));
+    let scanner = Weaver::new(&parity, Discoverer::new(&parity));
     let seed = Coords2D { u: 0, v: 1 };
+    let layer = SurfaceLayer::new(Axis::Y, 0);
+    let edges = Edges::from_parity(&parity, layer);
+    let discoverer = Discoverer::new(&parity);
 
-    let region = scanner
-        .discoverer
-        .discover(SurfaceLayer::new(Axis::Y, 0), &claims, seed);
+    let region = discoverer.discover(layer, &claims, &edges, seed);
     let reference = weave(&region); // the helper the stepper tests use
 
     let mut tris = Vec::new();

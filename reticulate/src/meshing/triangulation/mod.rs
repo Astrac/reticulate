@@ -1,4 +1,5 @@
 pub mod discoverer;
+pub mod edges;
 pub mod run;
 pub mod run_mask;
 pub mod runs;

@@ -44,8 +44,8 @@ where
         let axis = face.axis();
         let (morton, axis_coord) = morton.projected_axis_morton(axis);
         let layer = SurfaceLayer::new(axis, axis_coord);
-        let discoverer = Discoverer::new(&self.parity, layer);
-        let scanner = Weaver::new(discoverer);
+        let discoverer = Discoverer::new(&self.parity);
+        let scanner = Weaver::new(&self.parity, discoverer);
 
         materials.iterate_materials(axis, morton, |material, coords, _| {
             if material == current_material

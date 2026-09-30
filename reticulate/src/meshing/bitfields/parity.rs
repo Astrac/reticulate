@@ -76,4 +76,19 @@ impl<'a> Parity<'a> {
         }
         guard
     }
+
+    #[inline(always)]
+    pub fn boundary_guard(&self, layer: SurfaceLayer, boundary: usize, mask: u32) -> u32 {
+        let columns_axis = layer.axis.next();
+
+        let start = mask.trailing_zeros() as usize;
+        let end = (32 - mask.leading_zeros()) as usize;
+
+        let mut g = self.gather_guard(columns_axis, layer.layer as usize, boundary, start, end);
+        if layer.layer > 0 {
+            g |= self.gather_guard(columns_axis, layer.layer as usize - 1, boundary, start, end);
+        }
+
+        g & mask
+    }
 }

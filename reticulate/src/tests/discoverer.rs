@@ -4,7 +4,7 @@ use crate::{
     meshing::{
         bitfields::{Claims, ClaimsMask, PARITY_WORDS, PLANE_SIDE, Parity, ParityMask},
         surface_layer::SurfaceLayer,
-        triangulation::discoverer::Discoverer,
+        triangulation::{discoverer::Discoverer, edges::Edges},
     },
 };
 
@@ -99,9 +99,12 @@ fn plane_fixture(cells_rc: &[(usize, usize)]) -> Fixture {
 fn discover(f: &mut Fixture, axis: Axis, axis_coord: u8, seed: (u32, u32)) -> [u32; PLANE_SIDE] {
     let parity = parity_of(&mut f.parity);
     let claims = claims_of(&mut f.claims);
-    Discoverer::new(&parity, SurfaceLayer::new(axis, axis_coord)).discover(
-        SurfaceLayer::new(axis, axis_coord),
+    let layer = SurfaceLayer::new(axis, axis_coord);
+    let edges = Edges::from_parity(&parity, layer);
+    Discoverer::new(&parity).discover(
+        layer,
         &claims,
+        &edges,
         Coords2D {
             u: seed.0 as u8,
             v: seed.1 as u8,
