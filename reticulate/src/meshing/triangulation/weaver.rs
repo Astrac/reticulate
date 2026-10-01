@@ -22,8 +22,8 @@ impl<'a> Weaver<'a> {
         region: &[u32; PLANE_SIDE],
         mut emit: impl FnMut(Triangle2D),
     ) {
-        let edges = Edges::from_parity(&self.parity, layer);
-        self.weave(layer, &edges, &region, &mut emit);
+        let edges = Edges::from_parity(self.parity, layer);
+        self.weave(layer, &edges, region, &mut emit);
     }
 
     fn weave(
@@ -31,7 +31,7 @@ impl<'a> Weaver<'a> {
         layer: SurfaceLayer,
         edges: &Edges,
         region: &[u32; PLANE_SIDE],
-        emit: &mut impl FnMut(Triangle2D),
+        mut emit: &mut impl FnMut(Triangle2D),
     ) {
         let Some(first) = region.iter().position(|&cells| cells != 0) else {
             return;
@@ -56,7 +56,7 @@ impl<'a> Weaver<'a> {
                 row,
                 bitmasks::boundary_points(region[row - 1], cells),
             );
-            stepper.weave_to(row, cells, extra, |t| emit(t));
+            stepper.weave_to(row, cells, extra, &mut emit);
         }
 
         debug_assert_eq!(

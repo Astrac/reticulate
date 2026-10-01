@@ -38,7 +38,7 @@ impl<'a> Material<'a> {
                 scanned_length,
             );
 
-            current_offset = current_offset + scanned_length;
+            current_offset += scanned_length;
             current_grid = quadtree_alignment(current_offset);
         }
     }

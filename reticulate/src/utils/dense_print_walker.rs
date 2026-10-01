@@ -5,7 +5,7 @@ pub struct DensePrintWalker {
     indent: usize,
 }
 
-const EMPTY_STRING: &'static str = "";
+const EMPTY_STRING: &str = "";
 
 impl<Data: std::fmt::Debug> DenseWalker<Data> for DensePrintWalker {
     fn on_branch_start(&mut self, morton: Morton3D, children_mask: u8) {

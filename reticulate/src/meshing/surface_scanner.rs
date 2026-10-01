@@ -64,7 +64,7 @@ where
             scanner.weave_region(layer, &filled, |t| {
                 (self.on_triangle)(Triangle::from_strip_triangle(
                     face,
-                    layer.layer as u8,
+                    layer.layer,
                     t,
                     face_material,
                 ))

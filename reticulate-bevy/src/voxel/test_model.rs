@@ -31,7 +31,7 @@ pub fn add_8x8(octree: &mut Fixed8Octree<()>) {
     for x in 0..8 {
         for y in 0..8 {
             for z in 0..8 {
-                octree.update(Coords3D { x: x, y: y, z: z }, Some(()));
+                octree.update(Coords3D { x, y, z }, Some(()));
             }
         }
     }
@@ -45,7 +45,7 @@ pub fn add_8x8_with_missing_corner(octree: &mut Fixed8Octree<()>) {
                     continue;
                 }
 
-                octree.update(Coords3D { x: x, y: y, z: z }, Some(()));
+                octree.update(Coords3D { x, y, z }, Some(()));
             }
         }
     }
@@ -59,7 +59,7 @@ pub fn add_tunnel(octree: &mut Fixed8Octree<()>) {
                     continue;
                 }
 
-                octree.update(Coords3D { x: x, y: y, z: z }, Some(()));
+                octree.update(Coords3D { x, y, z }, Some(()));
             }
         }
     }
@@ -73,7 +73,7 @@ pub fn add_nested_cubes(octree: &mut Fixed8Octree<()>) {
                     continue;
                 }
 
-                octree.update(Coords3D { x: x, y: y, z: z }, Some(()));
+                octree.update(Coords3D { x, y, z }, Some(()));
             }
         }
     }
@@ -87,7 +87,7 @@ pub fn add_2x2_with_hole(octree: &mut Fixed8Octree<()>) {
                     continue;
                 }
 
-                octree.update(Coords3D { x: x, y: y, z: z }, Some(()));
+                octree.update(Coords3D { x, y, z }, Some(()));
             }
         }
     }
@@ -97,7 +97,7 @@ pub fn add_2x2(octree: &mut Fixed8Octree<()>) {
     for x in 0..2 {
         for y in 0..2 {
             for z in 0..2 {
-                octree.update(Coords3D { x: x, y: y, z: z }, Some(()));
+                octree.update(Coords3D { x, y, z }, Some(()));
             }
         }
     }
@@ -152,7 +152,7 @@ fn add_diagonal_helix(octree: &mut Fixed8Octree<()>) {
         let ry = (cy + offset_y).round() as i32;
         let rz = (cz + offset_z).round() as i32;
 
-        if rx >= 0 && rx < 32 && ry >= 0 && ry < 32 && rz >= 0 && rz < 32 {
+        if (0..32).contains(&rx) && (0..32).contains(&ry) && (0..32).contains(&rz) {
             let x = rx as u8;
             let y = ry as u8;
             let z = rz as u8;

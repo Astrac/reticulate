@@ -1,6 +1,6 @@
 use crate::{coords_3d::Coords3D, morton_3d::Morton3D, octree::TREE_DEPTH};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Fixed8Octree<Data> {
     pub nodes: Vec<Fixed8OctreeNode<Data>>,
 }
@@ -112,9 +112,9 @@ impl<Data: Clone + PartialEq> Fixed8Octree<Data> {
 
                     // TODO: Bubble up setting children masks if it changed!!!
                     if data.is_some() {
-                        *children_mask = *children_mask | (1 << octant);
+                        *children_mask |= 1 << octant;
                     } else {
-                        *children_mask = *children_mask & !(1 << octant);
+                        *children_mask &= !(1 << octant);
                     }
 
                     self.nodes[target] = Fixed8OctreeNode::leaf(data);

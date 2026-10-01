@@ -47,7 +47,7 @@ pub fn print_materials(materials: &Material<'_>, axes: &[Axis]) {
                 let Some(m) = data.next() else { unreachable!() };
                 print!("{m:04x} ");
             }
-            print!("\n");
+            println!();
         }
         println!("{}", "-".repeat(32));
     }

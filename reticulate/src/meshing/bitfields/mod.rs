@@ -21,14 +21,14 @@ pub type MaterialId = u16;
 pub const CHUNK_VOLUME: usize = PLANE_SIDE * PLANE_SIDE * PLANE_SIDE;
 pub const CLAIMS_BITS: usize = CHUNK_VOLUME;
 pub const CLAIMS_WORDS: usize = CLAIMS_BITS / STORAGE_WORD;
-pub const MATERIAL_BITS: usize = size_of::<MaterialId>() * 8;
+pub const MATERIAL_BITS: usize = MaterialId::BITS as usize;
 pub const MATERIAL_PLANE_BITS: usize = PLANE_AREA * MATERIAL_BITS;
 pub const MATERIAL_WORDS: usize = PLANE_AREA * MATERIAL_BITS / STORAGE_WORD;
 pub const PARITY_BITS: usize = CHUNK_VOLUME;
 pub const PARITY_WORDS: usize = PARITY_BITS / STORAGE_WORD;
 pub const PLANE_AREA: usize = PLANE_SIDE * PLANE_SIDE;
 pub const PLANE_SIDE: usize = 1 << TREE_DEPTH;
-pub const STORAGE_WORD: usize = size_of::<Word>() * 8;
+pub const STORAGE_WORD: usize = Word::BITS as usize;
 
 const BITFIELD_SIZE: usize = (CLAIMS_BITS * 3) + (MATERIAL_PLANE_BITS * 3) + (PARITY_BITS * 3);
 

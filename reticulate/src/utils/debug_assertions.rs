@@ -33,7 +33,7 @@ pub fn find_unclaimed_faces(
         for axis_coord in 0..crate::meshing::bitfields::PLANE_SIDE {
             for u in 0..crate::meshing::bitfields::PLANE_SIDE {
                 let mut bits =
-                    gather_footprint(&parity, SurfaceLayer::new(axis, axis_coord as u8), u);
+                    gather_footprint(parity, SurfaceLayer::new(axis, axis_coord as u8), u);
                 while bits != 0 {
                     let v = bits.trailing_zeros();
                     bits &= bits - 1;
@@ -54,8 +54,8 @@ pub fn find_unclaimed_faces(
 fn gather_footprint(parity: &Parity, layer: SurfaceLayer, u: usize) -> u32 {
     let words = parity.masks[layer.axis.as_usize()].get_layer(u);
     let mut row = 0u32;
-    for v in 0..PLANE_SIDE {
-        row |= ((words[v] >> layer.layer) & 1) << v;
+    for (v, word) in words.iter().enumerate() {
+        row |= ((word >> layer.layer) & 1) << v;
     }
     row
 }
