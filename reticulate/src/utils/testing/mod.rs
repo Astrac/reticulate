@@ -9,18 +9,18 @@
 
 pub mod fixtures;
 pub mod geometry;
+pub mod lcg;
 pub mod logging;
 pub mod mesh;
 pub mod walkers;
 pub mod weaving;
-pub mod lcg;
 
 pub use fixtures::{DIRT, EMPTY, Fixture, STONE, VoxelGrid, cells, claims_of, parity_of, storage};
 pub use geometry::{
     area2, assert_covers_exactly, assert_no_t_junctions, assert_no_t_junctions_3d, assert_scan,
 };
+pub use lcg::SeededRandom;
 pub use logging::init_logging;
 pub use mesh::assert_mesh_matches;
 pub use walkers::{RecordingWalker, WalkEvent};
 pub use weaving::{AsciiGrid, weave_rows};
-pub use lcg::SeededRandom;

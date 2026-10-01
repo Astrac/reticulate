@@ -7,7 +7,7 @@ use crate::{
         Triangle,
         bitfields::{Claims, Material, MaterialId, Parity},
         surface_layer::SurfaceLayer,
-        triangulation::{filler::Filler, edges::Edges, weaver::Weaver},
+        triangulation::{edges::Edges, filler::Filler, weaver::Weaver},
     },
 };
 

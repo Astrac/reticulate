@@ -59,14 +59,7 @@ pub fn add_tunnel(octree: &mut Fixed8Octree<()>) {
                     continue;
                 }
 
-                octree.update(
-                    Coords3D {
-                        x: x,
-                        y: y,
-                        z: z,
-                    },
-                    Some(()),
-                );
+                octree.update(Coords3D { x: x, y: y, z: z }, Some(()));
             }
         }
     }
