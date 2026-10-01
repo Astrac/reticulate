@@ -5319,6 +5319,7 @@ dependencies = [
  "bitvec",
  "bytemuck",
  "log",
+ "rand 0.10.3",
  "rstest",
  "rstest_reuse",
  "spdlog-rs",

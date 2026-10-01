@@ -3,8 +3,7 @@ use crate::{
         Triangle2D,
         stepper::{INACTIVE_VERTEX, Stepper},
     },
-    tests::assert_covers_exactly,
-    utils::bitmasks,
+    utils::testing::{AsciiGrid, assert_covers_exactly, weave_rows},
 };
 
 #[test]
@@ -50,10 +49,7 @@ fn first_step_records_start_row() {
 
 #[test]
 fn weave_strip_simple_rectangle() {
-    let grid = Grid::parse(&vec![
-        "........................",
-        "..................xxxxx.",
-    ]);
+    let grid = AsciiGrid::parse(&["........................", "..................xxxxx."]);
 
     assert_eq!(
         grid.weave_triangles(),
@@ -70,7 +66,7 @@ fn weave_strip_simple_rectangle() {
 
 #[test]
 fn weave_strip_multirow_rectangle() {
-    let grid = Grid::parse(&vec![
+    let grid = AsciiGrid::parse(&[
         "........................",
         "..................xxxxx.",
         "..................xxxxx.",
@@ -91,7 +87,7 @@ fn weave_strip_multirow_rectangle() {
 
 #[test]
 fn weave_strip_shrinking() {
-    let grid = Grid::parse(&vec![
+    let grid = AsciiGrid::parse(&[
         "........................",
         ".....................x..",
         "....................xxx.",
@@ -124,7 +120,7 @@ fn weave_strip_shrinking() {
 
 #[test]
 fn weave_strip_growing() {
-    let grid = Grid::parse(&vec![
+    let grid = AsciiGrid::parse(&[
         "........................",
         "....................xxx.",
         ".....................x..",
@@ -157,7 +153,7 @@ fn weave_strip_growing() {
 
 #[test]
 fn weave_strip_around_hole() {
-    let grid = Grid::parse(&vec![
+    let grid = AsciiGrid::parse(&[
         "........................",
         "....................xxx.",
         "....................x.x.",
@@ -201,7 +197,7 @@ fn weave_strip_around_hole() {
 
 #[test]
 fn weave_strip_complex_shape() {
-    let grid = Grid::parse(&vec![
+    let grid = AsciiGrid::parse(&[
         "........................",
         ".....................xx.",
         ".....................xxx",
@@ -236,7 +232,7 @@ fn weave_strip_complex_shape() {
 
 #[test]
 fn weave_strip_complex_shape_with_hole() {
-    let grid = Grid::parse(&vec![
+    let grid = AsciiGrid::parse(&[
         "........................",
         "................xx......",
         ".................x.xx...",
@@ -321,7 +317,7 @@ fn weave_strip_two_holes_close_same_row() {
         "..xxx.x.xxxxx...",
         "..xxxxxxxxxxx...",
     ];
-    let grid = Grid::parse(&rows);
+    let grid = AsciiGrid::parse(&rows);
     let triangles = grid.weave_triangles();
 
     let width = rows.iter().map(|r| r.len()).max().unwrap();
@@ -360,7 +356,7 @@ fn weave_strip_branch_3() {
         "....xxxxxxxx..",
         "....xxxxxxxx..",
     ];
-    let grid = Grid::parse(&rows);
+    let grid = AsciiGrid::parse(&rows);
     let triangles = grid.weave_triangles();
 
     assert_covers_exactly(
@@ -379,93 +375,75 @@ fn weave_strip_branch_3() {
 }
 
 #[test]
-fn l_shape_seeded_mid_face() {
+fn l_shape_with_a_missing_corner_cell() {
     let mut cells = vec![0b1111_1110];
     cells.extend([0xFF; 7]);
-    assert_covers_exactly(&weave(&cells), &cells);
+    assert_covers_exactly(&weave_rows(&cells), &cells);
 }
 
-struct Grid {
-    cells: Vec<u32>,
-}
-
-const EMPTY: u8 = b'.';
-
-impl Grid {
-    fn weave_triangles(&self) -> Vec<Triangle2D> {
-        weave(&self.cells)
-    }
-
-    fn parse(grid: &[&str]) -> Grid {
-        let width = grid.iter().map(|line| line.len()).max().unwrap_or(0);
-        debug_assert!(width <= 32, "grid is wider than 32 columns: {width}");
-        debug_assert!(
-            grid.len() <= 32,
-            "grid is taller than 32 rows: {}",
-            grid.len()
-        );
-
-        let cells = grid
-            .iter()
-            .rev() // the last line of text is row 0
-            .map(|line| {
-                let bytes = line.as_bytes();
-                (0..width).fold(0u32, |mask, r| {
-                    let x = width - 1 - r;
-                    let cell = bytes.get(x).copied().unwrap_or(EMPTY);
-                    if cell != EMPTY { mask | (1 << r) } else { mask }
-                })
-            })
-            .collect();
-
-        Grid { cells }
-    }
-}
-
-/// Weaves region rows from the bottom up: `cells[r]` are row r's cells.
-/// Everything past the end of `cells` is empty, which closes the last runs.
-fn weave(cells: &[u32]) -> Vec<Triangle2D> {
-    let mut out = Vec::new();
-    let Some(first) = cells.iter().position(|&c| c != 0) else {
-        return out;
-    };
-    let edge = bitmasks::segment_boundaries(cells[first]);
-    let mut stepper = Stepper::from_live(edge, cells[first], first as u32);
-    for row in first + 1..=cells.len() {
-        let top = cells.get(row).copied().unwrap_or(0);
-        stepper.weave_to(row, top, 0, |t| out.push(t));
-    }
-    out
-}
-
-/// A collinear bottom chain, (1,0) and (2,1), under an apex at (3,2). Without
-/// the skip in the zipper this emits the zero-area triangle (3,2),(1,0),(2,1).
 #[test]
-fn collinear_bottom_vertex_is_skipped_not_connected() {
-    let cells = [0b0010, 0b1110, 0b0110]; // .x.. / .xxx / .xx.
-    let tris = weave(&cells);
-    assert_covers_exactly(&tris, &cells);
-    assert!(
-        tris.iter().all(|t| area2(t) != 0),
-        "zero-area triangle: {tris:?}"
+fn from_live_starts_one_run_per_group_of_live_columns() {
+    // Walls at 1, 3, 5 and 8; live columns 2 and 6 belong to different runs.
+    let edge = 0b1_0010_1010;
+    let stepper = Stepper::from_live(edge, (1 << 2) | (1 << 6), 4);
+
+    assert_eq!(stepper.runs.count(), 2);
+
+    let mut expected = [INACTIVE_VERTEX; 32];
+    for c in [1, 3, 5, 8] {
+        expected[c] = 4;
+    }
+    assert_eq!(stepper.zipper.bottom_column_heights, expected);
+    assert_eq!(
+        stepper.zipper.bottom_columns_mask,
+        (1 << 1) | (1 << 3) | (1 << 5) | (1 << 8)
     );
 }
 
-/// A staircase growing to the left leaves a pending diagonal, (6,1)-(7,0), and
-/// no top vertex to close it. Without the break this emits the zero-area
-/// triangle (3,2),(4,1),(5,0).
 #[test]
-fn pending_diagonal_is_left_for_a_later_strip() {
-    let cells = [0b100, 0b110, 0b111].map(|m: u32| m << 2); // ..x / .xx / xxx, moved right
-    let tris = weave(&cells);
-    assert_covers_exactly(&tris, &cells);
-    assert!(
-        tris.iter().all(|t| area2(t) != 0),
-        "zero-area triangle: {tris:?}"
-    );
+fn add_vertices_records_their_height_and_activates_them() {
+    let mut stepper = Stepper::from_bottom_edge(0b1_0001, 2, 1);
+
+    stepper.add_vertices(0b0_1100, 3);
+
+    assert_eq!(stepper.zipper.bottom_column_heights[2], 3);
+    assert_eq!(stepper.zipper.bottom_column_heights[3], 3);
+    assert_eq!(stepper.zipper.bottom_column_heights[0], 1);
+    assert_eq!(stepper.zipper.bottom_columns_mask, 0b1_1101);
 }
 
-fn area2(t: &Triangle2D) -> i32 {
-    let [(x0, y0), (x1, y1), (x2, y2)] = t.vertices.map(|(c, r)| (c as i32, r as i32));
-    (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)
+#[test]
+fn weaving_an_identical_row_adds_no_triangles() {
+    let mut stepper = Stepper::from_bottom_edge(0b1_0001, 2, 0);
+    let mut tris = Vec::new();
+
+    // The row above has the same cells 0..4, so the strip just keeps growing.
+    stepper.weave_to(1, 0b1111, 0, |t| tris.push(t));
+
+    assert!(tris.is_empty());
+    assert_eq!(stepper.filled[0], 0b1111);
+    assert_eq!(stepper.runs.count(), 1);
+}
+
+#[test]
+fn extra_vertices_force_triangles_on_a_straight_edge() {
+    let mut stepper = Stepper::from_bottom_edge(0b1_0001, 2, 0);
+    let mut tris = Vec::new();
+
+    // A vertex requested at column 2 (e.g. to meet a neighbouring region's
+    // corner) splits the otherwise untouched strip.
+    stepper.weave_to(1, 0b1111, 1 << 2, |t| tris.push(t));
+
+    assert!(!tris.is_empty());
+    assert!(tris.iter().any(|t| t.vertices.contains(&(2, 1))));
+}
+
+#[test]
+fn weaving_a_closed_region_empties_the_runs() {
+    let mut stepper = Stepper::from_bottom_edge(0b1_0001, 2, 0);
+
+    stepper.weave_to(1, 0, 0, |_| {});
+
+    assert_eq!(stepper.runs.count(), 0);
+    assert_eq!(stepper.filled[0], 0b1111);
 }

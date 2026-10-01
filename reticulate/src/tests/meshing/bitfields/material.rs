@@ -5,6 +5,7 @@ use crate::{
     axis::*,
     meshing::bitfields::{MATERIAL_BITS, Material, PLANE_AREA},
     octree::TREE_DEPTH,
+    utils::testing::SeededRandom,
 };
 
 fn depth_area(d: usize) -> usize {
@@ -254,20 +255,9 @@ fn smallest_node_is_a_single_run() {
     );
 }
 
-struct Lcg(u64);
-impl Lcg {
-    fn next(&mut self, bound: usize) -> usize {
-        self.0 = self
-            .0
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
-        ((self.0 >> 33) as usize) % bound
-    }
-}
-
 #[test]
 fn random_planes_match_the_reference_decomposition() {
-    let mut rng = Lcg(0xC0FFEE);
+    let mut rng = SeededRandom::new(0xA572AC);
 
     for case in 0..64 {
         let axis = AXES[rng.next(3)];

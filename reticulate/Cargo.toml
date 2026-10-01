@@ -4,11 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# TODO: Make these optional under "log" feature
+# TODO: Make this optional under "log" feature
 log = "0.4"
-spdlog-rs = { version = "0.5", features = ["log"] }
-# TODO: Make these optional under "test" feature
-rstest = "0.26"
-rstest_reuse = "0.7.0"
 bitvec = "1.1.1"
 bytemuck = "1.25.2"
+
+[dev-dependencies]
+rand = "0.10"
+rstest = "0.26"
+rstest_reuse = "0.7.0"
+spdlog-rs = { version = "0.5", features = ["log"] }
