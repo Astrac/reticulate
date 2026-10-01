@@ -10,7 +10,12 @@ bitvec = "1.1.1"
 bytemuck = "1.25.2"
 
 [dev-dependencies]
+criterion = "0.5"
 rand = "0.10"
 rstest = "0.26"
 rstest_reuse = "0.7.0"
 spdlog-rs = { version = "0.5", features = ["log"] }
+
+[[bench]]
+name = "zipper"
+harness = false
