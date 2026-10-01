@@ -42,7 +42,7 @@ impl<'a> Parity<'a> {
     pub fn set_transition(&mut self, layer: SurfaceLayer, area_coords: Coords2D, area_size: usize) {
         let target = &mut self.masks[layer.axis.as_usize()].0;
         let side = area_size.isqrt();
-        let axis_coord = layer.layer as u32;
+        let axis_coord = layer.index as u32;
         let bit = 1u32 << axis_coord;
         let u = area_coords.u as usize;
         let v = area_coords.v as usize;
@@ -56,7 +56,7 @@ impl<'a> Parity<'a> {
 
     #[inline(always)]
     pub fn gather_edges(&self, layer: SurfaceLayer) -> &[u32] {
-        self.masks[layer.axis.as_usize()].get_layer(layer.layer as usize)
+        self.masks[layer.axis.as_usize()].get_layer(layer.index as usize)
     }
 
     // TODO - Too many usizes here, this is error-prone, find a better way
@@ -84,9 +84,9 @@ impl<'a> Parity<'a> {
         let start = mask.trailing_zeros() as usize;
         let end = (32 - mask.leading_zeros()) as usize;
 
-        let mut g = self.gather_guard(columns_axis, layer.layer as usize, boundary, start, end);
-        if layer.layer > 0 {
-            g |= self.gather_guard(columns_axis, layer.layer as usize - 1, boundary, start, end);
+        let mut g = self.gather_guard(columns_axis, layer.index as usize, boundary, start, end);
+        if layer.index > 0 {
+            g |= self.gather_guard(columns_axis, layer.index as usize - 1, boundary, start, end);
         }
 
         g & mask

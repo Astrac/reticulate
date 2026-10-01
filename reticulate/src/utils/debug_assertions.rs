@@ -17,7 +17,7 @@ pub fn debug_assert_within_footprint(
             claimed & !footprint == 0,
             "strip claimed non-face cells on {:?}@{}, row {u}: {:032b}",
             layer.axis,
-            layer.layer,
+            layer.index,
             claimed & !footprint
         );
     }
@@ -55,7 +55,7 @@ fn gather_footprint(parity: &Parity, layer: SurfaceLayer, u: usize) -> u32 {
     let words = parity.masks[layer.axis.as_usize()].get_layer(u);
     let mut row = 0u32;
     for (v, word) in words.iter().enumerate() {
-        row |= ((word >> layer.layer) & 1) << v;
+        row |= ((word >> layer.index) & 1) << v;
     }
     row
 }

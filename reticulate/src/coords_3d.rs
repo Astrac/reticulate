@@ -36,19 +36,19 @@ impl Coords3D {
     pub const fn from_2d_projection(layer: SurfaceLayer, uv_coords: (u8, u8)) -> Coords3D {
         match layer.axis {
             Axis::X => Coords3D {
-                x: layer.layer as ChunkCoord,
+                x: layer.index as ChunkCoord,
                 y: uv_coords.1 as ChunkCoord,
                 z: uv_coords.0 as ChunkCoord,
             },
             Axis::Y => Coords3D {
                 x: uv_coords.0 as ChunkCoord,
-                y: layer.layer as ChunkCoord,
+                y: layer.index as ChunkCoord,
                 z: uv_coords.1 as ChunkCoord,
             },
             Axis::Z => Coords3D {
                 x: uv_coords.1 as ChunkCoord,
                 y: uv_coords.0 as ChunkCoord,
-                z: layer.layer as ChunkCoord,
+                z: layer.index as ChunkCoord,
             },
         }
     }

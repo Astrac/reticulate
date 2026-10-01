@@ -10,9 +10,9 @@ impl<'a> Edges<'a> {
     pub fn from_parity(parity: &'a Parity<'a>, layer: SurfaceLayer) -> Edges<'a> {
         let rows_axis = layer.axis.next().next();
         Edges {
-            current: parity.gather_edges(SurfaceLayer::new(rows_axis, layer.layer)),
-            previous: (layer.layer > 0)
-                .then(|| parity.gather_edges(SurfaceLayer::new(rows_axis, layer.layer - 1))),
+            current: parity.gather_edges(SurfaceLayer::new(rows_axis, layer.index)),
+            previous: (layer.index > 0)
+                .then(|| parity.gather_edges(SurfaceLayer::new(rows_axis, layer.index - 1))),
         }
     }
 
