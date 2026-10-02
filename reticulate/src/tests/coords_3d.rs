@@ -1,8 +1,4 @@
-use crate::{
-    Coords3D, Depth, Morton3D,
-    axis::{AXES, Axis},
-    meshing::{bitfields::PLANE_SIDE, surface_layer::SurfaceLayer},
-};
+use crate::{Axis, Coords3D, Depth, Morton3D, PLANE_SIDE, meshing::surface_layer::SurfaceLayer};
 
 #[test]
 fn roundtrip_zero() {
@@ -145,7 +141,7 @@ fn from_2d_projection_places_column_and_row_per_axis() {
 
 #[test]
 fn from_2d_projection_inverts_projected_axis_coords() {
-    for axis in AXES {
+    for axis in Axis::AXES {
         let point = Coords3D { x: 9, y: 21, z: 14 };
         let (uv, layer) = Morton3D::from_coords_max_depth(point).projected_axis_coords(axis);
         let back = Coords3D::from_2d_projection(SurfaceLayer::new(axis, layer), (uv.v, uv.u));

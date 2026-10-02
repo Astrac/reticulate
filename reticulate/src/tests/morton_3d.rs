@@ -1,7 +1,4 @@
-use crate::{
-    Coords2D, Coords3D, Depth, Morton2D, Morton3D,
-    axis::{AXES, Axis},
-};
+use crate::{Axis, Coords2D, Coords3D, Depth, Morton2D, Morton3D};
 
 #[test]
 fn uniqueness() {
@@ -146,7 +143,7 @@ fn projected_axis_coords_follow_the_plane_conventions() {
 #[test]
 fn projected_axis_morton_is_the_morton_of_the_projected_coords() {
     let point = Morton3D::from_xyz_max_depth(9, 21, 14);
-    for axis in AXES {
+    for axis in Axis::AXES {
         let (coords, layer) = point.projected_axis_coords(axis);
         let (morton, morton_layer) = point.projected_axis_morton(axis);
         assert_eq!(morton, Morton2D::from_uv_max_depth(coords.u, coords.v));
@@ -167,7 +164,7 @@ fn projection_scales_shallow_nodes_to_their_first_voxel() {
 #[test]
 fn drop_axis_keeps_the_node_depth() {
     let node = Morton3D::from_code(0b101_011, Depth(2));
-    for axis in AXES {
+    for axis in Axis::AXES {
         assert_eq!(node.drop_axis(axis).depth(), Depth(2));
     }
 }

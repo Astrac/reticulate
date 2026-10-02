@@ -1,6 +1,5 @@
 use crate::{
-    Coords2D,
-    axis::Axis,
+    Axis, Coords2D,
     meshing::{bitfields::Parity, surface_layer::SurfaceLayer, triangulation::edges::Edges},
     utils::testing::{parity_of, storage},
 };

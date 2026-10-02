@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use reticulate::{Coords3D, DenseWalk, meshing::Triangulator};
+use reticulate::{Coords3D, DenseWalk, Triangulator};
 
 const INITIAL_CAPACITY: usize = 8000;
 const NORMALS: [Vec3; 6] = [
@@ -61,7 +61,7 @@ impl Mesher {
     }
 }
 
-fn to_normal(face: reticulate::face::Face) -> Vec3 {
+fn to_normal(face: reticulate::Face) -> Vec3 {
     NORMALS[face.as_usize()]
 }
 

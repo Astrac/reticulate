@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::axis::Axis;
+use crate::Axis;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Face {

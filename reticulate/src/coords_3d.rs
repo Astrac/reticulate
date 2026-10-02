@@ -1,5 +1,5 @@
 use crate::{
-    ChunkCoord, Morton3D, axis::Axis, meshing::surface_layer::SurfaceLayer, octree::TREE_DEPTH,
+    Axis, ChunkCoord, Morton3D, TREE_DEPTH, meshing::surface_layer::SurfaceLayer,
     utils::bitmasks::take_one_every_3_bits,
 };
 

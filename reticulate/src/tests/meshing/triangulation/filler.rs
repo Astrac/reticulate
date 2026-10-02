@@ -1,8 +1,6 @@
 use crate::{
-    Coords2D,
-    axis::Axis,
+    Axis, Coords2D, PLANE_SIDE,
     meshing::{
-        bitfields::PLANE_SIDE,
         surface_layer::SurfaceLayer,
         triangulation::{edges::Edges, filler::Filler},
     },

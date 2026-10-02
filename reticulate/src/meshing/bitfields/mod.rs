@@ -9,16 +9,13 @@ pub use parity::{Parity, ParityMask};
 use bitvec::prelude::*;
 
 use crate::{
+    CHUNK_VOLUME, MaterialId, PLANE_AREA,
     meshing::{Triangle, surface_scanner::SurfaceScanner},
-    octree::TREE_DEPTH,
 };
 
 type Word = u64;
 type Slice = BitSlice<u64, Lsb0>;
-// TODO Move this type, here is wrong
-pub type MaterialId = u16;
 
-pub const CHUNK_VOLUME: usize = PLANE_SIDE * PLANE_SIDE * PLANE_SIDE;
 pub const CLAIMS_BITS: usize = CHUNK_VOLUME;
 pub const CLAIMS_WORDS: usize = CLAIMS_BITS / STORAGE_WORD;
 pub const MATERIAL_BITS: usize = MaterialId::BITS as usize;
@@ -26,8 +23,6 @@ pub const MATERIAL_PLANE_BITS: usize = PLANE_AREA * MATERIAL_BITS;
 pub const MATERIAL_WORDS: usize = PLANE_AREA * MATERIAL_BITS / STORAGE_WORD;
 pub const PARITY_BITS: usize = CHUNK_VOLUME;
 pub const PARITY_WORDS: usize = PARITY_BITS / STORAGE_WORD;
-pub const PLANE_AREA: usize = PLANE_SIDE * PLANE_SIDE;
-pub const PLANE_SIDE: usize = 1 << TREE_DEPTH;
 pub const STORAGE_WORD: usize = Word::BITS as usize;
 
 const BITFIELD_SIZE: usize = (CLAIMS_BITS * 3) + (MATERIAL_PLANE_BITS * 3) + (PARITY_BITS * 3);

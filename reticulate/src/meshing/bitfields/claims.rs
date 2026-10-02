@@ -1,7 +1,4 @@
-use crate::{
-    Coords2D,
-    meshing::{bitfields::PLANE_SIDE, surface_layer::SurfaceLayer},
-};
+use crate::{Coords2D, PLANE_SIDE, meshing::surface_layer::SurfaceLayer};
 
 /// Per-axis claim storage: plane `axis_coord` is PLANE_SIDE words, where
 /// word u is row u and bit v is column v. This is the same layout as

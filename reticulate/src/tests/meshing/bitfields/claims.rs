@@ -1,9 +1,6 @@
 use crate::{
-    ChunkCoord, Coords2D,
-    axis::{AXES, Axis},
-    meshing::{
-        bitfields::PLANE_SIDE, surface_layer::SurfaceLayer, triangulation::stepper::Stepper,
-    },
+    Axis, ChunkCoord, Coords2D, PLANE_SIDE,
+    meshing::{surface_layer::SurfaceLayer, triangulation::stepper::Stepper},
     utils::testing::{cells, claims_of, storage},
 };
 
@@ -18,7 +15,7 @@ fn uv(u: u32, v: u32) -> Coords2D {
 fn fresh_storage_is_all_pending() {
     let mut s = storage();
     let c = claims_of(&mut s);
-    for axis in AXES {
+    for axis in Axis::AXES {
         for coord in 0..PLANE_SIDE {
             for u in 0..PLANE_SIDE as u32 {
                 for v in 0..PLANE_SIDE as u32 {

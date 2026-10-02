@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::{DenseWalker, Morton3D, Walker, octree::TREE_DEPTH};
+use crate::{DenseWalker, Morton3D, TREE_DEPTH, Walker};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum WalkEvent<Data> {

@@ -1,4 +1,4 @@
-use crate::{ChunkCoord, axis::Axis};
+use crate::{Axis, ChunkCoord};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SurfaceLayer {

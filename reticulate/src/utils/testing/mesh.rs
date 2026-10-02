@@ -3,18 +3,16 @@ use bitvec::prelude::*;
 #[cfg(debug_assertions)]
 use crate::utils::debug_assertions::debug_assert_within_footprint;
 use crate::{
-    ChunkCoord, Coords2D, DenseWalker, Morton3D,
-    axis::Axis,
-    face::Face,
+    Axis, CHUNK_VOLUME, ChunkCoord, Coords2D, DenseWalker, Face, MaterialId, Morton3D, PLANE_SIDE,
+    TREE_DEPTH,
     meshing::{
         Triangle,
-        bitfields::{CHUNK_VOLUME, MATERIAL_WORDS, Material, MaterialId, PLANE_SIDE},
+        bitfields::{MATERIAL_WORDS, Material},
         surface_layer::SurfaceLayer,
         surface_scanner::SurfaceScanner,
         surface_walker::SurfaceWalker,
         triangulation::{Triangle2D, edges::Edges, filler::Filler, weaver::Weaver},
     },
-    octree::TREE_DEPTH,
     utils::testing::{
         assert_no_t_junctions_3d,
         fixtures::{EMPTY, Fixture, VoxelGrid, claims_of, parity_of, project, voxel, words},

@@ -70,7 +70,9 @@ pub const fn boundary_points(below: u32, above: u32) -> u32 {
     segment_boundaries(below) | segment_boundaries(above) | crossings | (crossings << 1)
 }
 
+// TODO - Remove if confirmed non-needed
 #[inline(always)]
+#[allow(unused)]
 pub const fn transpose32(mut a: [u32; 32]) -> [u32; 32] {
     let mut j = 16u32;
     let mut m: u32 = 0x0000_FFFF;

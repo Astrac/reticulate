@@ -1,10 +1,6 @@
 use crate::{
-    DenseWalker, Morton3D,
-    axis::*,
-    meshing::{
-        bitfields::{Bitfields, MaterialId},
-        surface_layer::SurfaceLayer,
-    },
+    Axis, DenseWalker, MaterialId, Morton3D,
+    meshing::{bitfields::Bitfields, surface_layer::SurfaceLayer},
 };
 
 pub struct GatheringWalker<'a, M> {

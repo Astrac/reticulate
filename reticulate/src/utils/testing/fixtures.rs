@@ -1,11 +1,7 @@
 use crate::{
-    ChunkCoord, Coords2D, Morton3D,
-    axis::AXES,
+    Axis, CHUNK_VOLUME, ChunkCoord, Coords2D, MaterialId, Morton3D, PLANE_SIDE,
     meshing::{
-        bitfields::{
-            CHUNK_VOLUME, Claims, ClaimsMask, MaterialId, PARITY_WORDS, PLANE_SIDE, Parity,
-            ParityMask,
-        },
+        bitfields::{Claims, ClaimsMask, PARITY_WORDS, Parity, ParityMask},
         surface_layer::SurfaceLayer,
     },
 };
@@ -130,7 +126,7 @@ impl Fixture {
                                 v: v as ChunkCoord,
                             };
                             parity.set_transition(
-                                SurfaceLayer::new(AXES[a], c as ChunkCoord),
+                                SurfaceLayer::new(Axis::AXES[a], c as ChunkCoord),
                                 uv,
                                 1,
                             );

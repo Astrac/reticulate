@@ -1,5 +1,6 @@
 use crate::{
-    meshing::{Triangle, bitfields::PLANE_SIDE, triangulation::Triangle2D},
+    PLANE_SIDE,
+    meshing::{Triangle, triangulation::Triangle2D},
     utils::testing::fixtures::cells,
 };
 

@@ -1,8 +1,7 @@
 use core::panic;
 
 use crate::{
-    Coords2D, Morton2D, Morton3D,
-    axis::Axis,
+    Axis, Coords2D, Morton2D, Morton3D,
     meshing::bitfields::{MATERIAL_BITS, MaterialId, PLANE_AREA, STORAGE_WORD, Slice},
 };
 

@@ -1,7 +1,7 @@
 use crate::{
-    Coords2D,
+    Coords2D, PLANE_SIDE,
     meshing::{
-        bitfields::{Claims, PLANE_SIDE, Parity},
+        bitfields::{Claims, Parity},
         surface_layer::SurfaceLayer,
         triangulation::{edges::Edges, runs::Runs},
     },

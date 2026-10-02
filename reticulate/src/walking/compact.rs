@@ -1,6 +1,6 @@
 use crate::{
-    CompactOctree, DenseWalk, DenseWalker, Morton3D, Walk, Walker,
-    octree::{CompactOctreeNode, TREE_DEPTH},
+    CompactOctree, DenseWalk, DenseWalker, Morton3D, TREE_DEPTH, Walk, Walker,
+    octree::CompactOctreeNode,
 };
 
 impl<Data> Walk<Data> for CompactOctree<Data> {

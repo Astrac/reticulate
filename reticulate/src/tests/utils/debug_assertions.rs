@@ -1,6 +1,5 @@
 use crate::{
-    Coords2D,
-    axis::Axis,
+    Axis, Coords2D,
     meshing::surface_layer::SurfaceLayer,
     utils::{
         debug_assertions::{debug_assert_within_footprint, find_unclaimed_faces},

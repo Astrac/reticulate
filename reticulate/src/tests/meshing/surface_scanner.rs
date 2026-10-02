@@ -1,6 +1,6 @@
 use crate::{
-    axis::Axis,
-    meshing::{bitfields::PLANE_SIDE, surface_layer::SurfaceLayer},
+    Axis, PLANE_SIDE,
+    meshing::surface_layer::SurfaceLayer,
     utils::testing::{Fixture, assert_scan, cells, claims_of, mesh::scan_plane},
 };
 

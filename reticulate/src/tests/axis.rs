@@ -1,8 +1,8 @@
-use crate::axis::{AXES, Axis};
+use crate::Axis;
 
 #[test]
 fn axes_are_listed_in_index_order() {
-    for (index, axis) in AXES.iter().enumerate() {
+    for (index, axis) in Axis::AXES.iter().enumerate() {
         assert_eq!(axis.as_usize(), index);
     }
 }
@@ -16,7 +16,7 @@ fn next_cycles_x_y_z() {
 
 #[test]
 fn three_nexts_come_back_to_the_start() {
-    for axis in AXES {
+    for axis in Axis::AXES {
         assert_eq!(axis.next().next().next(), axis);
     }
 }

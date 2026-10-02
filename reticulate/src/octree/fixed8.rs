@@ -1,4 +1,4 @@
-use crate::{coords_3d::Coords3D, morton_3d::Morton3D, octree::TREE_DEPTH};
+use crate::{TREE_DEPTH, coords_3d::Coords3D, morton_3d::Morton3D};
 
 #[derive(Clone, Debug, Default)]
 pub struct Fixed8Octree<Data> {

@@ -1,6 +1,5 @@
 use crate::{
-    Coords2D,
-    axis::Axis,
+    Axis, Coords2D,
     meshing::{
         surface_layer::SurfaceLayer,
         triangulation::{edges::Edges, filler::Filler, weaver::Weaver},

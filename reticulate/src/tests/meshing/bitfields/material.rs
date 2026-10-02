@@ -1,10 +1,8 @@
 use bitvec::prelude::*;
 
 use crate::{
-    Coords2D, Depth, Morton2D, Morton3D,
-    axis::*,
-    meshing::bitfields::{MATERIAL_BITS, Material, PLANE_AREA},
-    octree::TREE_DEPTH,
+    Axis, Coords2D, Depth, Morton2D, Morton3D, PLANE_AREA, TREE_DEPTH,
+    meshing::bitfields::{MATERIAL_BITS, Material},
     utils::testing::SeededRandom,
 };
 
@@ -52,7 +50,7 @@ impl Planes {
 
     fn with_background(background: u16) -> Self {
         let mut p = Self::new();
-        for axis in AXES {
+        for axis in Axis::AXES {
             write_run(p.plane_mut(axis), 0, PLANE_AREA, background);
         }
         p
@@ -115,7 +113,7 @@ fn collect_runs(planes: &mut Planes, axis: Axis, offset: usize, d: usize) -> Vec
 
 #[test]
 fn uniform_plane_is_a_single_run() {
-    for axis in AXES {
+    for axis in Axis::AXES {
         let mut p = Planes::new();
         write_run(p.plane_mut(axis), 0, PLANE_AREA, 5);
 
@@ -260,7 +258,7 @@ fn random_planes_match_the_reference_decomposition() {
     let mut rng = SeededRandom::new(0xA572AC);
 
     for case in 0..64 {
-        let axis = AXES[rng.next(3)];
+        let axis = Axis::AXES[rng.next(3)];
         let mut p = Planes::new();
         write_run(p.plane_mut(axis), 0, PLANE_AREA, 1);
 
@@ -296,7 +294,7 @@ fn random_planes_match_the_reference_decomposition() {
 const BACKGROUND: u16 = 1;
 
 fn assert_only_area_changed(p: &Planes, axis: Axis, start: usize, len: usize, material: u16) {
-    for a in AXES {
+    for a in Axis::AXES {
         for cell in 0..PLANE_AREA {
             let expected =
                 if a.as_usize() == axis.as_usize() && (start..start + len).contains(&cell) {
@@ -317,7 +315,7 @@ fn assert_only_area_changed(p: &Planes, axis: Axis, start: usize, len: usize, ma
 
 #[test]
 fn fill_at_origin_writes_exactly_the_node_at_every_depth() {
-    for axis in AXES {
+    for axis in Axis::AXES {
         for d in 0..=TREE_DEPTH {
             let mut p = Planes::with_background(BACKGROUND);
             p.material()
@@ -329,7 +327,7 @@ fn fill_at_origin_writes_exactly_the_node_at_every_depth() {
 
 #[test]
 fn fill_at_offset_node_writes_exactly_the_node_at_every_depth() {
-    for axis in AXES {
+    for axis in Axis::AXES {
         for d in 1..=TREE_DEPTH {
             let m = Morton3D::from_xyz_and_depth(1, 1, 1, d.into());
             let size = depth_area(d);
@@ -386,7 +384,7 @@ fn fill_overwrites_previous_content_of_the_area() {
 
 #[test]
 fn fill_then_iterate_round_trips() {
-    for axis in AXES {
+    for axis in Axis::AXES {
         for d in 0..=TREE_DEPTH {
             let mut p = Planes::new();
             let m = Morton3D::from_xyz_and_depth(0, 0, 0, d.into());
@@ -449,7 +447,7 @@ fn clear_material_planes_on_empty_planes_is_a_no_op() {
 
 #[test]
 fn projected_node_iterates_its_whole_area() {
-    for axis in AXES {
+    for axis in Axis::AXES {
         for d in 0..=TREE_DEPTH {
             let node = Morton3D::from_xyz_and_depth(0, 0, 0, d.into());
             let (area, _) = node.projected_axis_morton(axis);

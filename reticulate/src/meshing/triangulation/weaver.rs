@@ -1,6 +1,7 @@
 use crate::{
+    PLANE_SIDE,
     meshing::{
-        bitfields::{PLANE_SIDE, Parity},
+        bitfields::Parity,
         surface_layer::SurfaceLayer,
         triangulation::{Triangle2D, edges::Edges, stepper::Stepper},
     },

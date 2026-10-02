@@ -1,9 +1,6 @@
 use std::ops::{Add, Sub};
 
-use crate::{
-    meshing::bitfields::{PLANE_AREA, PLANE_SIDE},
-    octree::TREE_DEPTH,
-};
+use crate::{PLANE_AREA, PLANE_SIDE, TREE_DEPTH};
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]

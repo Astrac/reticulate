@@ -1,6 +1,5 @@
 use crate::{
-    ChunkCoord, Coords2D, Coords3D, Depth, axis::Axis, morton_2d::Morton2D, octree::TREE_DEPTH,
-    utils::bitmasks::*,
+    Axis, ChunkCoord, Coords2D, Coords3D, Depth, TREE_DEPTH, morton_2d::Morton2D, utils::bitmasks,
 };
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -18,9 +17,9 @@ impl Morton3D {
         depth: Depth,
     ) -> Morton3D {
         Morton3D {
-            code: (interleave_two_zeroes(z) << 2)
-                | (interleave_two_zeroes(y) << 1)
-                | interleave_two_zeroes(x),
+            code: (bitmasks::interleave_two_zeroes(z) << 2)
+                | (bitmasks::interleave_two_zeroes(y) << 1)
+                | bitmasks::interleave_two_zeroes(x),
             depth,
         }
     }
@@ -28,9 +27,9 @@ impl Morton3D {
     #[inline(always)]
     pub const fn from_xyz_max_depth(x: ChunkCoord, y: ChunkCoord, z: ChunkCoord) -> Morton3D {
         Morton3D {
-            code: (interleave_two_zeroes(z) << 2)
-                | (interleave_two_zeroes(y) << 1)
-                | interleave_two_zeroes(x),
+            code: (bitmasks::interleave_two_zeroes(z) << 2)
+                | (bitmasks::interleave_two_zeroes(y) << 1)
+                | bitmasks::interleave_two_zeroes(x),
             depth: Depth::MAX,
         }
     }
@@ -108,19 +107,19 @@ impl Morton3D {
         let morton_3d = self.code << ((TREE_DEPTH - self.depth.as_usize()) * 3);
         let (u, v, layer) = match axis {
             Axis::X => (
-                take_one_every_3_bits(morton_3d >> 1),
-                take_one_every_3_bits(morton_3d >> 2),
-                take_one_every_3_bits(morton_3d),
+                bitmasks::take_one_every_3_bits(morton_3d >> 1),
+                bitmasks::take_one_every_3_bits(morton_3d >> 2),
+                bitmasks::take_one_every_3_bits(morton_3d),
             ),
             Axis::Y => (
-                take_one_every_3_bits(morton_3d >> 2),
-                take_one_every_3_bits(morton_3d),
-                take_one_every_3_bits(morton_3d >> 1),
+                bitmasks::take_one_every_3_bits(morton_3d >> 2),
+                bitmasks::take_one_every_3_bits(morton_3d),
+                bitmasks::take_one_every_3_bits(morton_3d >> 1),
             ),
             Axis::Z => (
-                take_one_every_3_bits(morton_3d),
-                take_one_every_3_bits(morton_3d >> 1),
-                take_one_every_3_bits(morton_3d >> 2),
+                bitmasks::take_one_every_3_bits(morton_3d),
+                bitmasks::take_one_every_3_bits(morton_3d >> 1),
+                bitmasks::take_one_every_3_bits(morton_3d >> 2),
             ),
         };
 

@@ -1,9 +1,6 @@
 use crate::{
-    axis::AXES,
-    meshing::{
-        bitfields::{PLANE_SIDE, Parity},
-        surface_layer::SurfaceLayer,
-    },
+    Axis, PLANE_SIDE,
+    meshing::{bitfields::Parity, surface_layer::SurfaceLayer},
 };
 
 pub fn debug_assert_within_footprint(
@@ -24,14 +21,15 @@ pub fn debug_assert_within_footprint(
 }
 
 // TODO - Use this or remove it
+#[allow(unused)]
 pub fn find_unclaimed_faces(
     parity: &crate::meshing::bitfields::Parity,
     occlusion: &crate::meshing::bitfields::Claims,
-) -> Vec<(crate::axis::Axis, usize, crate::Coords2D)> {
+) -> Vec<(crate::Axis, usize, crate::Coords2D)> {
     let mut missing = Vec::new();
-    for axis in AXES {
-        for axis_coord in 0..crate::meshing::bitfields::PLANE_SIDE {
-            for u in 0..crate::meshing::bitfields::PLANE_SIDE {
+    for axis in Axis::AXES {
+        for axis_coord in 0..PLANE_SIDE {
+            for u in 0..PLANE_SIDE {
                 let mut bits =
                     gather_footprint(parity, SurfaceLayer::new(axis, axis_coord as u8), u);
                 while bits != 0 {

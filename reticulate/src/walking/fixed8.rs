@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
 use crate::{
-    Fixed8Octree, Morton3D, Walk, Walker,
-    octree::{Fixed8OctreeNode, TREE_DEPTH},
+    Fixed8Octree, Morton3D, TREE_DEPTH, Walk, Walker,
+    octree::Fixed8OctreeNode,
     walking::{DenseWalk, DenseWalker},
 };
 

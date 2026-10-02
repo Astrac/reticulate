@@ -1,8 +1,4 @@
-use crate::{
-    Depth,
-    meshing::bitfields::{PLANE_AREA, PLANE_SIDE},
-    octree::TREE_DEPTH,
-};
+use crate::{Depth, PLANE_AREA, PLANE_SIDE, TREE_DEPTH};
 
 #[test]
 fn max_is_the_tree_depth() {

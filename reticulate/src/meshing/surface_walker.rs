@@ -1,12 +1,6 @@
 use crate::{
-    DenseWalker, Morton3D,
-    axis::Axis,
-    face::Face,
-    meshing::{
-        Triangle,
-        bitfields::{Material, MaterialId},
-        surface_scanner::SurfaceScanner,
-    },
+    Axis, DenseWalker, Face, MaterialId, Morton3D,
+    meshing::{Triangle, bitfields::Material, surface_scanner::SurfaceScanner},
 };
 
 pub struct SurfaceWalker<'a, M, F> {

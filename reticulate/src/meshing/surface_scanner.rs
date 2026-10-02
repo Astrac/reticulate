@@ -1,11 +1,10 @@
 #[cfg(debug_assertions)]
 use crate::utils::debug_assertions::debug_assert_within_footprint;
 use crate::{
-    Morton3D,
-    face::Face,
+    Face, MaterialId, Morton3D,
     meshing::{
         Triangle,
-        bitfields::{Claims, Material, MaterialId, Parity},
+        bitfields::{Claims, Material, Parity},
         surface_layer::SurfaceLayer,
         triangulation::{edges::Edges, filler::Filler, weaver::Weaver},
     },

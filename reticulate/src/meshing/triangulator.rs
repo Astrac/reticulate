@@ -1,8 +1,8 @@
 use crate::{
-    DenseWalk,
+    DenseWalk, MaterialId,
     meshing::{
         Triangle,
-        bitfields::{Bitfields, BitfieldsStorage, MaterialId},
+        bitfields::{Bitfields, BitfieldsStorage},
         gathering_walker::GatheringWalker,
         surface_walker::SurfaceWalker,
     },

@@ -1,5 +1,5 @@
 use crate::{
-    meshing::bitfields::MaterialId,
+    MaterialId,
     utils::testing::{
         DIRT, Fixture, STONE, SeededRandom, assert_mesh_matches, assert_no_t_junctions_3d,
         mesh::mesh,

@@ -1,7 +1,5 @@
 use crate::{
-    Coords3D,
-    axis::{AXES, Axis},
-    face::Face,
+    Axis, Coords3D, Face,
     meshing::{Triangle, triangulation::Triangle2D},
 };
 
@@ -37,7 +35,7 @@ fn from_strip_triangle_keeps_face_and_material() {
 
 #[test]
 fn from_strip_triangle_places_every_vertex_on_the_layer() {
-    for axis in AXES {
+    for axis in Axis::AXES {
         for face in [Face::Positive(axis), Face::Negative(axis)] {
             let t = Triangle::from_strip_triangle(face, 11, strip(), 1);
             for v in t.vertices {
@@ -88,13 +86,13 @@ fn from_strip_triangle_maps_columns_and_rows_like_the_projection() {
 
 #[test]
 fn outward_vertices_face_away_from_the_solid() {
-    for axis in AXES {
+    for axis in Axis::AXES {
         for (face, sign) in [(Face::Positive(axis), 1), (Face::Negative(axis), -1)] {
             let t = Triangle::from_strip_triangle(face, 6, strip(), 1);
             let [a, b, c] = t.outward_vertices();
             let normal = cross(a, b, c);
 
-            for other in AXES {
+            for other in Axis::AXES {
                 let component = normal[other.as_usize()];
                 if other == axis {
                     assert_eq!(component.signum(), sign, "{face:?}: {normal:?}");
@@ -108,7 +106,7 @@ fn outward_vertices_face_away_from_the_solid() {
 
 #[test]
 fn outward_vertices_is_a_permutation_of_the_vertices() {
-    for axis in AXES {
+    for axis in Axis::AXES {
         for face in [Face::Positive(axis), Face::Negative(axis)] {
             let t = Triangle::from_strip_triangle(face, 6, strip(), 1);
             let mut original = t.vertices.map(|v| (v.x, v.y, v.z));

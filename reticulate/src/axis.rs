@@ -8,9 +8,9 @@ pub enum Axis {
     Z = 2,
 }
 
-pub const AXES: [Axis; 3] = [Axis::X, Axis::Y, Axis::Z];
-
 impl Axis {
+    pub const AXES: [Axis; 3] = [Axis::X, Axis::Y, Axis::Z];
+
     #[inline(always)]
     pub const fn as_usize(&self) -> usize {
         *self as usize
@@ -18,6 +18,6 @@ impl Axis {
 
     #[inline(always)]
     pub const fn next(&self) -> Axis {
-        AXES[(self.as_usize() + 1) % 3]
+        Self::AXES[(self.as_usize() + 1) % 3]
     }
 }

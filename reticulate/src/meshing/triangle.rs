@@ -1,7 +1,6 @@
 use crate::{
-    ChunkCoord, Coords3D,
-    face::Face,
-    meshing::{bitfields::MaterialId, surface_layer::SurfaceLayer, triangulation::Triangle2D},
+    ChunkCoord, Coords3D, Face, MaterialId,
+    meshing::{surface_layer::SurfaceLayer, triangulation::Triangle2D},
 };
 
 #[derive(Clone, Debug)]

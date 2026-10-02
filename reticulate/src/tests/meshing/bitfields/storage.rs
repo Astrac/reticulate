@@ -1,15 +1,12 @@
 use crate::{
-    Coords2D,
-    axis::{AXES, Axis},
+    Axis, CHUNK_VOLUME, Coords2D, PLANE_AREA, PLANE_SIDE, TREE_DEPTH,
     meshing::{
         bitfields::{
-            Bitfields, BitfieldsStorage, CHUNK_VOLUME, CLAIMS_WORDS, MATERIAL_BITS,
-            MATERIAL_PLANE_BITS, MATERIAL_WORDS, PARITY_WORDS, PLANE_AREA, PLANE_SIDE,
-            STORAGE_WORD,
+            Bitfields, BitfieldsStorage, CLAIMS_WORDS, MATERIAL_BITS, MATERIAL_PLANE_BITS,
+            MATERIAL_WORDS, PARITY_WORDS, STORAGE_WORD,
         },
         surface_layer::SurfaceLayer,
     },
-    octree::TREE_DEPTH,
 };
 
 #[test]
@@ -33,7 +30,7 @@ fn fresh_storage_is_entirely_empty() {
     let mut storage = BitfieldsStorage::default();
     let bitfields = Bitfields::from_storage(&mut storage);
 
-    for axis in AXES {
+    for axis in Axis::AXES {
         assert!(bitfields.material.cells[axis.as_usize()].not_any());
         for layer in 0..PLANE_SIDE {
             assert!(
@@ -59,7 +56,7 @@ fn material_planes_hold_one_cell_per_plane_position() {
     let mut storage = BitfieldsStorage::default();
     let bitfields = Bitfields::from_storage(&mut storage);
 
-    for axis in AXES {
+    for axis in Axis::AXES {
         assert_eq!(
             bitfields.material.cells[axis.as_usize()].len(),
             PLANE_AREA * MATERIAL_BITS
@@ -74,7 +71,7 @@ fn views_do_not_overlap() {
 
     // Fill the last plane of every claims mask and the last layer of every
     // parity mask, which are the regions next to their neighbours in memory.
-    for axis in AXES {
+    for axis in Axis::AXES {
         let last = SurfaceLayer::new(axis, PLANE_SIDE as u8 - 1);
         bitfields.claims.claim(last, &[u32::MAX; PLANE_SIDE]);
         for u in 0..PLANE_SIDE as u8 {
@@ -83,14 +80,14 @@ fn views_do_not_overlap() {
             }
         }
     }
-    for axis in AXES {
+    for axis in Axis::AXES {
         bitfields.material.cells[axis.as_usize()].fill(true);
     }
 
     // Each view must read back exactly what was written to it: the claims of
     // every plane but the last are untouched, and so is the parity below the
     // last layer bit.
-    for axis in AXES {
+    for axis in Axis::AXES {
         for layer in 0..PLANE_SIDE as u8 - 1 {
             assert_eq!(
                 bitfields

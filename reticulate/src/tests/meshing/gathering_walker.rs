@@ -1,6 +1,7 @@
 use crate::{
+    MaterialId, PLANE_SIDE,
     meshing::{
-        bitfields::{Bitfields, BitfieldsStorage, MaterialId, PLANE_SIDE},
+        bitfields::{Bitfields, BitfieldsStorage},
         gathering_walker::GatheringWalker,
     },
     utils::testing::{
