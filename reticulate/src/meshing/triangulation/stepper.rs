@@ -42,11 +42,6 @@ impl Stepper {
     }
 
     #[inline(always)]
-    pub fn from_bottom_edge(bottom_edge: u32, seed_col: u32, row: u32) -> Stepper {
-        Self::from_live(bottom_edge, 1 << seed_col, row)
-    }
-
-    #[inline(always)]
     pub const fn add_vertices(&mut self, mask: u32, row: u32) {
         let mut m = mask;
         while let Some(c) = m.lowest_one() {

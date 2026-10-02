@@ -1,7 +1,4 @@
-use crate::{
-    meshing::triangulation::{run::Run, run_mask::RunMasks},
-    utils::bitmasks,
-};
+use crate::meshing::triangulation::{run::Run, run_mask::RunMasks};
 
 #[derive(Clone, Debug, Default)]
 pub struct Runs {
@@ -43,21 +40,6 @@ impl Runs {
     }
 
     #[inline(always)]
-    pub const fn from_columns_mask(columns_mask: u32, seed_columns: u32) -> Runs {
-        Self::from_blocks(columns_mask, 1 << seed_columns)
-    }
-
-    #[inline(always)]
-    pub const fn advance(&mut self, edge: u32, guard: u32) {
-        *self = Self::from_blocks(edge, self.fill_mask() ^ guard);
-    }
-
-    #[inline(always)]
-    pub const fn all(&self) -> &[Run; 16] {
-        &self.runs
-    }
-
-    #[inline(always)]
     pub const fn at_index(&self, index: usize) -> &Run {
         &self.runs[index]
     }
@@ -82,10 +64,5 @@ impl Runs {
         for run_index in 0..self.runs_count {
             f(self.runs[run_index]);
         }
-    }
-
-    #[inline(always)]
-    pub const fn guard_caps(&self, guard: u32) -> u32 {
-        bitmasks::segment_boundaries(self.fill_mask() & guard)
     }
 }

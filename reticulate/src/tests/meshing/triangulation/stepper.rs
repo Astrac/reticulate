@@ -8,14 +8,12 @@ use crate::{
 
 #[test]
 fn init_on_boundary() {
-    let stepper = Stepper::from_bottom_edge(0b010010001, 0, 5);
+    let stepper = Stepper::from_live(0b010010001, 1 << 0, 5);
     let mut expected_vertices = [INACTIVE_VERTEX; 32];
     expected_vertices[0] = 5;
     expected_vertices[4] = 5;
 
     assert_eq!(stepper.runs.count(), 1);
-    assert_eq!(stepper.runs.all()[0].start(), 0);
-    assert_eq!(stepper.runs.all()[0].end(), 4);
     assert_eq!(stepper.zipper.bottom_column_heights, expected_vertices);
     assert_eq!(stepper.filled, [0; 32]);
     assert_eq!(stepper.runs.fill_mask(), 0b1111);
@@ -23,14 +21,12 @@ fn init_on_boundary() {
 
 #[test]
 fn init_in_middle() {
-    let stepper = Stepper::from_bottom_edge(0b010010001, 6, 5);
+    let stepper = Stepper::from_live(0b010010001, 1 << 6, 5);
     let mut expected_vertices = [INACTIVE_VERTEX; 32];
     expected_vertices[4] = 5;
     expected_vertices[7] = 5;
 
     assert_eq!(stepper.runs.count(), 1);
-    assert_eq!(stepper.runs.all()[0].start(), 4);
-    assert_eq!(stepper.runs.all()[0].end(), 7);
     assert_eq!(stepper.zipper.bottom_column_heights, expected_vertices);
     assert_eq!(stepper.filled, [0; 32]);
     assert_eq!(stepper.runs.fill_mask(), 0b1110000);
@@ -38,7 +34,7 @@ fn init_in_middle() {
 
 #[test]
 fn first_step_records_start_row() {
-    let mut stepper = Stepper::from_bottom_edge(0b010010001, 0, 5);
+    let mut stepper = Stepper::from_live(0b010010001, 1 << 0, 5);
     stepper.weave_to(6, 0, 0, |_| {});
 
     let mut expected = [0; 32];
@@ -402,7 +398,7 @@ fn from_live_starts_one_run_per_group_of_live_columns() {
 
 #[test]
 fn add_vertices_records_their_height_and_activates_them() {
-    let mut stepper = Stepper::from_bottom_edge(0b1_0001, 2, 1);
+    let mut stepper = Stepper::from_live(0b1_0001, 1 << 2, 1);
 
     stepper.add_vertices(0b0_1100, 3);
 
@@ -414,7 +410,7 @@ fn add_vertices_records_their_height_and_activates_them() {
 
 #[test]
 fn weaving_an_identical_row_adds_no_triangles() {
-    let mut stepper = Stepper::from_bottom_edge(0b1_0001, 2, 0);
+    let mut stepper = Stepper::from_live(0b1_0001, 1 << 2, 0);
     let mut tris = Vec::new();
 
     // The row above has the same cells 0..4, so the strip just keeps growing.
@@ -427,7 +423,7 @@ fn weaving_an_identical_row_adds_no_triangles() {
 
 #[test]
 fn extra_vertices_force_triangles_on_a_straight_edge() {
-    let mut stepper = Stepper::from_bottom_edge(0b1_0001, 2, 0);
+    let mut stepper = Stepper::from_live(0b1_0001, 1 << 2, 0);
     let mut tris = Vec::new();
 
     // A vertex requested at column 2 (e.g. to meet a neighbouring region's
@@ -440,7 +436,7 @@ fn extra_vertices_force_triangles_on_a_straight_edge() {
 
 #[test]
 fn weaving_a_closed_region_empties_the_runs() {
-    let mut stepper = Stepper::from_bottom_edge(0b1_0001, 2, 0);
+    let mut stepper = Stepper::from_live(0b1_0001, 1 << 2, 0);
 
     stepper.weave_to(1, 0, 0, |_| {});
 
