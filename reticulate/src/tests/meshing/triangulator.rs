@@ -23,14 +23,14 @@ fn octree_of(voxels: &Voxels) -> Fixed8Octree<MaterialId> {
 
 fn triangulate_fixed8(triangulator: &mut Triangulator, voxels: &Voxels) -> Vec<Triangle> {
     let mut tris = Vec::new();
-    triangulator.triangulate(octree_of(voxels), |m| *m, |t| tris.push(t));
+    triangulator.triangulate(&octree_of(voxels), |m| *m, |t| tris.push(t));
     tris
 }
 
 fn triangulate_compact(triangulator: &mut Triangulator, voxels: &Voxels) -> Vec<Triangle> {
     let mut tris = Vec::new();
     let compact = CompactOctree::from_fixed8(&octree_of(voxels));
-    triangulator.triangulate(compact, |m| *m, |t| tris.push(t));
+    triangulator.triangulate(&compact, |m| *m, |t| tris.push(t));
     tris
 }
 
@@ -63,7 +63,7 @@ fn assert_meshes_correctly(voxels: &Voxels) -> usize {
 #[test]
 fn empty_tree_produces_no_triangles() {
     let mut tris = Vec::new();
-    Triangulator::new().triangulate(Fixed8Octree::<MaterialId>::new(), |m| *m, |t| tris.push(t));
+    Triangulator::new().triangulate(&Fixed8Octree::<MaterialId>::new(), |m| *m, |t| tris.push(t));
     assert!(tris.is_empty());
 }
 
@@ -126,7 +126,7 @@ fn to_material_maps_the_payload_to_a_material() {
     tree.update(Coords3D { x: 2, y: 3, z: 4 }, Some(7u8));
     let mut tris = Vec::new();
 
-    Triangulator::new().triangulate(tree, |id| *id as MaterialId * 10, |t| tris.push(t));
+    Triangulator::new().triangulate(&tree, |id| *id as MaterialId * 10, |t| tris.push(t));
 
     assert_eq!(tris.len(), 12);
     assert!(tris.iter().all(|t| t.material == 70));
@@ -138,7 +138,7 @@ fn materials_of_zero_are_treated_as_empty() {
     tree.update(Coords3D { x: 2, y: 3, z: 4 }, Some(EMPTY));
     let mut tris = Vec::new();
 
-    Triangulator::new().triangulate(tree, |m| *m, |t| tris.push(t));
+    Triangulator::new().triangulate(&tree, |m| *m, |t| tris.push(t));
 
     assert!(tris.is_empty());
 }

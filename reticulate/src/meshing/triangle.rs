@@ -3,6 +3,11 @@ use crate::{
     meshing::{surface_layer::SurfaceLayer, triangulation::Triangle2D},
 };
 
+// TODO - Face and vertices capture overlapping information without
+//        enforcing consistency: vertex position already implies
+//        axis of the face and face only actually informs the
+//        winding/normals (i.e. positive/negative). Replace Face
+//        with something that only capture that information.
 #[derive(Clone, Debug)]
 pub struct Triangle {
     pub face: Face,

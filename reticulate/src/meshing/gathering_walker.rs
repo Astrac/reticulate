@@ -38,7 +38,7 @@ impl<'a, M> GatheringWalker<'a, M> {
 
 impl<'a, M, Data> DenseWalker<Data> for GatheringWalker<'a, M>
 where
-    M: Fn(&Data) -> MaterialId,
+    M: FnMut(&Data) -> MaterialId,
 {
     fn on_branch_start(&mut self, _morton: Morton3D, _children_mask: u8) {}
 

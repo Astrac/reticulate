@@ -35,7 +35,7 @@ impl Mesher {
         let mut triangulator = Triangulator::default();
 
         triangulator.triangulate(
-            octree,
+            &octree,
             |_| 1,
             |t| {
                 let [v1, v2, v3] = t.outward_vertices();

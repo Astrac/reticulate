@@ -29,7 +29,7 @@ where
 impl<'a, M, F, Data> DenseWalker<Data> for SurfaceWalker<'a, M, F>
 where
     F: FnMut(Triangle),
-    M: Fn(&Data) -> MaterialId,
+    M: FnMut(&Data) -> MaterialId,
 {
     fn on_branch_start(&mut self, _morton: Morton3D, _children_mask: u8) {}
     fn on_branch_end(&mut self, _morton: Morton3D) {}

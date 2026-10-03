@@ -22,12 +22,12 @@ impl Triangulator {
 
     pub fn triangulate<Data, F, M>(
         &mut self,
-        tree: impl DenseWalk<Data>,
+        tree: &impl DenseWalk<Data>,
         mut to_material: M,
         mut on_triangle: F,
     ) where
-        Data: Copy + PartialEq,
-        M: Fn(&Data) -> MaterialId,
+        Data: PartialEq,
+        M: FnMut(&Data) -> MaterialId,
         F: FnMut(Triangle),
     {
         let bitfields = Bitfields::from_storage(&mut self.storage);
