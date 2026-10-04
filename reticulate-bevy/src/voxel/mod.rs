@@ -1,4 +1,4 @@
-mod mesher;
+mod vertices;
 #[allow(dead_code)]
 mod test_model;
 
@@ -7,7 +7,7 @@ use bevy::light::CascadeShadowConfigBuilder;
 use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::prelude::*;
 
-use crate::voxel::mesher::Mesher;
+use crate::voxel::vertices::Vertices;
 
 #[derive(Component)]
 pub struct ChunkMesh;
@@ -16,7 +16,7 @@ pub fn redraw(
     mut commands: Commands,
     materials: ResMut<Assets<StandardMaterial>>,
     meshes: ResMut<Assets<Mesh>>,
-    mesher: ResMut<Mesher>,
+    mesher: ResMut<Vertices>,
     query: Query<Entity, With<ChunkMesh>>,
     keys: Res<ButtonInput<KeyCode>>,
 ) {
@@ -32,7 +32,7 @@ pub fn redraw(
 
 fn draw_mesh(
     commands: &mut Commands,
-    mut mesher: ResMut<Mesher>,
+    mut mesher: ResMut<Vertices>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
@@ -68,7 +68,7 @@ fn draw_mesh(
 
 pub fn setup(mut commands: Commands) {
     let light_color = Color::srgb(0.98, 0.85, 0.72);
-    let mesher = Mesher::new();
+    let mesher = Vertices::new();
     commands.insert_resource(mesher);
 
     // Sun

@@ -84,19 +84,18 @@ pub fn mesh(f: &mut Fixture, blocks: &[Block]) -> Vec<Triangle> {
     let mut cache = words(MATERIAL_WORDS);
     {
         let [mx, my, mz] = &mut cache;
-        let materials = Material {
+        let mut materials = Material {
             cells: [
                 mx.view_bits_mut::<Lsb0>(),
                 my.view_bits_mut::<Lsb0>(),
                 mz.view_bits_mut::<Lsb0>(),
             ],
         };
-        let scanner =
-            SurfaceScanner::new(claims_of(&mut f.claims), parity_of(&mut f.parity), |t| {
-                tris.push(t)
-            });
+        let mut claims = claims_of(&mut f.claims);
+        let parity = parity_of(&mut f.parity);
+        let scanner = SurfaceScanner::new(&mut claims, &parity, |t| tris.push(t));
         let mut to_material = |m: &MaterialId| *m;
-        let mut walker = SurfaceWalker::new(materials, scanner, &mut to_material);
+        let mut walker = SurfaceWalker::new(&mut materials, scanner, &mut to_material);
         dense_walk(&mut walker, &f.grid, blocks);
     }
     tris

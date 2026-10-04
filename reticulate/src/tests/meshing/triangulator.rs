@@ -1,6 +1,6 @@
 use crate::{
     CompactOctree, Coords3D, Fixed8Octree, MaterialId,
-    meshing::{Triangle, Triangulator},
+    meshing::{Triangle, Mesher},
     utils::testing::{DIRT, EMPTY, STONE, SeededRandom, VoxelGrid, assert_mesh_matches},
 };
 
@@ -21,16 +21,16 @@ fn octree_of(voxels: &Voxels) -> Fixed8Octree<MaterialId> {
     tree
 }
 
-fn triangulate_fixed8(triangulator: &mut Triangulator, voxels: &Voxels) -> Vec<Triangle> {
+fn triangulate_fixed8(triangulator: &mut Mesher, voxels: &Voxels) -> Vec<Triangle> {
     let mut tris = Vec::new();
-    triangulator.triangulate(&octree_of(voxels), |m| *m, |t| tris.push(t));
+    triangulator.make_triangles(&octree_of(voxels), |m| *m, |t| tris.push(t));
     tris
 }
 
-fn triangulate_compact(triangulator: &mut Triangulator, voxels: &Voxels) -> Vec<Triangle> {
+fn triangulate_compact(triangulator: &mut Mesher, voxels: &Voxels) -> Vec<Triangle> {
     let mut tris = Vec::new();
     let compact = CompactOctree::from_fixed8(&octree_of(voxels));
-    triangulator.triangulate(&compact, |m| *m, |t| tris.push(t));
+    triangulator.make_triangles(&compact, |m| *m, |t| tris.push(t));
     tris
 }
 
@@ -51,10 +51,10 @@ fn block(from: usize, to: usize, material: MaterialId) -> Voxels {
 fn assert_meshes_correctly(voxels: &Voxels) -> usize {
     let grid = VoxelGrid::new(voxels);
 
-    let fixed8 = triangulate_fixed8(&mut Triangulator::new(), voxels);
+    let fixed8 = triangulate_fixed8(&mut Mesher::new(), voxels);
     assert_mesh_matches(&grid, &fixed8);
 
-    let compact = triangulate_compact(&mut Triangulator::new(), voxels);
+    let compact = triangulate_compact(&mut Mesher::new(), voxels);
     assert_mesh_matches(&grid, &compact);
 
     fixed8.len()
@@ -63,7 +63,7 @@ fn assert_meshes_correctly(voxels: &Voxels) -> usize {
 #[test]
 fn empty_tree_produces_no_triangles() {
     let mut tris = Vec::new();
-    Triangulator::new().triangulate(&Fixed8Octree::<MaterialId>::new(), |m| *m, |t| tris.push(t));
+    Mesher::new().make_triangles(&Fixed8Octree::<MaterialId>::new(), |m| *m, |t| tris.push(t));
     assert!(tris.is_empty());
 }
 
@@ -81,7 +81,7 @@ fn equal_neighbours_share_no_internal_face() {
 #[test]
 fn different_materials_split_the_shared_boundary() {
     let voxels = vec![((2, 3, 4), STONE), ((3, 3, 4), DIRT)];
-    let mut tris = triangulate_fixed8(&mut Triangulator::new(), &voxels);
+    let mut tris = triangulate_fixed8(&mut Mesher::new(), &voxels);
 
     assert_mesh_matches(&VoxelGrid::new(&voxels), &tris);
     let stone = tris.iter().filter(|t| t.material == STONE).count();
@@ -126,7 +126,7 @@ fn to_material_maps_the_payload_to_a_material() {
     tree.update(Coords3D { x: 2, y: 3, z: 4 }, Some(7u8));
     let mut tris = Vec::new();
 
-    Triangulator::new().triangulate(&tree, |id| *id as MaterialId * 10, |t| tris.push(t));
+    Mesher::new().make_triangles(&tree, |id| *id as MaterialId * 10, |t| tris.push(t));
 
     assert_eq!(tris.len(), 12);
     assert!(tris.iter().all(|t| t.material == 70));
@@ -138,7 +138,7 @@ fn materials_of_zero_are_treated_as_empty() {
     tree.update(Coords3D { x: 2, y: 3, z: 4 }, Some(EMPTY));
     let mut tris = Vec::new();
 
-    Triangulator::new().triangulate(&tree, |m| *m, |t| tris.push(t));
+    Mesher::new().make_triangles(&tree, |m| *m, |t| tris.push(t));
 
     assert!(tris.is_empty());
 }
@@ -146,7 +146,7 @@ fn materials_of_zero_are_treated_as_empty() {
 #[test]
 fn every_triangle_is_a_unit_aligned_non_degenerate_triangle_in_the_chunk() {
     let voxels = block(1, 5, STONE);
-    let tris = triangulate_fixed8(&mut Triangulator::new(), &voxels);
+    let tris = triangulate_fixed8(&mut Mesher::new(), &voxels);
 
     for t in &tris {
         let [a, b, c] = t.vertices;
@@ -161,8 +161,8 @@ fn every_triangle_is_a_unit_aligned_non_degenerate_triangle_in_the_chunk() {
 fn fixed8_and_compact_trees_give_the_same_mesh() {
     let voxels = block(4, 8, STONE);
 
-    let mut fixed8 = triangulate_fixed8(&mut Triangulator::new(), &voxels);
-    let mut compact = triangulate_compact(&mut Triangulator::new(), &voxels);
+    let mut fixed8 = triangulate_fixed8(&mut Mesher::new(), &voxels);
+    let mut compact = triangulate_compact(&mut Mesher::new(), &voxels);
 
     let key = |t: &Triangle| {
         let mut vs = t.vertices.map(|v| (v.x, v.y, v.z));
@@ -204,7 +204,7 @@ fn random_blobs_are_seamless_with_both_tree_types() {
 #[ignore = "Disabled: Triangulator::triangulate does not reset claims, parity and materials between chunks"]
 fn reusing_a_triangulator_for_the_same_chunk_gives_the_same_mesh() {
     let voxels = vec![((2, 3, 4), STONE), ((3, 3, 4), DIRT)];
-    let mut triangulator = Triangulator::new();
+    let mut triangulator = Mesher::new();
 
     let first = triangulate_fixed8(&mut triangulator, &voxels);
     let second = triangulate_fixed8(&mut triangulator, &voxels);
@@ -218,7 +218,7 @@ fn reusing_a_triangulator_for_the_same_chunk_gives_the_same_mesh() {
 fn reusing_a_triangulator_for_an_overlapping_chunk_gives_a_correct_mesh() {
     let first = vec![((2, 3, 4), STONE), ((3, 3, 4), DIRT)];
     let second = vec![((2, 3, 4), DIRT), ((2, 4, 4), STONE)];
-    let mut triangulator = Triangulator::new();
+    let mut triangulator = Mesher::new();
 
     triangulate_fixed8(&mut triangulator, &first);
     let tris = triangulate_fixed8(&mut triangulator, &second);
@@ -230,7 +230,7 @@ fn reusing_a_triangulator_for_an_overlapping_chunk_gives_a_correct_mesh() {
 #[ignore = "Disabled: touching chunk boundary not yet implemented"]
 fn voxel_at_the_far_corner_meshes_only_its_near_faces() {
     let voxels = vec![((31, 31, 31), STONE)];
-    let tris = triangulate_fixed8(&mut Triangulator::new(), &voxels);
+    let tris = triangulate_fixed8(&mut Mesher::new(), &voxels);
 
     assert_eq!(tris.len(), 6);
     assert_mesh_matches(&VoxelGrid::new(&voxels), &tris);

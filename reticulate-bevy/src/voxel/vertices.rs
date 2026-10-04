@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use reticulate::{Coords3D, DenseWalk, Triangulator};
+use reticulate::{Coords3D, DenseWalk, Mesher};
 
 const INITIAL_CAPACITY: usize = 8000;
 const NORMALS: [Vec3; 6] = [
@@ -12,16 +12,16 @@ const NORMALS: [Vec3; 6] = [
 ];
 
 #[derive(Resource)]
-pub struct Mesher {
+pub struct Vertices {
     pub positions: Vec<Vec3>,
     pub normals: Vec<Vec3>,
     pub colors: Vec<Vec4>,
     pub indices: Vec<u32>,
 }
 
-impl Mesher {
-    pub fn new() -> Mesher {
-        Mesher {
+impl Vertices {
+    pub fn new() -> Vertices {
+        Vertices {
             positions: Vec::with_capacity(INITIAL_CAPACITY),
             normals: Vec::with_capacity(INITIAL_CAPACITY),
             colors: Vec::with_capacity(INITIAL_CAPACITY),
@@ -32,9 +32,9 @@ impl Mesher {
     pub fn build_mesh(&mut self, octree: impl DenseWalk<()>) {
         let mut next_index = 0;
 
-        let mut triangulator = Triangulator::default();
+        let mut mesher = Mesher::default();
 
-        triangulator.triangulate(
+        mesher.make_triangles(
             &octree,
             |_| 1,
             |t| {

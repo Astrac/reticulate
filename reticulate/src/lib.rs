@@ -17,7 +17,7 @@ pub use coords_3d::Coords3D;
 pub use definitions::*;
 pub use depth::Depth;
 pub use face::Face;
-pub use meshing::Triangulator;
+pub use meshing::Mesher;
 pub use morton_2d::Morton2D;
 pub use morton_3d::Morton3D;
 pub use octree::{CompactOctree, Fixed8Octree};

@@ -10,22 +10,22 @@ use crate::{
     },
 };
 
-pub struct SurfaceScanner<'a, F> {
-    claims: Claims<'a>,
-    parity: Parity<'a>,
+pub struct SurfaceScanner<'a, 'b, F> {
+    claims: &'b mut Claims<'a>,
+    parity: &'b Parity<'a>,
     on_triangle: F,
 }
 
-impl<'a, F> SurfaceScanner<'a, F>
+impl<'a, 'b, F> SurfaceScanner<'a, 'b, F>
 where
     F: FnMut(Triangle),
 {
     #[inline(always)]
     pub const fn new(
-        claims: Claims<'a>,
-        parity: Parity<'a>,
+        claims: &'b mut Claims<'a>,
+        parity: &'b Parity<'a>,
         on_triangle: F,
-    ) -> SurfaceScanner<'a, F> {
+    ) -> SurfaceScanner<'a, 'b, F> {
         SurfaceScanner {
             claims,
             parity,

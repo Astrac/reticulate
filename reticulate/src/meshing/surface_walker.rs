@@ -3,21 +3,21 @@ use crate::{
     meshing::{Triangle, bitfields::Material, surface_scanner::SurfaceScanner},
 };
 
-pub struct SurfaceWalker<'a, M, F> {
-    materials: Material<'a>,
-    surface_scanner: SurfaceScanner<'a, F>,
-    to_material: &'a mut M,
+pub struct SurfaceWalker<'a, 'b, M, F> {
+    materials: &'b mut Material<'a>,
+    surface_scanner: SurfaceScanner<'a, 'b, F>,
+    to_material: &'b mut M,
 }
 
-impl<'a, M, F> SurfaceWalker<'a, M, F>
+impl<'a, 'b, M, F> SurfaceWalker<'a, 'b, M, F>
 where
     F: FnMut(Triangle),
 {
     pub fn new(
-        materials: Material<'a>,
-        surface_scanner: SurfaceScanner<'a, F>,
-        to_material: &'a mut M,
-    ) -> SurfaceWalker<'a, M, F> {
+        materials: &'b mut Material<'a>,
+        surface_scanner: SurfaceScanner<'a, 'b, F>,
+        to_material: &'b mut M,
+    ) -> SurfaceWalker<'a, 'b, M, F> {
         SurfaceWalker {
             materials,
             surface_scanner,
@@ -26,7 +26,7 @@ where
     }
 }
 
-impl<'a, M, F, Data> DenseWalker<Data> for SurfaceWalker<'a, M, F>
+impl<'a, 'b, M, F, Data> DenseWalker<Data> for SurfaceWalker<'a, 'b, M, F>
 where
     F: FnMut(Triangle),
     M: FnMut(&Data) -> MaterialId,

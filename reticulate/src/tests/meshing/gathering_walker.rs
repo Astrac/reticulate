@@ -22,9 +22,13 @@ fn assert_gathers_brute_force_parity(
     let reference_parity = parity_of(&mut reference.parity);
 
     let mut storage = BitfieldsStorage::default();
-    let bitfields = Bitfields::from_storage(&mut storage);
+    let mut bitfields = Bitfields::from_storage(&mut storage);
     let mut to_material = |m: &MaterialId| *m;
-    let mut walker = GatheringWalker::new(bitfields, &mut to_material);
+    let mut walker = GatheringWalker::new(
+        &mut bitfields.material,
+        &mut bitfields.parity,
+        &mut to_material,
+    );
     dense_walk(&mut walker, &VoxelGrid::new(voxels), blocks);
 
     let gathered = Bitfields::from_storage(&mut storage).parity;

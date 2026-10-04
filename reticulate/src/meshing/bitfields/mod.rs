@@ -8,10 +8,7 @@ pub use parity::{Parity, ParityMask};
 
 use bitvec::prelude::*;
 
-use crate::{
-    CHUNK_VOLUME, MaterialId, PLANE_AREA,
-    meshing::{Triangle, surface_scanner::SurfaceScanner},
-};
+use crate::{CHUNK_VOLUME, MaterialId, PLANE_AREA};
 
 type Word = u64;
 type Slice = BitSlice<u64, Lsb0>;
@@ -41,14 +38,14 @@ pub struct Bitfields<'a> {
 impl<'a> Bitfields<'a> {
     pub fn from_storage(storage: &'a mut BitfieldsStorage) -> Bitfields<'a> {
         let storage_words = storage.bits.as_raw_mut_slice();
+        let (x_parity, storage_words) = storage_words.split_at_mut(PARITY_WORDS);
+        let (y_parity, storage_words) = storage_words.split_at_mut(PARITY_WORDS);
+        let (z_parity, storage_words) = storage_words.split_at_mut(PARITY_WORDS);
         let (x_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_WORDS);
         let (y_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_WORDS);
         let (z_material_plane, storage_words) = storage_words.split_at_mut(MATERIAL_WORDS);
         let (x_claims, storage_words) = storage_words.split_at_mut(CLAIMS_WORDS);
-        let (y_claims, storage_words) = storage_words.split_at_mut(CLAIMS_WORDS);
-        let (z_claims, storage_words) = storage_words.split_at_mut(CLAIMS_WORDS);
-        let (x_parity, storage_words) = storage_words.split_at_mut(PARITY_WORDS);
-        let (y_parity, z_parity) = storage_words.split_at_mut(PARITY_WORDS);
+        let (y_claims, z_claims) = storage_words.split_at_mut(CLAIMS_WORDS);
 
         Bitfields {
             claims: Claims {
@@ -73,15 +70,5 @@ impl<'a> Bitfields<'a> {
                 ],
             },
         }
-    }
-
-    pub fn as_surface_scanner<F: FnMut(Triangle)>(
-        self,
-        on_triangle: F,
-    ) -> (Material<'a>, SurfaceScanner<'a, F>) {
-        (
-            self.material,
-            SurfaceScanner::new(self.claims, self.parity, on_triangle),
-        )
     }
 }

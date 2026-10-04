@@ -4,23 +4,24 @@ use crate::{
         Triangle,
         bitfields::{Bitfields, BitfieldsStorage},
         gathering_walker::GatheringWalker,
+        surface_scanner::SurfaceScanner,
         surface_walker::SurfaceWalker,
     },
 };
 
 #[derive(Debug, Default)]
-pub struct Triangulator {
+pub struct Mesher {
     storage: BitfieldsStorage,
 }
 
-impl Triangulator {
-    pub fn new() -> Triangulator {
-        Triangulator {
+impl Mesher {
+    pub fn new() -> Mesher {
+        Mesher {
             storage: BitfieldsStorage::default(),
         }
     }
 
-    pub fn triangulate<Data, F, M>(
+    pub fn make_triangles<Data, F, M>(
         &mut self,
         tree: &impl DenseWalk<Data>,
         mut to_material: M,
@@ -30,16 +31,22 @@ impl Triangulator {
         M: FnMut(&Data) -> MaterialId,
         F: FnMut(Triangle),
     {
-        let bitfields = Bitfields::from_storage(&mut self.storage);
-        let mut gathering_walker = GatheringWalker::new(bitfields, &mut to_material);
+        let Bitfields {
+            mut claims,
+            mut parity,
+            mut material,
+        } = Bitfields::from_storage(&mut self.storage);
+
+        let mut gathering_walker =
+            GatheringWalker::new(&mut material, &mut parity, &mut to_material);
         tree.walk_dense(&mut gathering_walker);
 
-        let (mut materials, surface_scanner) =
-            Bitfields::from_storage(&mut self.storage).as_surface_scanner(&mut on_triangle);
+        material.clear();
 
-        materials.clear();
+        let surface_scanner = SurfaceScanner::new(&mut claims, &parity, &mut on_triangle);
+        let mut surface_walker =
+            SurfaceWalker::new(&mut material, surface_scanner, &mut to_material);
 
-        let mut surface_walker = SurfaceWalker::new(materials, surface_scanner, &mut to_material);
         tree.walk_dense(&mut surface_walker);
     }
 }

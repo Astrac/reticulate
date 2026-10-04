@@ -1,42 +1,45 @@
 use crate::{
     Axis, DenseWalker, MaterialId, Morton3D,
-    meshing::{bitfields::Bitfields, surface_layer::SurfaceLayer},
+    meshing::{
+        bitfields::{Material, Parity},
+        surface_layer::SurfaceLayer,
+    },
 };
 
-pub struct GatheringWalker<'a, M> {
-    bitfields: Bitfields<'a>,
-    to_material: &'a mut M,
+pub struct GatheringWalker<'a, 'b, M> {
+    material: &'b mut Material<'a>,
+    parity: &'b mut Parity<'a>,
+    to_material: &'b mut M,
 }
 
-impl<'a, M> GatheringWalker<'a, M> {
-    pub fn new(bitfields: Bitfields<'a>, to_material: &'a mut M) -> GatheringWalker<'a, M> {
+impl<'a, 'b, M> GatheringWalker<'a, 'b, M> {
+    pub fn new(
+        material: &'b mut Material<'a>,
+        parity: &'b mut Parity<'a>,
+        to_material: &'b mut M,
+    ) -> GatheringWalker<'a, 'b, M> {
         GatheringWalker {
-            bitfields,
+            material,
+            parity,
             to_material,
         }
     }
 
     fn set_transitions(&mut self, axis: Axis, morton: Morton3D, material: MaterialId) {
         let (morton_2d, layer) = morton.projected_axis_morton(axis);
-        self.bitfields.material.iterate_materials(
-            axis,
-            morton_2d,
-            |existing_material, coords, area| {
+        self.material
+            .iterate_materials(axis, morton_2d, |existing_material, coords, area| {
                 if existing_material != material {
-                    self.bitfields.parity.set_transition(
-                        SurfaceLayer::new(axis, layer),
-                        coords,
-                        area,
-                    );
+                    self.parity
+                        .set_transition(SurfaceLayer::new(axis, layer), coords, area);
                 }
-            },
-        );
+            });
 
-        self.bitfields.material.fill(axis, morton, material);
+        self.material.fill(axis, morton, material);
     }
 }
 
-impl<'a, M, Data> DenseWalker<Data> for GatheringWalker<'a, M>
+impl<'a, 'b, M, Data> DenseWalker<Data> for GatheringWalker<'a, 'b, M>
 where
     M: FnMut(&Data) -> MaterialId,
 {
