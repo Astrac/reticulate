@@ -23,7 +23,6 @@ fn single_voxel_at_chunk_origin() {
 }
 
 #[test]
-#[ignore = "Disabled: touching chunk boundary not yet implemented"]
 fn single_voxel_at_far_corner_emits_only_near_faces() {
     let mut f = Fixture::new(&[((31, 31, 31), STONE)]);
     let tris = mesh(&mut f, &[]);

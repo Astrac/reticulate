@@ -24,6 +24,8 @@ pub use octree::{CompactOctree, Fixed8Octree};
 pub use walking::{DenseWalk, DenseWalker, Walk, Walker};
 
 pub type ChunkCoord = u8;
+pub type CellMask = u32;
+pub type BoundaryMask = u64;
 
 #[cfg(test)]
 mod tests;

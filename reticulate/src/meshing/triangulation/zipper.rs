@@ -1,19 +1,32 @@
-use crate::meshing::triangulation::Triangle2D;
+use crate::{
+    BoundaryMask,
+    meshing::triangulation::{Triangle2D, stepper::BOUNDARIES_COUNT},
+};
 
 const INACTIVE_VERTEX_U32: u32 = u32::MAX;
 
-#[derive(Clone, Debug, Default)]
+// TODO - Make the attributes private if possible
+#[derive(Clone, Debug)]
 pub struct Zipper {
-    pub bottom_column_heights: [u8; 32],
-    pub bottom_columns_mask: u32,
+    pub bottom_column_heights: [u8; BOUNDARIES_COUNT],
+    pub bottom_columns_mask: BoundaryMask,
+}
+
+impl Default for Zipper {
+    fn default() -> Self {
+        Self {
+            bottom_column_heights: [Default::default(); BOUNDARIES_COUNT],
+            bottom_columns_mask: Default::default(),
+        }
+    }
 }
 
 impl Zipper {
     pub fn zip(
         &mut self,
-        run_scan_mask: u32,
+        run_scan_mask: BoundaryMask,
         top_height: usize,
-        top_columns_mask: u32,
+        top_columns_mask: BoundaryMask,
         on_triangle: &mut impl FnMut(Triangle2D),
     ) {
         let mut top_mask = top_columns_mask & run_scan_mask;
@@ -74,7 +87,7 @@ impl Zipper {
     }
 
     #[inline(always)]
-    pub const fn advance(&mut self, row: usize, mut mask: u32, scan_mask: u32) {
+    pub const fn advance(&mut self, row: usize, mut mask: BoundaryMask, scan_mask: BoundaryMask) {
         self.bottom_columns_mask = (self.bottom_columns_mask & !mask) | (mask & scan_mask);
         while let Some(x) = mask.lowest_one() {
             mask &= !mask.isolate_lowest_one();

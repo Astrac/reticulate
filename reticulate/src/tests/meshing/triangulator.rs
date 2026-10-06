@@ -227,7 +227,6 @@ fn reusing_a_triangulator_for_an_overlapping_chunk_gives_a_correct_mesh() {
 }
 
 #[test]
-#[ignore = "Disabled: touching chunk boundary not yet implemented"]
 fn voxel_at_the_far_corner_meshes_only_its_near_faces() {
     let voxels = vec![((31, 31, 31), STONE)];
     let tris = triangulate_fixed8(&mut Mesher::new(), &voxels);

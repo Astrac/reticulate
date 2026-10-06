@@ -1,5 +1,5 @@
 use crate::{
-    Coords2D, PLANE_SIDE,
+    CellMask, Coords2D, PLANE_SIDE,
     meshing::{
         bitfields::{Claims, Parity},
         surface_layer::SurfaceLayer,
@@ -66,7 +66,13 @@ impl<'a> Filler<'a> {
         true
     }
 
-    fn expand(&self, layer: SurfaceLayer, edges: &Edges, row: usize, columns: u32) -> u32 {
+    fn expand(
+        &self,
+        layer: SurfaceLayer,
+        edges: &Edges,
+        row: usize,
+        columns: CellMask,
+    ) -> CellMask {
         let walls =
             edges.walls(row) | bitmasks::segment_boundaries(self.claims.claimed_row(layer, row));
         Runs::from_blocks(walls, columns).fill_mask()

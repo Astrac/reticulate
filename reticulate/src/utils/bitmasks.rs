@@ -1,3 +1,5 @@
+use crate::{BoundaryMask, CellMask};
+
 #[inline(always)]
 pub const fn take_one_every_3_bits(mut x: u32) -> u32 {
     x &= 0x0924_9249;
@@ -37,7 +39,7 @@ pub const fn interleave_two_zeroes(n: u8) -> u32 {
 }
 
 #[inline(always)]
-pub const fn make_ones_mask(from: u8, to: u8) -> u32 {
+pub const fn cell_ones(from: u8, to: u8) -> CellMask {
     let upper_bound = ((1u32 << to) << 1).wrapping_sub(1);
     let lower_bound = (1u32 << from).wrapping_sub(1);
 
@@ -45,51 +47,38 @@ pub const fn make_ones_mask(from: u8, to: u8) -> u32 {
 }
 
 #[inline(always)]
-pub const fn segment_boundaries(cells: u32) -> u32 {
+pub const fn boundary_ones(from: u8, to: u8) -> BoundaryMask {
+    let upper_bound = ((1u64 << to) << 1).wrapping_sub(1);
+    let lower_bound = (1u64 << from).wrapping_sub(1);
+
+    upper_bound & !lower_bound
+}
+
+#[inline(always)]
+pub const fn segment_boundaries(cells: CellMask) -> BoundaryMask {
+    let cells = cells as BoundaryMask;
     cells ^ (cells << 1)
 }
 
 #[inline(always)]
-pub const fn run_starts(cells: u32) -> u32 {
+pub const fn run_starts(cells: CellMask) -> BoundaryMask {
+    let cells = cells as BoundaryMask;
     cells & !(cells << 1)
 }
 
 #[inline(always)]
-pub const fn run_ends(cells: u32) -> u32 {
+pub const fn run_ends(cells: CellMask) -> BoundaryMask {
+    let cells = cells as BoundaryMask;
     (cells << 1) & !cells
 }
 
 #[inline(always)]
-pub const fn boundary_changes(below: u32, above: u32) -> u32 {
+pub const fn boundary_changes(below: CellMask, above: CellMask) -> BoundaryMask {
     (run_starts(below) ^ run_starts(above)) | (run_ends(below) ^ run_ends(above))
 }
 
 #[inline(always)]
-pub const fn boundary_points(below: u32, above: u32) -> u32 {
-    let crossings = below ^ above;
+pub const fn boundary_points(below: CellMask, above: CellMask) -> BoundaryMask {
+    let crossings = (below ^ above) as BoundaryMask;
     segment_boundaries(below) | segment_boundaries(above) | crossings | (crossings << 1)
-}
-
-// TODO - Remove if confirmed non-needed
-#[inline(always)]
-#[allow(unused)]
-pub const fn transpose32(mut a: [u32; 32]) -> [u32; 32] {
-    let mut j = 16u32;
-    let mut m: u32 = 0x0000_FFFF;
-    while j != 0 {
-        let mut k = 0;
-        while k < 32 {
-            let mut i = k;
-            while i < (k + j as usize) {
-                let t = (a[i] ^ (a[i + j as usize] >> j)) & m;
-                a[i] ^= t;
-                a[i + j as usize] ^= t << j;
-                i += 1;
-            }
-            k += (j << 1) as usize;
-        }
-        j >>= 1;
-        m ^= m << j;
-    }
-    a
 }

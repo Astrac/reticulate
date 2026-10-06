@@ -1,4 +1,7 @@
-use crate::meshing::triangulation::{run::Run, run_mask::RunMasks};
+use crate::{
+    BoundaryMask, CellMask,
+    meshing::triangulation::{run::Run, run_mask::RunMasks},
+};
 
 #[derive(Clone, Debug, Default)]
 pub struct Runs {
@@ -9,19 +12,16 @@ pub struct Runs {
 
 impl Runs {
     #[inline(always)]
-    pub const fn from_blocks(edge: u32, mut blocks: u32) -> Runs {
+    pub const fn from_blocks(edge: BoundaryMask, mut blocks: CellMask) -> Runs {
         let mut runs = [Run::default(); 16];
         let mut count = 0;
         let mut fill = 0;
         let mut scan = 0;
 
         while let Some(start) = blocks.lowest_one() {
-            let run = Run::from_columns_mask(edge, start);
+            let run = Run::from_edges(edge, start);
             debug_assert!((edge >> run.start()) & 1 == 1, "No wall found at run start");
-            debug_assert!(
-                count == 0 || run.start() >= runs[count - 1].end(),
-                "Found out of order or overlapping run"
-            );
+            debug_assert!((edge >> run.end()) & 1 == 1, "No wall found at run end");
 
             runs[count] = run;
             count += 1;
@@ -50,12 +50,12 @@ impl Runs {
     }
 
     #[inline(always)]
-    pub const fn fill_mask(&self) -> u32 {
+    pub const fn fill_mask(&self) -> CellMask {
         self.masks.fill()
     }
 
     #[inline(always)]
-    pub const fn scan_mask(&self) -> u32 {
+    pub const fn scan_mask(&self) -> BoundaryMask {
         self.masks.scan()
     }
 

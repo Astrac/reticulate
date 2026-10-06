@@ -1,4 +1,6 @@
-use crate::{meshing::triangulation::run_mask::RunMasks, utils::bitmasks};
+use crate::{
+    BoundaryMask, CellMask, PLANE_SIDE, meshing::triangulation::run_mask::RunMasks, utils::bitmasks,
+};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Run {
@@ -18,15 +20,17 @@ impl Run {
     }
 
     #[inline(always)]
-    pub const fn from_columns_mask(u_mask: u32, seed_u: u32) -> Run {
-        let mask_lower = u_mask & (!0u32 >> (31 - seed_u));
-        let start = (31 - (mask_lower | 1).leading_zeros()) as u8;
+    pub const fn from_edges(edges: BoundaryMask, seed_cell_index: u32) -> Run {
+        let below = edges & (!0u64 >> (63 - seed_cell_index));
+        let above = edges & ((!0u64 << seed_cell_index) << 1);
 
-        let mask_upper = u_mask & ((!0u32 << seed_u) << 1);
-        let end = (mask_upper | (1 << 31)).trailing_zeros() as u8;
+        // These imply a parity violation (i.e. an implicit wall) at indices
+        // 0 and 32 of the chunk, forcing vertices on the chunk boundaries.
+        let start = (63 - (below | 1).leading_zeros()) as u8;
+        let end = (above | (1u64 << PLANE_SIDE)).trailing_zeros() as u8;
 
-        let fill = bitmasks::make_ones_mask(start, end - 1);
-        let scan = bitmasks::make_ones_mask(start, end);
+        let fill = bitmasks::cell_ones(start, end - 1);
+        let scan = bitmasks::boundary_ones(start, end);
 
         Run {
             end,
@@ -46,17 +50,17 @@ impl Run {
     }
 
     #[inline(always)]
-    pub const fn boundary_mask(&self) -> u32 {
-        (1u32 << self.start) | (1u32 << self.end)
+    pub const fn boundary_mask(&self) -> BoundaryMask {
+        (1u64 << self.start) | (1u64 << self.end)
     }
 
     #[inline(always)]
-    pub const fn fill_mask(&self) -> u32 {
+    pub const fn fill_mask(&self) -> CellMask {
         self.masks.fill()
     }
 
     #[inline(always)]
-    pub const fn scan_mask(&self) -> u32 {
+    pub const fn scan_mask(&self) -> BoundaryMask {
         self.masks.scan()
     }
 }

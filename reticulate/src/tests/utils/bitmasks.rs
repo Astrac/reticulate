@@ -59,17 +59,17 @@ fn take_one_every_3_bits_undoes_interleave_two_zeroes() {
 
 #[test]
 fn make_ones_mask_is_inclusive_on_both_ends() {
-    assert_eq!(make_ones_mask(3, 5), 0b111_000);
-    assert_eq!(make_ones_mask(0, 0), 0b1);
-    assert_eq!(make_ones_mask(4, 4), 0b1_0000);
-    assert_eq!(make_ones_mask(0, 3), 0b1111);
+    assert_eq!(cell_ones(3, 5), 0b111_000);
+    assert_eq!(cell_ones(0, 0), 0b1);
+    assert_eq!(cell_ones(4, 4), 0b1_0000);
+    assert_eq!(cell_ones(0, 3), 0b1111);
 }
 
 #[test]
 fn make_ones_mask_reaches_the_top_bit() {
-    assert_eq!(make_ones_mask(0, 31), u32::MAX);
-    assert_eq!(make_ones_mask(31, 31), 1 << 31);
-    assert_eq!(make_ones_mask(28, 31), 0xF000_0000);
+    assert_eq!(cell_ones(0, 31), u32::MAX);
+    assert_eq!(cell_ones(31, 31), 1 << 31);
+    assert_eq!(cell_ones(28, 31), 0xF000_0000);
 }
 
 #[test]
@@ -85,11 +85,26 @@ fn run_starts_and_ends_mark_each_run_once() {
 }
 
 #[test]
-fn run_ends_of_a_run_touching_the_top_bit_is_lost() {
-    // A run that reaches column 31 would end at column 32, which a 32-bit
-    // word cannot represent. This is the known chunk-boundary limitation.
-    assert_eq!(run_ends(1 << 31), 0);
-    assert_eq!(run_starts(1 << 31), 1 << 31);
+fn a_run_touching_cell_31_ends_at_boundary_32() {
+    assert_eq!(run_ends(1 << 31), 1u64 << 32);
+    assert_eq!(run_starts(1 << 31), 1u64 << 31);
+    assert_eq!(segment_boundaries(1 << 31), (1u64 << 31) | (1u64 << 32));
+}
+
+#[test]
+fn a_full_row_spans_boundaries_0_to_32() {
+    assert_eq!(run_starts(u32::MAX), 1);
+    assert_eq!(run_ends(u32::MAX), 1u64 << 32);
+    assert_eq!(segment_boundaries(u32::MAX), 1 | (1u64 << 32));
+}
+
+#[test]
+fn moving_the_end_onto_boundary_32_is_a_change() {
+    // cells {30} -> {30, 31}: the start stays at 30, the end moves from 31 to 32.
+    assert_eq!(
+        boundary_changes(1 << 30, 0b11 << 30),
+        (1u64 << 31) | (1u64 << 32)
+    );
 }
 
 #[test]
@@ -162,45 +177,4 @@ fn boundary_points_include_the_boundaries_of_both_rows() {
         (1 << 2) | (1 << 6),
         "identical rows only expose their shared boundaries"
     );
-}
-
-#[test]
-fn transpose32_of_the_identity_is_the_identity() {
-    let identity: [u32; 32] = core::array::from_fn(|i| 1 << i);
-    assert_eq!(transpose32(identity), identity);
-}
-
-/// `transpose32` is the classic MSB-first routine: columns are counted from
-/// the most significant bit, so bit `c` (from the LSB) of row `r` lands on
-/// bit `31 - r` of row `31 - c`.
-#[test]
-fn transpose32_swaps_rows_and_columns_counting_columns_from_the_msb() {
-    for (row, col) in [(0, 0), (0, 31), (31, 0), (3, 17), (17, 3), (12, 12)] {
-        let mut m = [0u32; 32];
-        m[row] = 1 << col;
-
-        let mut expected = [0u32; 32];
-        expected[31 - col] = 1 << (31 - row);
-
-        assert_eq!(transpose32(m), expected, "bit at row {row}, column {col}");
-    }
-}
-
-#[test]
-fn transpose32_is_its_own_inverse() {
-    let mut state = 0x1234_5678u32;
-    let m: [u32; 32] = core::array::from_fn(|_| {
-        state ^= state << 13;
-        state ^= state >> 17;
-        state ^= state << 5;
-        state
-    });
-    assert_eq!(transpose32(transpose32(m)), m);
-}
-
-#[test]
-fn transpose32_preserves_the_number_of_set_bits() {
-    let m: [u32; 32] = core::array::from_fn(|i| (i as u32).wrapping_mul(0x9E37_79B9));
-    let count = |m: &[u32; 32]| m.iter().map(|w| w.count_ones()).sum::<u32>();
-    assert_eq!(count(&transpose32(m)), count(&m));
 }

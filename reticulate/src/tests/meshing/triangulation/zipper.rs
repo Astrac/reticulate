@@ -1,12 +1,17 @@
 use crate::{
-    meshing::triangulation::{Triangle2D, stepper::INACTIVE_VERTEX, zipper::Zipper},
+    BoundaryMask,
+    meshing::triangulation::{
+        Triangle2D,
+        stepper::{BOUNDARIES_COUNT, INACTIVE_VERTEX},
+        zipper::Zipper,
+    },
     utils::testing::{area2, assert_covers_exactly, weave_rows},
 };
 
 /// A zipper whose bottom vertices sit at the given columns, all at `height`.
 fn zipper_at(columns: &[u32], height: u8) -> Zipper {
     let mut zipper = Zipper {
-        bottom_column_heights: [INACTIVE_VERTEX; 32],
+        bottom_column_heights: [INACTIVE_VERTEX; BOUNDARIES_COUNT],
         bottom_columns_mask: 0,
     };
     for &c in columns {
@@ -16,7 +21,7 @@ fn zipper_at(columns: &[u32], height: u8) -> Zipper {
     zipper
 }
 
-fn mask(columns: &[u32]) -> u32 {
+fn mask(columns: &[BoundaryMask]) -> BoundaryMask {
     columns.iter().fold(0, |m, &c| m | (1 << c))
 }
 

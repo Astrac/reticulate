@@ -1,5 +1,5 @@
 use crate::{
-    PLANE_SIDE,
+    BoundaryMask, CellMask, PLANE_SIDE,
     meshing::{
         bitfields::Parity,
         surface_layer::SurfaceLayer,
@@ -71,8 +71,8 @@ impl<'a> Weaver<'a> {
         layer: SurfaceLayer,
         edges: &Edges,
         line: usize,
-        points: u32,
-    ) -> u32 {
+        points: BoundaryMask,
+    ) -> BoundaryMask {
         if points == 0 {
             return 0;
         }
@@ -83,9 +83,9 @@ impl<'a> Weaver<'a> {
         };
         let down = if line > 0 { edges.walls(line - 1) } else { 0 };
         // Each point c needs the segments under cells c - 1 and c.
-        let cells = points | (points >> 1);
+        let cells = (points | (points >> 1)) as CellMask;
         let across = if line < PLANE_SIDE {
-            self.parity.boundary_guard(layer, line, cells)
+            self.parity.boundary_guard(layer, line, cells) as BoundaryMask
         } else {
             0
         };

@@ -1,6 +1,6 @@
-use crate::meshing::triangulation::runs::Runs;
+use crate::{BoundaryMask, meshing::triangulation::runs::Runs};
 
-const fn walls(columns: &[u32]) -> u32 {
+const fn walls(columns: &[BoundaryMask]) -> BoundaryMask {
     let mut mask = 0;
     let mut i = 0;
     while i < columns.len() {

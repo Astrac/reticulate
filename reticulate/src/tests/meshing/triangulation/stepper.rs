@@ -1,7 +1,7 @@
 use crate::{
     meshing::triangulation::{
         Triangle2D,
-        stepper::{INACTIVE_VERTEX, Stepper},
+        stepper::{BOUNDARIES_COUNT, GRID_SIDE, INACTIVE_VERTEX, Stepper},
     },
     utils::testing::{AsciiGrid, assert_covers_exactly, weave_rows},
 };
@@ -9,26 +9,26 @@ use crate::{
 #[test]
 fn init_on_boundary() {
     let stepper = Stepper::from_live(0b010010001, 1 << 0, 5);
-    let mut expected_vertices = [INACTIVE_VERTEX; 32];
+    let mut expected_vertices = [INACTIVE_VERTEX; BOUNDARIES_COUNT];
     expected_vertices[0] = 5;
     expected_vertices[4] = 5;
 
     assert_eq!(stepper.runs.count(), 1);
     assert_eq!(stepper.zipper.bottom_column_heights, expected_vertices);
-    assert_eq!(stepper.filled, [0; 32]);
+    assert_eq!(stepper.filled, [0; GRID_SIDE]);
     assert_eq!(stepper.runs.fill_mask(), 0b1111);
 }
 
 #[test]
 fn init_in_middle() {
     let stepper = Stepper::from_live(0b010010001, 1 << 6, 5);
-    let mut expected_vertices = [INACTIVE_VERTEX; 32];
+    let mut expected_vertices = [INACTIVE_VERTEX; BOUNDARIES_COUNT];
     expected_vertices[4] = 5;
     expected_vertices[7] = 5;
 
     assert_eq!(stepper.runs.count(), 1);
     assert_eq!(stepper.zipper.bottom_column_heights, expected_vertices);
-    assert_eq!(stepper.filled, [0; 32]);
+    assert_eq!(stepper.filled, [0; GRID_SIDE]);
     assert_eq!(stepper.runs.fill_mask(), 0b1110000);
 }
 
@@ -37,7 +37,7 @@ fn first_step_records_start_row() {
     let mut stepper = Stepper::from_live(0b010010001, 1 << 0, 5);
     stepper.weave_to(6, 0, 0, |_| {});
 
-    let mut expected = [0; 32];
+    let mut expected = [0; GRID_SIDE];
     expected[5] = 0b1111;
     assert_eq!(stepper.filled, expected);
     assert_eq!(stepper.runs.count(), 0);
@@ -385,7 +385,7 @@ fn from_live_starts_one_run_per_group_of_live_columns() {
 
     assert_eq!(stepper.runs.count(), 2);
 
-    let mut expected = [INACTIVE_VERTEX; 32];
+    let mut expected = [INACTIVE_VERTEX; BOUNDARIES_COUNT];
     for c in [1, 3, 5, 8] {
         expected[c] = 4;
     }

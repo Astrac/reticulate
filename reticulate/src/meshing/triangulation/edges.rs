@@ -1,4 +1,11 @@
-use crate::meshing::{bitfields::Parity, surface_layer::SurfaceLayer};
+use crate::{
+    BoundaryMask, PLANE_SIDE,
+    meshing::{bitfields::Parity, surface_layer::SurfaceLayer},
+};
+
+// These are the parity violations forced at the edges of the chunk
+// in order to force matching vertices and continuity across chunks
+pub const BOUNDARY_WALLS: BoundaryMask = 1 | (1 << PLANE_SIDE);
 
 pub struct Edges<'a> {
     current: &'a [u32],
@@ -16,7 +23,7 @@ impl<'a> Edges<'a> {
         }
     }
 
-    pub fn walls(&self, row: usize) -> u32 {
-        self.current[row] | self.previous.map_or(0, |p| p[row])
+    pub fn walls(&self, row: usize) -> BoundaryMask {
+        (self.current[row] | self.previous.map_or(0, |p| p[row])) as BoundaryMask | BOUNDARY_WALLS
     }
 }

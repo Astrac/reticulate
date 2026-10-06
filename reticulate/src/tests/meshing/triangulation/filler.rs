@@ -160,7 +160,6 @@ fn full_height_column_from_the_middle() {
 /// A run reaching the last column. Its right end would be a wall at
 /// column 32, which a 32-bit row can't hold.
 #[test]
-#[ignore = "Disabled: touching chunk boundary not yet implemented"]
 fn run_reaching_last_column() {
     let shape = [(3, 29), (3, 30), (3, 31)];
     let mut f = Fixture::plane(&shape);
