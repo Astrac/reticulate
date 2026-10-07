@@ -1,7 +1,7 @@
 #[cfg(debug_assertions)]
 use crate::utils::debug_assertions::debug_assert_within_footprint;
 use crate::{
-    Face, MaterialId, Morton3D,
+    ChunkCoord, Face, MaterialId, Morton2D,
     meshing::{
         Triangle,
         bitfields::{Claims, Material, Parity},
@@ -33,15 +33,16 @@ where
         }
     }
 
-    pub fn scan(
+    #[inline(always)]
+    pub fn scan_projected(
         &mut self,
         face: Face,
-        morton: Morton3D,
+        morton: Morton2D,
+        axis_coord: ChunkCoord,
         current_material: MaterialId,
         materials: &Material<'a>,
     ) {
         let axis = face.axis();
-        let (morton, axis_coord) = morton.projected_axis_morton(axis);
         let layer = SurfaceLayer::new(axis, axis_coord);
         let parity = self.parity;
         let weaver = Weaver::new(parity);

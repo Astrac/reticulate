@@ -25,17 +25,18 @@ impl<'a, 'b, M> GatheringWalker<'a, 'b, M> {
         }
     }
 
+    #[inline(always)]
     fn set_transitions(&mut self, axis: Axis, morton: Morton3D, material: MaterialId) {
         let (morton_2d, layer) = morton.projected_axis_morton(axis);
+        let surface_layer = SurfaceLayer::new(axis, layer);
+        let parity = &mut self.parity;
+
         self.material
-            .iterate_materials(axis, morton_2d, |existing_material, coords, area| {
-                if existing_material != material {
-                    self.parity
-                        .set_transition(SurfaceLayer::new(axis, layer), coords, area);
+            .replace_projected(axis, morton_2d, material, |existing, coords, area| {
+                if existing != material {
+                    parity.set_transition(surface_layer, coords, area);
                 }
             });
-
-        self.material.fill(axis, morton, material);
     }
 }
 

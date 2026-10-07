@@ -24,6 +24,14 @@ where
             to_material,
         }
     }
+
+    #[inline(always)]
+    fn scan_and_fill(&mut self, axis: Axis, face: Face, morton: Morton3D, material: MaterialId) {
+        let (morton, layer) = morton.projected_axis_morton(axis);
+        self.surface_scanner
+            .scan_projected(face, morton, layer, material, &*self.materials);
+        self.materials.fill_projected(axis, morton, material);
+    }
 }
 
 impl<'a, 'b, M, F, Data> DenseWalker<Data> for SurfaceWalker<'a, 'b, M, F>
@@ -36,31 +44,14 @@ where
 
     fn on_leaf(&mut self, morton: Morton3D, data: &Data) {
         let material = (self.to_material)(data);
-
-        self.surface_scanner
-            .scan(Face::Negative(Axis::X), morton, material, &self.materials);
-        self.surface_scanner
-            .scan(Face::Negative(Axis::Y), morton, material, &self.materials);
-        self.surface_scanner
-            .scan(Face::Negative(Axis::Z), morton, material, &self.materials);
-
-        self.materials.fill(Axis::X, morton, material);
-        self.materials.fill(Axis::Y, morton, material);
-        self.materials.fill(Axis::Z, morton, material);
+        self.scan_and_fill(Axis::X, Face::Negative(Axis::X), morton, material);
+        self.scan_and_fill(Axis::Y, Face::Negative(Axis::Y), morton, material);
+        self.scan_and_fill(Axis::Z, Face::Negative(Axis::Z), morton, material);
     }
 
     fn on_empty(&mut self, morton: Morton3D) {
-        let material = 0;
-
-        self.surface_scanner
-            .scan(Face::Positive(Axis::X), morton, 0, &self.materials);
-        self.surface_scanner
-            .scan(Face::Positive(Axis::Y), morton, 0, &self.materials);
-        self.surface_scanner
-            .scan(Face::Positive(Axis::Z), morton, 0, &self.materials);
-
-        self.materials.fill(Axis::X, morton, material);
-        self.materials.fill(Axis::Y, morton, material);
-        self.materials.fill(Axis::Z, morton, material);
+        self.scan_and_fill(Axis::X, Face::Positive(Axis::X), morton, 0);
+        self.scan_and_fill(Axis::Y, Face::Positive(Axis::Y), morton, 0);
+        self.scan_and_fill(Axis::Z, Face::Positive(Axis::Z), morton, 0);
     }
 }

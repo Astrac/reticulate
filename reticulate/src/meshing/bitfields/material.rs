@@ -1,5 +1,5 @@
 use crate::{
-    Axis, Coords2D, Morton2D, Morton3D,
+    Axis, Coords2D, Morton2D,
     meshing::bitfields::{MaterialId, PLANE_AREA},
 };
 
@@ -51,18 +51,42 @@ impl<'a> Material<'a> {
     }
 
     #[inline]
-    pub fn fill(&mut self, axis: Axis, morton: Morton3D, material: MaterialId) {
-        let (morton_2d, _) = morton.projected_axis_morton(axis);
-        let area = PLANE_AREA >> (morton.depth.as_usize() << 1);
-        let start = morton_2d.as_usize();
+    pub fn fill_projected(&mut self, axis: Axis, morton: Morton2D, material: MaterialId) {
+        let area = PLANE_AREA >> (morton.depth().as_usize() << 1);
+        let start = morton.as_usize();
         debug_assert!(start % area == 0 && start + area <= PLANE_AREA);
 
         let plane = &mut *self.planes[axis.as_usize()];
         if area == 1 {
-            plane[start] = material; // single store, no RMW
+            plane[start] = material;
         } else {
-            plane[start..start + area].fill(material); // vectorizes to wide stores
+            plane[start..start + area].fill(material);
         }
+    }
+
+    // TODO - Remove this
+    #[cfg(test)]
+    #[inline(always)]
+    pub fn fill(&mut self, axis: Axis, morton: crate::Morton3D, material: MaterialId) {
+        self.fill_projected(axis, morton.projected_axis_morton(axis).0, material);
+    }
+
+    #[inline(always)]
+    pub fn replace_projected(
+        &mut self,
+        axis: Axis,
+        node: Morton2D,
+        material: MaterialId,
+        mut on_material: impl FnMut(MaterialId, Coords2D, usize),
+    ) {
+        if node.depth().as_area() == 1 {
+            let start = node.as_usize() & (PLANE_AREA - 1);
+            let old = core::mem::replace(&mut self.planes[axis.as_usize()][start], material);
+            on_material(old, node.as_coords(), 1);
+            return;
+        }
+        self.iterate_materials(axis, node, &mut on_material);
+        self.fill_projected(axis, node, material);
     }
 
     #[inline]
@@ -85,16 +109,15 @@ fn run_length(
     debug_assert!(max_len.is_power_of_two() && start % max_len == 0);
 
     if max_len < 4 {
-        return max_len; // a single cell, nothing to scan
+        return max_len;
     }
 
-    let splat = splat64(material);
-    for (i, quad) in plane[start..start + max_len].chunks_exact(4).enumerate() {
-        let word = bytemuck::cast::<[u16; 4], u64>(quad.try_into().unwrap());
-        let diff = word ^ splat;
-        if diff != 0 {
-            // lowest differing 16-bit lane (little-endian)
-            return i * 4 + (diff.trailing_zeros() / 16) as usize;
+    let quads: &[[MaterialId; 4]; PLANE_AREA / 4] = bytemuck::cast_ref(plane);
+    let want = [material; 4];
+    let first = start >> 2;
+    for (i, quad) in quads[first..first + (max_len >> 2)].iter().enumerate() {
+        if *quad != want {
+            return i * 4 + quad.iter().position(|&c| c != material).unwrap();
         }
     }
     max_len
@@ -105,10 +128,4 @@ fn run_length(
 const fn quadtree_truncate(len: usize) -> usize {
     debug_assert!(len > 0);
     1 << ((usize::BITS - 1 - len.leading_zeros()) & !1)
-}
-
-#[inline(always)]
-const fn splat64(material: u16) -> u64 {
-    let material_u64 = material as u64;
-    material_u64 | (material_u64 << 16) | (material_u64 << 32) | (material_u64 << 48)
 }
