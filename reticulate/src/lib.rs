@@ -1,12 +1,14 @@
 mod axis;
 mod coords_2d;
 mod coords_3d;
+mod coords_lut;
 mod definitions;
 mod depth;
 mod face;
 mod meshing;
 mod morton_2d;
 mod morton_3d;
+mod morton_lut;
 mod octree;
 mod utils;
 mod walking;

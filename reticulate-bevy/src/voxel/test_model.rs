@@ -1,6 +1,6 @@
 use reticulate::{ChunkCoord, CompactOctree, Coords3D, DenseWalk, Fixed8Octree, Morton3D};
 
-pub fn test_scene() -> impl DenseWalk<u16> {
+pub fn test_scene() -> impl DenseWalk<()> {
     let mut octree = Fixed8Octree::new();
 
     // add_single_cube(&mut octree);
@@ -14,13 +14,18 @@ pub fn test_scene() -> impl DenseWalk<u16> {
     // add_gyroid(&mut octree);
     // add_diagonal_helix(&mut octree);
     // add_fractal_staircase(&mut octree);
+    add_checkerboard_32(&mut octree);
 
-    let center = Coords3D {
-        x: 16,
-        y: 16,
-        z: 16,
-    };
-    add_sphere(&mut octree, center, 14, |_| 1u16);
+    // add_sphere(
+    //     &mut octree,
+    //     Coords3D {
+    //         x: 16,
+    //         y: 16,
+    //         z: 16,
+    //     },
+    //     14,
+    //     |_| 1u16,
+    // );
 
     let compressed = CompactOctree::from_fixed8(&octree);
     // let mut print_walker = PrintWalker::default();
@@ -234,6 +239,18 @@ fn add_sphere<Data: Clone + PartialEq>(
                     };
 
                     tree.update(coords, Some(data(coords)));
+                }
+            }
+        }
+    }
+}
+
+pub fn add_checkerboard_32(octree: &mut Fixed8Octree<()>) {
+    for x in 0..32 {
+        for y in 0..32 {
+            for z in 0..32 {
+                if (x + y + z) % 2 == 0 {
+                    octree.update(Coords3D { x, y, z }, Some(()));
                 }
             }
         }

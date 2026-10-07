@@ -1,4 +1,4 @@
-use crate::{ChunkCoord, Coords2D, Depth, utils::bitmasks};
+use crate::{ChunkCoord, Coords2D, Depth, PLANE_AREA, coords_lut::COORDS_LUT, utils::bitmasks};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Morton2D {
@@ -25,11 +25,8 @@ impl Morton2D {
 
     #[inline(always)]
     pub const fn as_coords(&self) -> Coords2D {
-        let (u, v) = decode_morton(self.code);
-        Coords2D {
-            u: u as ChunkCoord,
-            v: v as ChunkCoord,
-        }
+        debug_assert!((self.code as usize) < PLANE_AREA);
+        COORDS_LUT[self.code as usize]
     }
 
     #[inline(always)]
@@ -73,18 +70,6 @@ const fn encode_morton(x: u32, y: u32) -> u32 {
     }
 
     encode_morton_portable(x, y)
-}
-
-/// Inverse of [`encode_morton`].
-#[inline(always)]
-const fn decode_morton(code: u32) -> (u32, u32) {
-    #[cfg(target_arch = "x86_64")]
-    if std::arch::is_x86_feature_detected!("bmi2") {
-        // SAFETY: BMI2 support has just been verified.
-        return unsafe { decode_morton_bmi2(code) };
-    }
-
-    decode_morton_portable(code)
 }
 
 #[cfg(target_arch = "x86_64")]

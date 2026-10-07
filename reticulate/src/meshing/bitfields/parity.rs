@@ -37,7 +37,7 @@ impl<'a> Parity<'a> {
     #[inline(always)]
     pub fn set_transition(&mut self, layer: SurfaceLayer, area_coords: Coords2D, area_size: usize) {
         let target = &mut self.masks[layer.axis.as_usize()].0;
-        let side = area_size.isqrt();
+        let side = 1 << (area_size.trailing_zeros() >> 1);
         let axis_coord = layer.index as u32;
         let bit = 1u32 << axis_coord;
         let u = area_coords.u as usize;

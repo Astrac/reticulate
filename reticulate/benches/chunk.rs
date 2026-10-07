@@ -54,6 +54,7 @@ fn bench_fixed_8_sphere_single_mat(c: &mut Criterion) {
 }
 
 fn bench_compact_sphere_single_mat(c: &mut Criterion) {
+    eprintln!("debug_assertions={}", cfg!(debug_assertions));
     let center = Coords3D {
         x: 16,
         y: 16,
@@ -73,10 +74,34 @@ fn bench_compact_sphere_single_mat(c: &mut Criterion) {
     });
 }
 
+pub fn bench_full_checkerboard(c: &mut Criterion) {
+    let mut tree = Fixed8Octree::new();
+
+    for x in 0..32 {
+        for y in 0..32 {
+            for z in 0..32 {
+                if (x + y + z) % 2 == 0 {
+                    tree.update(Coords3D { x, y, z }, Some(1));
+                }
+            }
+        }
+    }
+
+    let mut mesher = Mesher::new();
+    c.bench_function("full_checkerboard", |b| {
+        b.iter(|| {
+            mesher.make_triangles(black_box(&tree), |d| *d, |_| ());
+        })
+    });
+}
+
 criterion_group!(
     name = benches;
     config = Criterion::default();
-    targets = bench_fixed_8_sphere_single_mat, bench_compact_sphere_single_mat
+    targets =
+        bench_fixed_8_sphere_single_mat,
+        bench_compact_sphere_single_mat,
+        bench_full_checkerboard,
 );
 
 criterion_main!(benches);

@@ -18,28 +18,35 @@ impl<'a> Material<'a> {
         mut on_material: impl FnMut(MaterialId, Coords2D, usize),
     ) {
         let plane: &[MaterialId; PLANE_AREA] = &*self.planes[axis.as_usize()];
-        let mut offset = morton.as_usize();
-        let end = offset + morton.depth().as_area();
 
-        // Cells in offset..run_end are known to equal run_material.
-        let mut run_end = offset;
+        let start = morton.as_usize() & (PLANE_AREA - 1);
+        let area = morton.depth().as_area();
+
+        if area == 1 {
+            on_material(plane[start], morton.as_coords(), 1);
+            return;
+        }
+
+        let mut local = 0;
+        let mut run_end = 0;
         let mut run_material: MaterialId = 0;
 
-        while offset < end {
-            let max_len = quadtree_alignment(offset).min(end - offset);
+        while local < area {
+            // Largest power of 4 dividing `local`; area if local == 0.
+            let max_len = 1usize << ((local | area).trailing_zeros() & !1);
 
-            if offset >= run_end {
-                run_material = plane[offset];
-                run_end = offset + run_length(plane, offset, run_material, max_len);
+            if local >= run_end {
+                run_material = plane[start + local];
+                run_end = local + run_length(plane, start + local, run_material, max_len);
             }
 
-            let len = quadtree_truncate((run_end - offset).min(max_len));
+            let len = quadtree_truncate((run_end - local).min(max_len));
             on_material(
                 run_material,
-                Morton2D::from_code_max_depth(offset as u32).as_coords(),
+                Morton2D::from_code_max_depth((start + local) as u32).as_coords(),
                 len,
             );
-            offset += len;
+            local += len;
         }
     }
 
@@ -91,12 +98,6 @@ fn run_length(
         }
     }
     max_len
-}
-
-/// Largest power of 4 dividing `offset`; PLANE_AREA for offset 0.
-#[inline(always)]
-const fn quadtree_alignment(offset: usize) -> usize {
-    1 << ((offset | PLANE_AREA).trailing_zeros() & !1)
 }
 
 /// Largest power of 4 that is <= `len` (`len` must be > 0).
