@@ -10,7 +10,6 @@ pub struct Material<'a> {
 }
 
 impl<'a> Material<'a> {
-    /// Reads the materials present in an area
     #[inline(always)]
     pub fn iterate_materials(
         &self,
@@ -18,26 +17,29 @@ impl<'a> Material<'a> {
         morton: Morton2D,
         mut on_material: impl FnMut(MaterialId, Coords2D, usize),
     ) {
-        let materials = self.material_plane(axis);
-        let index = morton.as_usize();
-        let plane_size = morton.depth().as_area();
-        let final_index = index + plane_size;
+        let plane: &[MaterialId; PLANE_AREA] = &*self.planes[axis.as_usize()];
+        let mut offset = morton.as_usize();
+        let end = offset + morton.depth().as_area();
 
-        let mut current_offset = index;
-        let mut current_grid = quadtree_alignment(current_offset);
+        // Cells in offset..run_end are known to equal run_material.
+        let mut run_end = offset;
+        let mut run_material: MaterialId = 0;
 
-        while current_offset < final_index {
-            let max_length = current_grid.min(final_index - current_offset);
-            let (material, scanned_length) = next_material(materials, current_offset, max_length);
+        while offset < end {
+            let max_len = quadtree_alignment(offset).min(end - offset);
 
+            if offset >= run_end {
+                run_material = plane[offset];
+                run_end = offset + run_length(plane, offset, run_material, max_len);
+            }
+
+            let len = quadtree_truncate((run_end - offset).min(max_len));
             on_material(
-                material,
-                Morton2D::from_code_max_depth(current_offset as u32).as_coords(),
-                scanned_length,
+                run_material,
+                Morton2D::from_code_max_depth(offset as u32).as_coords(),
+                len,
             );
-
-            current_offset += scanned_length;
-            current_grid = quadtree_alignment(current_offset);
+            offset += len;
         }
     }
 
@@ -62,51 +64,50 @@ impl<'a> Material<'a> {
             p.fill(0);
         }
     }
-
-    #[inline]
-    fn material_plane(&self, axis: Axis) -> &[MaterialId; PLANE_AREA] {
-        self.planes[axis.as_usize()]
-    }
 }
 
+/// Length of the uniform run starting at `start`, capped at `max_len`.
+/// `max_len` is a power of 4 and `start` is a multiple of it.
 #[inline(always)]
-fn next_material(materials: &[u16], start_offset: usize, max_length: usize) -> (u16, usize) {
-    debug_assert!(max_length > 0);
-    debug_assert!(materials.len() > start_offset);
+fn run_length(
+    plane: &[MaterialId; PLANE_AREA],
+    start: usize,
+    material: MaterialId,
+    max_len: usize,
+) -> usize {
+    debug_assert!(max_len.is_power_of_two() && start % max_len == 0);
 
-    let mut current_offset = start_offset;
-    let final_offset = start_offset + max_length;
-    let material = materials[current_offset];
+    if max_len < 4 {
+        return max_len; // a single cell, nothing to scan
+    }
 
-    while current_offset < final_offset {
-        if material != materials[current_offset] {
-            break;
+    let splat = splat64(material);
+    for (i, quad) in plane[start..start + max_len].chunks_exact(4).enumerate() {
+        let word = bytemuck::cast::<[u16; 4], u64>(quad.try_into().unwrap());
+        let diff = word ^ splat;
+        if diff != 0 {
+            // lowest differing 16-bit lane (little-endian)
+            return i * 4 + (diff.trailing_zeros() / 16) as usize;
         }
-
-        current_offset += 1;
     }
-
-    (material, quadtree_truncate(current_offset - start_offset))
+    max_len
 }
 
-/// Returns the biggest power of 4 that is smaller of the given value
-#[inline(always)]
-const fn quadtree_truncate(value: usize) -> usize {
-    if value == 0 {
-        0
-    } else {
-        let msb_index = usize::BITS - 1 - value.leading_zeros();
-        let even_index = msb_index & !1;
-        1 << even_index
-    }
-}
-
-/// Returns the biggest power of 4 that can divide the offset or PLANE_AREA if the offset is 0
+/// Largest power of 4 dividing `offset`; PLANE_AREA for offset 0.
 #[inline(always)]
 const fn quadtree_alignment(offset: usize) -> usize {
-    if offset == 0 {
-        PLANE_AREA
-    } else {
-        1 << (offset.trailing_zeros() & !1)
-    }
+    1 << ((offset | PLANE_AREA).trailing_zeros() & !1)
+}
+
+/// Largest power of 4 that is <= `len` (`len` must be > 0).
+#[inline(always)]
+const fn quadtree_truncate(len: usize) -> usize {
+    debug_assert!(len > 0);
+    1 << ((usize::BITS - 1 - len.leading_zeros()) & !1)
+}
+
+#[inline(always)]
+const fn splat64(material: u16) -> u64 {
+    let material_u64 = material as u64;
+    material_u64 | (material_u64 << 16) | (material_u64 << 32) | (material_u64 << 48)
 }
