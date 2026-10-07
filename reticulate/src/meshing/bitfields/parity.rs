@@ -2,18 +2,23 @@ use crate::{Axis, Coords2D, PLANE_SIDE, meshing::surface_layer::SurfaceLayer};
 
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct ParityMask<'a>(&'a mut [u32]);
+pub struct ParityMask<'a>(&'a mut [[u32; PLANE_SIDE]; PLANE_SIDE]);
 
 impl<'a> ParityMask<'a> {
     #[inline(always)]
     pub fn from_u64_slice(data: &'a mut [u64]) -> ParityMask<'a> {
-        ParityMask(bytemuck::cast_slice_mut(data))
+        let layers: &mut [[u32; PLANE_SIDE]] = bytemuck::cast_slice_mut(data);
+
+        ParityMask(
+            layers
+                .try_into()
+                .expect("Unexpected size for parity layers"),
+        )
     }
 
     #[inline(always)]
     pub fn get_layer(&self, layer: usize) -> &[u32] {
-        let index = layer * PLANE_SIDE;
-        &self.0[index..index + PLANE_SIDE]
+        &self.0[layer & (PLANE_SIDE - 1)]
     }
 }
 
@@ -45,7 +50,7 @@ impl<'a> Parity<'a> {
 
         for u in u..u + side {
             for v in v..v + side {
-                target[u * PLANE_SIDE + v] |= bit;
+                target[u][v] |= bit;
             }
         }
     }

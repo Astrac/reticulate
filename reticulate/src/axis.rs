@@ -18,6 +18,19 @@ impl Axis {
 
     #[inline(always)]
     pub const fn next(&self) -> Axis {
-        Self::AXES[(self.as_usize() + 1) % 3]
+        match self {
+            Axis::X => Axis::Y,
+            Axis::Y => Axis::Z,
+            Axis::Z => Axis::X,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn prev(&self) -> Axis {
+        match self {
+            Axis::X => Axis::Z,
+            Axis::Y => Axis::X,
+            Axis::Z => Axis::Y,
+        }
     }
 }
