@@ -23,14 +23,12 @@ pub fn print_parity(parity: &Parity<'_>, axes: &[Axis], layers: Range<usize>) {
 
 pub fn print_materials(materials: &Material<'_>, axes: &[Axis]) {
     for axis in axes {
-        let data = &mut materials.cells[axis.as_usize()].domain().flat_map(|x| {
-            bytemuck::cast::<_, [MaterialId; 8 / size_of::<MaterialId>()]>(x.to_le_bytes())
-        });
+        let data = &materials.planes[axis.as_usize()];
 
         println!("-- {} {axis:?}", "-".repeat(27));
-        for _ in 0..32 {
-            for _ in 0..32 {
-                let Some(m) = data.next() else { unreachable!() };
+        for row in 0..32 {
+            for column in 0..32 {
+                let m = data[row * 32 + column];
                 print!("{m:04x} ");
             }
             println!();

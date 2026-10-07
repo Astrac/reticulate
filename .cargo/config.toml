@@ -1,5 +1,6 @@
 [target.aarch64-apple-darwin]
-rustflags = ["-C", "link-arg=-Wl,-no_compact_unwind", "-Z", "threads=8"]
+# rustflags = ["-C", "link-arg=-Wl,-no_compact_unwind", "-Z", "threads=8"]
+rustflags = ["-C", "link-arg=-Wl,-no_compact_unwind"]
 
 # Unsupported by bevy
 # [unstable]

@@ -1,13 +1,11 @@
-use bitvec::prelude::*;
-
 #[cfg(debug_assertions)]
 use crate::utils::debug_assertions::debug_assert_within_footprint;
 use crate::{
-    Axis, CHUNK_VOLUME, ChunkCoord, Coords2D, DenseWalker, Face, MaterialId, Morton3D, PLANE_SIDE,
-    TREE_DEPTH,
+    Axis, CHUNK_VOLUME, ChunkCoord, Coords2D, DenseWalker, Face, MaterialId, Morton3D, PLANE_AREA,
+    PLANE_SIDE, TREE_DEPTH,
     meshing::{
         Triangle,
-        bitfields::{MATERIAL_WORDS, Material},
+        bitfields::Material,
         surface_layer::SurfaceLayer,
         surface_scanner::SurfaceScanner,
         surface_walker::SurfaceWalker,
@@ -15,7 +13,7 @@ use crate::{
     },
     utils::testing::{
         assert_no_t_junctions_3d,
-        fixtures::{EMPTY, Fixture, VoxelGrid, claims_of, parity_of, project, voxel, words},
+        fixtures::{EMPTY, Fixture, VoxelGrid, claims_of, parity_of, project, voxel},
     },
 };
 
@@ -81,15 +79,11 @@ pub fn dense_walk<W: DenseWalker<MaterialId>>(walker: &mut W, grid: &VoxelGrid, 
 /// second call only emits what the first one did not claim.
 pub fn mesh(f: &mut Fixture, blocks: &[Block]) -> Vec<Triangle> {
     let mut tris = Vec::new();
-    let mut cache = words(MATERIAL_WORDS);
+    let mut cache: [[MaterialId; PLANE_AREA]; 3] = [[0; PLANE_AREA]; 3];
     {
         let [mx, my, mz] = &mut cache;
         let mut materials = Material {
-            cells: [
-                mx.view_bits_mut::<Lsb0>(),
-                my.view_bits_mut::<Lsb0>(),
-                mz.view_bits_mut::<Lsb0>(),
-            ],
+            planes: [mx, my, mz],
         };
         let mut claims = claims_of(&mut f.claims);
         let parity = parity_of(&mut f.parity);

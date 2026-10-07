@@ -1,9 +1,6 @@
-use bitvec::prelude::*;
-
 use crate::{
-    Axis, Coords2D, Depth, Morton2D, Morton3D, PLANE_AREA, TREE_DEPTH,
-    meshing::bitfields::{MATERIAL_BITS, Material},
-    utils::testing::SeededRandom,
+    Axis, Coords2D, Depth, MaterialId, Morton2D, Morton3D, PLANE_AREA, TREE_DEPTH,
+    meshing::bitfields::Material, utils::testing::SeededRandom,
 };
 
 fn depth_area(d: usize) -> usize {
@@ -19,36 +16,30 @@ fn is_power_of_four(n: usize) -> bool {
 }
 
 struct Planes {
-    bits: [BitArr!(for PLANE_AREA * MATERIAL_BITS, in u64, Lsb0); 3],
+    bits: [[MaterialId; PLANE_AREA]; 3],
 }
 
 impl Planes {
     fn new() -> Self {
         Self {
-            bits: core::array::from_fn(|_| BitArray::ZERO),
+            bits: [[0; PLANE_AREA]; 3],
         }
     }
 
     fn material(&mut self) -> Material<'_> {
         let [x, y, z] = &mut self.bits;
-        Material {
-            cells: [
-                x.as_mut_bitslice(),
-                y.as_mut_bitslice(),
-                z.as_mut_bitslice(),
-            ],
-        }
+        Material { planes: [x, y, z] }
     }
 
-    fn plane(&self, axis: Axis) -> &BitSlice<u64, Lsb0> {
-        self.bits[axis.as_usize()].as_bitslice()
+    fn plane(&self, axis: Axis) -> &[MaterialId] {
+        &self.bits[axis.as_usize()]
     }
 
-    fn plane_mut(&mut self, axis: Axis) -> &mut BitSlice<u64, Lsb0> {
-        self.bits[axis.as_usize()].as_mut_bitslice()
+    fn plane_mut(&mut self, axis: Axis) -> &mut [MaterialId] {
+        &mut self.bits[axis.as_usize()]
     }
 
-    fn with_background(background: u16) -> Self {
+    fn with_background(background: MaterialId) -> Self {
         let mut p = Self::new();
         for axis in Axis::AXES {
             write_run(p.plane_mut(axis), 0, PLANE_AREA, background);
@@ -57,27 +48,22 @@ impl Planes {
     }
 }
 
-fn read_cell(plane: &BitSlice<u64, Lsb0>, cell: usize) -> u16 {
-    let bit = cell * MATERIAL_BITS;
-    plane[bit..bit + MATERIAL_BITS].load_le::<u16>()
+fn read_cell(plane: &[MaterialId], cell: usize) -> MaterialId {
+    plane[cell]
 }
 
-fn write_run(plane: &mut BitSlice<u64, Lsb0>, start: usize, len: usize, material: u16) {
-    let bit_start = start * MATERIAL_BITS;
-    let bit_len = len * MATERIAL_BITS;
-    for bit in (bit_start..bit_start + bit_len).step_by(MATERIAL_BITS) {
-        plane[bit..bit + MATERIAL_BITS].store_le::<u16>(material);
-    }
+fn write_run(plane: &mut [MaterialId], start: usize, len: usize, material: MaterialId) {
+    plane[start..start + len].fill(material);
 }
 
-fn is_uniform(plane: &BitSlice<u64, Lsb0>, start: usize, len: usize) -> bool {
-    let first = read_cell(plane, start);
-    (start..start + len).all(|c| read_cell(plane, c) == first)
+fn is_uniform(plane: &[MaterialId], start: usize, len: usize) -> bool {
+    let first = plane[start];
+    plane[start..start + len].iter().all(|&c| c == first)
 }
 
 type Run = (u16, Coords2D, usize);
 
-fn reference_runs(plane: &BitSlice<u64, Lsb0>, start: usize, len: usize) -> Vec<Run> {
+fn reference_runs(plane: &[MaterialId], start: usize, len: usize) -> Vec<Run> {
     let end = start + len;
 
     let mut sizes = Vec::new();
@@ -435,14 +421,14 @@ fn filling_a_child_makes_the_parent_decompose() {
 fn clear_material_planes_zeroes_all_three_planes() {
     let mut p = Planes::with_background(BACKGROUND);
     p.material().clear();
-    assert!(p.bits.iter().all(|b| b.not_any()));
+    assert!(p.bits.iter().flatten().all(|&m| m == 0));
 }
 
 #[test]
 fn clear_material_planes_on_empty_planes_is_a_no_op() {
     let mut p = Planes::new();
     p.material().clear();
-    assert!(p.bits.iter().all(|b| b.not_any()));
+    assert!(p.bits.iter().flatten().all(|&m| m == 0));
 }
 
 #[test]

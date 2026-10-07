@@ -1,10 +1,7 @@
 use crate::{
     Axis, CHUNK_VOLUME, Coords2D, PLANE_AREA, PLANE_SIDE, TREE_DEPTH,
     meshing::{
-        bitfields::{
-            Bitfields, BitfieldsStorage, CLAIMS_WORDS, MATERIAL_BITS, MATERIAL_PLANE_BITS,
-            MATERIAL_WORDS, PARITY_WORDS, STORAGE_WORD,
-        },
+        bitfields::{Bitfields, BitfieldsStorage},
         surface_layer::SurfaceLayer,
     },
 };
@@ -17,21 +14,17 @@ fn chunk_dimensions_derive_from_the_tree_depth() {
 }
 
 #[test]
-fn word_counts_match_the_bit_counts() {
-    assert_eq!(STORAGE_WORD, 64);
-    assert_eq!(CLAIMS_WORDS * STORAGE_WORD, CHUNK_VOLUME);
-    assert_eq!(PARITY_WORDS * STORAGE_WORD, CHUNK_VOLUME);
-    assert_eq!(MATERIAL_WORDS * STORAGE_WORD, MATERIAL_PLANE_BITS);
-    assert_eq!(MATERIAL_PLANE_BITS, PLANE_AREA * MATERIAL_BITS);
-}
-
-#[test]
 fn fresh_storage_is_entirely_empty() {
     let mut storage = BitfieldsStorage::default();
     let bitfields = Bitfields::from_storage(&mut storage);
 
     for axis in Axis::AXES {
-        assert!(bitfields.material.cells[axis.as_usize()].not_any());
+        assert!(
+            bitfields.material.planes[axis.as_usize()]
+                .iter()
+                .all(|x| *x == 0)
+        );
+
         for layer in 0..PLANE_SIDE {
             assert!(
                 bitfields.parity.masks[axis.as_usize()]
@@ -52,19 +45,6 @@ fn fresh_storage_is_entirely_empty() {
 }
 
 #[test]
-fn material_planes_hold_one_cell_per_plane_position() {
-    let mut storage = BitfieldsStorage::default();
-    let bitfields = Bitfields::from_storage(&mut storage);
-
-    for axis in Axis::AXES {
-        assert_eq!(
-            bitfields.material.cells[axis.as_usize()].len(),
-            PLANE_AREA * MATERIAL_BITS
-        );
-    }
-}
-
-#[test]
 fn views_do_not_overlap() {
     let mut storage = BitfieldsStorage::default();
     let mut bitfields = Bitfields::from_storage(&mut storage);
@@ -81,7 +61,7 @@ fn views_do_not_overlap() {
         }
     }
     for axis in Axis::AXES {
-        bitfields.material.cells[axis.as_usize()].fill(true);
+        bitfields.material.planes[axis.as_usize()].fill(u16::MAX);
     }
 
     // Each view must read back exactly what was written to it: the claims of

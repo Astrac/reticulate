@@ -29,7 +29,7 @@ impl Vertices {
         }
     }
 
-    pub fn build_mesh(&mut self, octree: impl DenseWalk<()>) {
+    pub fn build_mesh<A: PartialEq>(&mut self, octree: impl DenseWalk<A>) {
         let mut next_index = 0;
 
         let mut mesher = Mesher::default();

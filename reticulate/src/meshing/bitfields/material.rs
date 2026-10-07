@@ -1,13 +1,12 @@
-use core::panic;
-
 use crate::{
     Axis, Coords2D, Morton2D, Morton3D,
-    meshing::bitfields::{MATERIAL_BITS, MaterialId, PLANE_AREA, STORAGE_WORD, Slice},
+    meshing::bitfields::{MaterialId, PLANE_AREA},
 };
 
+// TODO - See if we can make planes private
 #[repr(transparent)]
 pub struct Material<'a> {
-    pub cells: [&'a mut Slice; 3],
+    pub planes: [&'a mut [MaterialId; PLANE_AREA]; 3],
 }
 
 impl<'a> Material<'a> {
@@ -42,62 +41,31 @@ impl<'a> Material<'a> {
         }
     }
 
-    /// Fills an area with the given material
-    #[inline(always)]
-    pub fn fill(&mut self, axis: Axis, morton: Morton3D, material: u16) {
+    #[inline]
+    pub fn fill(&mut self, axis: Axis, morton: Morton3D, material: MaterialId) {
         let (morton_2d, _) = morton.projected_axis_morton(axis);
-        let plane_size = (PLANE_AREA >> (morton.depth.as_usize() << 1)) * MATERIAL_BITS;
-        let material_splat64 = splat64(material);
-        let index = morton_2d.as_usize() * MATERIAL_BITS;
-        let plane_bits = &mut self.cells[axis.as_usize()][index..index + plane_size];
+        let area = PLANE_AREA >> (morton.depth.as_usize() << 1);
+        let start = morton_2d.as_usize();
+        debug_assert!(start % area == 0 && start + area <= PLANE_AREA);
 
-        match plane_bits.domain_mut() {
-            bitvec::domain::Domain::Enclave(mut v) => {
-                v.store_value(material_splat64);
-            }
-            bitvec::domain::Domain::Region {
-                mut head,
-                body,
-                mut tail,
-            } => {
-                head.iter_mut().for_each(|h| {
-                    h.store_value(material_splat64);
-                });
-                body.iter_mut().for_each(|v| *v = material_splat64);
-                tail.iter_mut().for_each(|h| {
-                    h.store_value(material_splat64);
-                });
-            }
-        };
-    }
-
-    #[inline(always)]
-    pub fn clear(&mut self) {
-        self.cells.iter_mut().for_each(|c| c.fill(false));
-    }
-
-    #[inline(always)]
-    fn material_plane(&self, axis: Axis) -> &[u16] {
-        let plane_bits = &self.cells[axis.as_usize()];
-
-        match plane_bits.domain() {
-            bitvec::domain::Domain::Enclave(_) => {
-                panic!("A material plane must have 1024 bits")
-            }
-            bitvec::domain::Domain::Region { head, body, tail } => {
-                debug_assert!(
-                    head.is_none(),
-                    "A material plane must be aligned with {}bit grid; found unaligned head.",
-                    STORAGE_WORD
-                );
-                debug_assert!(
-                    tail.is_none(),
-                    "A material plane must be aligned with {}bit grid; found unaligned tail.",
-                    STORAGE_WORD
-                );
-                bytemuck::cast_slice(body)
-            }
+        let plane = &mut *self.planes[axis.as_usize()];
+        if area == 1 {
+            plane[start] = material; // single store, no RMW
+        } else {
+            plane[start..start + area].fill(material); // vectorizes to wide stores
         }
+    }
+
+    #[inline]
+    pub fn clear(&mut self) {
+        for p in &mut self.planes {
+            p.fill(0);
+        }
+    }
+
+    #[inline]
+    fn material_plane(&self, axis: Axis) -> &[MaterialId; PLANE_AREA] {
+        self.planes[axis.as_usize()]
     }
 }
 
@@ -141,10 +109,4 @@ const fn quadtree_alignment(offset: usize) -> usize {
     } else {
         1 << (offset.trailing_zeros() & !1)
     }
-}
-
-#[inline(always)]
-const fn splat64(material: u16) -> u64 {
-    let material_u64 = material as u64;
-    material_u64 | (material_u64 << 16) | (material_u64 << 32) | (material_u64 << 48)
 }
