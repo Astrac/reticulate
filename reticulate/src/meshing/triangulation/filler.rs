@@ -14,6 +14,7 @@ pub struct Filler<'a> {
 }
 
 impl<'a> Filler<'a> {
+    #[inline(always)]
     pub fn new(claims: &'a Claims, parity: &'a Parity<'a>) -> Self {
         Filler { claims, parity }
     }
@@ -28,18 +29,19 @@ impl<'a> Filler<'a> {
         let seed_row = seed.u as usize; // row: u, column: v
         region[seed_row] = self.expand(layer, edges, seed_row, 1 << seed.v);
 
-        loop {
-            let mut changed = false;
-            for to in 1..PLANE_SIDE {
-                changed |= self.grow(layer, edges, &mut region, to - 1, to);
+        let mut dirty: u32 = 1 << seed_row;
+        while dirty != 0 {
+            let row = dirty.trailing_zeros() as usize;
+            dirty &= dirty - 1;
+            if row > 0 && self.grow(layer, edges, &mut region, row, row - 1) {
+                dirty |= 1 << (row - 1);
             }
-            for to in (0..PLANE_SIDE - 1).rev() {
-                changed |= self.grow(layer, edges, &mut region, to + 1, to);
-            }
-            if !changed {
-                return region;
+            if row + 1 < PLANE_SIDE && self.grow(layer, edges, &mut region, row, row + 1) {
+                dirty |= 1 << (row + 1);
             }
         }
+
+        region
     }
 
     fn grow(

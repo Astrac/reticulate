@@ -114,7 +114,7 @@ fn weaver_matches_stepper_reference_weave() {
     let reference = weave_rows(&region);
 
     let mut tris = Vec::new();
-    weaver.weave_region(SurfaceLayer::new(Axis::Y, 0), &region, |t| tris.push(t));
+    weaver.weave_region(layer, &edges, &region, |t| tris.push(t));
     assert_eq!(tris, reference);
 }
 
@@ -144,9 +144,11 @@ fn empty_region_emits_nothing() {
     let mut f = Fixture::plane(&[(1, 1)]);
     let parity = parity_of(&mut f.parity);
     let weaver = Weaver::new(&parity);
+    let layer = SurfaceLayer::new(Axis::Y, 0);
+    let edges = Edges::from_parity(&parity, layer);
 
     let mut tris = Vec::new();
-    weaver.weave_region(SurfaceLayer::new(Axis::Y, 0), &[0; 32], |t| tris.push(t));
+    weaver.weave_region(layer, &edges, &[0; 32], |t| tris.push(t));
 
     assert!(tris.is_empty());
 }

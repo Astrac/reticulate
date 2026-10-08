@@ -54,7 +54,7 @@ impl Stepper {
         self.zipper.bottom_columns_mask |= mask;
     }
 
-    // TODO - Benchmark and optimize
+    #[inline(always)]
     pub fn weave_to(
         &mut self,
         top_row: usize,

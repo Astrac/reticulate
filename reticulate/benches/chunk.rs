@@ -94,7 +94,7 @@ pub fn bench_full_checkerboard(c: &mut Criterion) {
     });
 }
 
-pub fn bench_3d_ortho_labyrinth(c: &mut Criterion) {
+pub fn bench_3d_ortho_labyrinth_fixed_8(c: &mut Criterion) {
     let mut tree = Fixed8Octree::new();
 
     for z in 0..32 {
@@ -123,7 +123,45 @@ pub fn bench_3d_ortho_labyrinth(c: &mut Criterion) {
     }
 
     let mut mesher = Mesher::new();
-    c.bench_function("3d_ortho_labyrinth", |b| {
+    c.bench_function("3d_ortho_labyrinth_fixed_8", |b| {
+        b.iter(|| {
+            mesher.make_triangles(black_box(&tree), |d| *d, |_| ());
+        })
+    });
+}
+
+pub fn bench_3d_ortho_labyrinth_compact(c: &mut Criterion) {
+    let mut tree = Fixed8Octree::new();
+
+    for z in 0..32 {
+        for y in 0..32 {
+            for x in 0..32 {
+                let mut is_solid = false;
+
+                if y % 4 == 0 && z % 4 == 0 {
+                    is_solid = true;
+                }
+
+                if x % 4 == 2 && z % 4 == 2 {
+                    is_solid = true;
+                }
+
+                if x % 4 == 0 && y % 4 == 2 {
+                    is_solid = true;
+                }
+
+                if is_solid {
+                    let coords = Coords3D { x, y, z };
+                    tree.update(coords, Some(1));
+                }
+            }
+        }
+    }
+
+    let tree = CompactOctree::from_fixed8(&tree);
+
+    let mut mesher = Mesher::new();
+    c.bench_function("3d_ortho_labyrinth_compact", |b| {
         b.iter(|| {
             mesher.make_triangles(black_box(&tree), |d| *d, |_| ());
         })
@@ -137,7 +175,8 @@ criterion_group!(
         bench_fixed_8_sphere_single_mat,
         bench_compact_sphere_single_mat,
         bench_full_checkerboard,
-        bench_3d_ortho_labyrinth,
+        bench_3d_ortho_labyrinth_fixed_8,
+        bench_3d_ortho_labyrinth_compact,
 );
 
 criterion_main!(benches);

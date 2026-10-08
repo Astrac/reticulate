@@ -13,26 +13,18 @@ pub struct Weaver<'a> {
 }
 
 impl<'a> Weaver<'a> {
+    #[inline(always)]
     pub fn new(parity: &'a Parity<'a>) -> Self {
         Weaver { parity }
     }
 
+    #[inline(always)]
     pub fn weave_region(
-        &self,
-        layer: SurfaceLayer,
-        region: &[u32; PLANE_SIDE],
-        mut emit: impl FnMut(Triangle2D),
-    ) {
-        let edges = Edges::from_parity(self.parity, layer);
-        self.weave(layer, &edges, region, &mut emit);
-    }
-
-    fn weave(
         &self,
         layer: SurfaceLayer,
         edges: &Edges,
         region: &[u32; PLANE_SIDE],
-        mut emit: &mut impl FnMut(Triangle2D),
+        mut emit: impl FnMut(Triangle2D),
     ) {
         let Some(first) = region.iter().position(|&cells| cells != 0) else {
             return;

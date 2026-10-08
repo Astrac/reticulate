@@ -225,7 +225,7 @@ pub fn scan_plane(
         },
     );
 
-    weaver.weave_region(layer, &filled, |t| tris.push(t));
+    weaver.weave_region(layer, &edges, &filled, |t| tris.push(t));
     #[cfg(debug_assertions)]
     debug_assert_within_footprint(&parity, layer, &filled);
 

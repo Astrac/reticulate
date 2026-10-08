@@ -30,6 +30,7 @@ impl<'a> Edges<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn walls(&self, row: usize) -> BoundaryMask {
         (self.current[row] | self.previous[row]) as BoundaryMask | BOUNDARY_WALLS
     }

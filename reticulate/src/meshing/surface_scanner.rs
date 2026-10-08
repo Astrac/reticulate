@@ -61,7 +61,7 @@ where
             let face_material = material.max(current_material);
             let filled = discoverer.fill_region(layer, &edges, coords);
 
-            weaver.weave_region(layer, &filled, |t| {
+            weaver.weave_region(layer, edges, &filled, |t| {
                 (self.on_triangle)(Triangle::from_strip_triangle(
                     face,
                     layer.index,

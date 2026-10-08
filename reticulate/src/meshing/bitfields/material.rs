@@ -3,8 +3,6 @@ use crate::{
     meshing::bitfields::{MaterialId, PLANE_AREA},
 };
 
-// TODO - See if we can make planes private
-#[repr(transparent)]
 pub struct Material<'a> {
     pub planes: [&'a mut [MaterialId; PLANE_AREA]; 3],
 }
