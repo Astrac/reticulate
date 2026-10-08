@@ -168,6 +168,14 @@ pub fn bench_3d_ortho_labyrinth_compact(c: &mut Criterion) {
     });
 }
 
+pub fn bench_terrain_single_material(c: &mut Criterion) {
+    bench_terrain(c, "terrain_single_material", single_material);
+}
+
+pub fn bench_terrain_layered(c: &mut Criterion) {
+    bench_terrain(c, "terrain_layered", layered_material);
+}
+
 criterion_group!(
     name = benches;
     config = Criterion::default();
@@ -177,6 +185,106 @@ criterion_group!(
         bench_full_checkerboard,
         bench_3d_ortho_labyrinth_fixed_8,
         bench_3d_ortho_labyrinth_compact,
+        bench_terrain_single_material,
+        bench_terrain_layered,
 );
 
 criterion_main!(benches);
+
+// ---- terrain helpers ----
+
+fn hash3(x: i32, y: i32, z: i32, seed: u32) -> u32 {
+    let mut h = (x as u32).wrapping_mul(0x9E37_79B1)
+        ^ (y as u32).wrapping_mul(0x85EB_CA77)
+        ^ (z as u32).wrapping_mul(0xC2B2_AE3D)
+        ^ seed.wrapping_mul(0x27D4_EB2F);
+    h ^= h >> 15;
+    h = h.wrapping_mul(0x2C1B_3C6D);
+    h ^= h >> 12;
+    h = h.wrapping_mul(0x297A_2D39);
+    h ^= h >> 15;
+    h
+}
+
+/// Smooth 2D value noise in 0..1.
+fn value_noise(x: f32, z: f32, seed: u32) -> f32 {
+    let (xi, zi) = (x.floor(), z.floor());
+    let (fx, fz) = (x - xi, z - zi);
+    let (sx, sz) = (fx * fx * (3.0 - 2.0 * fx), fz * fz * (3.0 - 2.0 * fz));
+    let corner = |dx: i32, dz: i32| {
+        (hash3(xi as i32 + dx, 0, zi as i32 + dz, seed) & 0xFFFF) as f32 / 65535.0
+    };
+    let top = corner(0, 0) + (corner(1, 0) - corner(0, 0)) * sx;
+    let bottom = corner(0, 1) + (corner(1, 1) - corner(0, 1)) * sx;
+    top + (bottom - top) * sz
+}
+
+/// Surface height per (x, z) column, roughly 6..26 in a 32-high chunk.
+fn heightmap() -> [[i32; 32]; 32] {
+    let mut h = [[0i32; 32]; 32];
+    for z in 0..32 {
+        for x in 0..32 {
+            let (fx, fz) = (x as f32, z as f32);
+            let n = 0.65 * value_noise(fx / 16.0, fz / 16.0, 1)
+                + 0.25 * value_noise(fx / 8.0, fz / 8.0, 2)
+                + 0.10 * value_noise(fx / 4.0, fz / 4.0, 3);
+            h[z][x] = 6 + (n * 20.0) as i32;
+        }
+    }
+    h
+}
+
+fn build_terrain(material_at: impl Fn(i32, i32, i32, i32) -> u16) -> Fixed8Octree<u16> {
+    let heights = heightmap();
+    let mut tree = Fixed8Octree::new();
+    for z in 0..32u8 {
+        for y in 0..32u8 {
+            for x in 0..32u8 {
+                let surface = heights[z as usize][x as usize];
+                if y < surface as u8 {
+                    let m = material_at(x as i32, y as i32, z as i32, surface);
+                    tree.update(Coords3D { x, y, z }, Some(m));
+                }
+            }
+        }
+    }
+    tree
+}
+
+// ---- materials ----
+
+fn single_material(_x: i32, _y: i32, _z: i32, _surface: i32) -> u16 {
+    1
+}
+
+/// 1 grass, 2 dirt, 3 stone, 4 ore, 5 sand (low ground)
+fn layered_material(x: i32, y: i32, z: i32, surface: i32) -> u16 {
+    let depth = surface - y; // 1 = topmost voxel
+    let top = if surface < 10 { 5 } else { 1 };
+    // Jitter the dirt/stone boundary per column so strata aren't flat.
+    let dirt_depth = 3 + (hash3(x, 0, z, 7) % 3) as i32;
+    if depth == 1 {
+        top
+    } else if depth <= dirt_depth {
+        2
+    } else if hash3(x, y, z, 11) % 48 == 0 {
+        4
+    } else {
+        3
+    }
+}
+
+// ---- benchmarks ----
+
+fn bench_terrain(c: &mut Criterion, name: &str, material_at: fn(i32, i32, i32, i32) -> u16) {
+    let tree = build_terrain(material_at);
+    let compact = CompactOctree::from_fixed8(&tree);
+    let mut mesher = Mesher::new();
+
+    c.bench_function(&format!("{name}_fixed8"), |b| {
+        b.iter(|| mesher.make_triangles(black_box(&tree), |d| *d, |_| ()))
+    });
+    c.bench_function(&format!("{name}_compact"), |b| {
+        b.iter(|| mesher.make_triangles(black_box(&compact), |d| *d, |_| ()))
+    });
+}
