@@ -54,6 +54,9 @@ jobs:
   bench:
     name: Benchmark regressions
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # to post the benchmark report on the PR
     env:
       # Allowed slowdown (percent) before a benchmark is reported as a regression.
       BENCH_THRESHOLD: "10"
@@ -96,7 +99,32 @@ jobs:
         run: cargo bench -p reticulate --bench chunk -- --save-baseline head
       - name: Compare
         if: steps.bench_base.outputs.skip != 'true'
-        run: python3 .github/scripts/bench_compare.py base head "$BENCH_THRESHOLD" | tee -a "$GITHUB_STEP_SUMMARY"
+        run: |
+          status=0
+          python3 .github/scripts/bench_compare.py base head "$BENCH_THRESHOLD" > bench-report.md || status=$?
+          cat bench-report.md >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+      # Fork PRs get a read-only token, so only comment on same-repo PRs.
+      - name: Comment on PR
+        if: >-
+          always() && github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          hashFiles('bench-report.md') != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- bench-report -->';
+            const body = `${marker}\n${fs.readFileSync('bench-report.md', 'utf8')}\n\nCommit: ${context.payload.pull_request.head.sha}`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
       - name: Upload criterion reports
         if: always()
         uses: actions/upload-artifact@v4
