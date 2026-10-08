@@ -30,7 +30,7 @@ impl Morton2D {
     }
 
     #[inline(always)]
-    pub const fn from_uv_max_depth(u: ChunkCoord, v: ChunkCoord) -> Morton2D {
+    pub fn from_uv_max_depth(u: ChunkCoord, v: ChunkCoord) -> Morton2D {
         Morton2D {
             code: encode_morton(u as u32, v as u32),
             depth: Depth::MAX,
@@ -38,7 +38,7 @@ impl Morton2D {
     }
 
     #[inline(always)]
-    pub const fn from_uv_and_depth(u: ChunkCoord, v: ChunkCoord, depth: Depth) -> Morton2D {
+    pub fn from_uv_and_depth(u: ChunkCoord, v: ChunkCoord, depth: Depth) -> Morton2D {
         Morton2D {
             code: encode_morton(u as u32, v as u32),
             depth,
@@ -62,7 +62,7 @@ impl Morton2D {
 /// with `+bmi2`, otherwise via a cached runtime check). Every other target,
 /// including aarch64, uses the portable bit-twiddling implementation.
 #[inline(always)]
-const fn encode_morton(x: u32, y: u32) -> u32 {
+fn encode_morton(x: u32, y: u32) -> u32 {
     #[cfg(target_arch = "x86_64")]
     if std::arch::is_x86_feature_detected!("bmi2") {
         // SAFETY: BMI2 support has just been verified.
