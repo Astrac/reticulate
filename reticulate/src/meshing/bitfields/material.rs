@@ -52,7 +52,7 @@ impl<'a> Material<'a> {
     pub fn fill_projected(&mut self, axis: Axis, morton: Morton2D, material: MaterialId) {
         let area = PLANE_AREA >> (morton.depth().as_usize() << 1);
         let start = morton.as_usize();
-        debug_assert!(start % area == 0 && start + area <= PLANE_AREA);
+        debug_assert!(start.is_multiple_of(area) && start + area <= PLANE_AREA);
 
         let plane = &mut *self.planes[axis.as_usize()];
         if area == 1 {
@@ -123,7 +123,7 @@ fn run_length(
     material: MaterialId,
     max_len: usize,
 ) -> usize {
-    debug_assert!(max_len.is_power_of_two() && start % max_len == 0);
+    debug_assert!(max_len.is_power_of_two() && start.is_multiple_of(max_len));
 
     if max_len < 4 {
         return max_len;

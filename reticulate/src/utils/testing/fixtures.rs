@@ -135,7 +135,6 @@ impl Fixture {
                 }
             }
         }
-        drop(parity);
         f
     }
 

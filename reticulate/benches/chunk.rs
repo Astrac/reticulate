@@ -267,7 +267,7 @@ fn layered_material(x: i32, y: i32, z: i32, surface: i32) -> u16 {
         top
     } else if depth <= dirt_depth {
         2
-    } else if hash3(x, y, z, 11) % 48 == 0 {
+    } else if hash3(x, y, z, 11).is_multiple_of(48) {
         4
     } else {
         3

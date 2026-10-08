@@ -171,7 +171,7 @@ fn fixed8_and_compact_trees_give_the_same_mesh() {
     };
     // Different leaf sizes can split the faces differently, but they must
     // cover the same area with the same materials.
-    assert_eq!(fixed8.len() > 0, compact.len() > 0);
+    assert_eq!(!fixed8.is_empty(), !compact.is_empty());
     fixed8.sort_by_key(key);
     compact.sort_by_key(key);
     assert_mesh_matches(&VoxelGrid::new(&voxels), &fixed8);

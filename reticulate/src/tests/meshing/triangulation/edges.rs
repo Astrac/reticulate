@@ -32,7 +32,7 @@ fn y_plane_walls_come_from_x_transitions() {
 
     let edges = Edges::from_parity(&parity, SurfaceLayer::new(Axis::Y, 7));
     assert_eq!(edges.walls(9), (1 << 5) | BOUNDARY_WALLS);
-    assert_eq!(edges.walls(8), 0 | BOUNDARY_WALLS);
+    assert_eq!(edges.walls(8), BOUNDARY_WALLS);
 }
 
 #[test]
@@ -43,7 +43,7 @@ fn x_plane_walls_come_from_z_transitions() {
 
     let edges = Edges::from_parity(&parity, SurfaceLayer::new(Axis::X, 5));
     assert_eq!(edges.walls(7), (1 << 9) | BOUNDARY_WALLS);
-    assert_eq!(edges.walls(6), 0 | BOUNDARY_WALLS);
+    assert_eq!(edges.walls(6), BOUNDARY_WALLS);
 }
 
 #[test]
@@ -54,7 +54,7 @@ fn z_plane_walls_come_from_y_transitions() {
 
     let edges = Edges::from_parity(&parity, SurfaceLayer::new(Axis::Z, 9));
     assert_eq!(edges.walls(5), (1 << 7) | BOUNDARY_WALLS);
-    assert_eq!(edges.walls(4), 0 | BOUNDARY_WALLS);
+    assert_eq!(edges.walls(4), BOUNDARY_WALLS);
 }
 
 #[test]
@@ -68,10 +68,10 @@ fn walls_include_the_previous_layer() {
     let same = Edges::from_parity(&parity, SurfaceLayer::new(Axis::Y, 7));
     let above = Edges::from_parity(&parity, SurfaceLayer::new(Axis::Y, 8));
     let beyond = Edges::from_parity(&parity, SurfaceLayer::new(Axis::Y, 9));
-    assert_eq!(below.walls(9), 0 | BOUNDARY_WALLS);
+    assert_eq!(below.walls(9), BOUNDARY_WALLS);
     assert_eq!(same.walls(9), (1 << 5) | BOUNDARY_WALLS);
     assert_eq!(above.walls(9), (1 << 5) | BOUNDARY_WALLS);
-    assert_eq!(beyond.walls(9), 0 | BOUNDARY_WALLS);
+    assert_eq!(beyond.walls(9), BOUNDARY_WALLS);
 }
 
 #[test]

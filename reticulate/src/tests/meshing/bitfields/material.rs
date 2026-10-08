@@ -12,7 +12,7 @@ fn coords(cell: usize) -> Coords2D {
 }
 
 fn is_power_of_four(n: usize) -> bool {
-    n.is_power_of_two() && n.trailing_zeros() % 2 == 0
+    n.is_power_of_two() && n.trailing_zeros().is_multiple_of(2)
 }
 
 struct Planes {
@@ -79,7 +79,9 @@ fn reference_runs(plane: &[MaterialId], start: usize, len: usize) -> Vec<Run> {
     while offset < end {
         let size = *sizes
             .iter()
-            .find(|&&s| offset % s == 0 && offset + s <= end && is_uniform(plane, offset, s))
+            .find(|&&s| {
+                offset.is_multiple_of(s) && offset + s <= end && is_uniform(plane, offset, s)
+            })
             .expect("a single cell is always uniform");
         runs.push((read_cell(plane, offset), coords(offset), size));
         offset += size;
@@ -256,7 +258,7 @@ fn random_planes_match_the_reference_decomposition() {
             write_run(p.plane_mut(axis), offset, size, 1 + rng.next(3) as u16);
         }
 
-        let before = p.bits.clone();
+        let before = p.bits;
 
         let d = rng.next(TREE_DEPTH + 1);
         let size = depth_area(d);

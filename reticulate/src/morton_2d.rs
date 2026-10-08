@@ -80,14 +80,6 @@ pub(crate) unsafe fn encode_morton_bmi2(x: u32, y: u32) -> u32 {
     _pdep_u32(x, 0x5555_5555) | _pdep_u32(y, 0xAAAA_AAAA)
 }
 
-#[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "bmi2")]
-#[inline]
-pub(crate) unsafe fn decode_morton_bmi2(code: u32) -> (u32, u32) {
-    use std::arch::x86_64::_pext_u32;
-    (_pext_u32(code, 0x5555_5555), _pext_u32(code, 0xAAAA_AAAA))
-}
-
 #[inline(always)]
 pub(crate) const fn encode_morton_portable(x: u32, y: u32) -> u32 {
     bitmasks::interleave_zeroes(x) | (bitmasks::interleave_zeroes(y) << 1)

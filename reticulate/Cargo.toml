@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2024"
 description = "A high performance voxel meshing library."
 authors.workspace = true
-license.workspace = true
 license-file.workspace = true
+
+[lints]
+workspace = true
 
 [dependencies]
 # TODO: Make this optional under "log" feature

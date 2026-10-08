@@ -57,9 +57,9 @@ where
             }
 
             let edges = edges.get_or_insert_with(|| Edges::from_parity(parity, layer));
-            let discoverer = Filler::new(&self.claims, &self.parity);
+            let discoverer = Filler::new(self.claims, self.parity);
             let face_material = material.max(current_material);
-            let filled = discoverer.fill_region(layer, &edges, coords);
+            let filled = discoverer.fill_region(layer, edges, coords);
 
             weaver.weave_region(layer, edges, &filled, |t| {
                 (self.on_triangle)(Triangle::from_strip_triangle(
@@ -71,7 +71,7 @@ where
             });
 
             #[cfg(debug_assertions)]
-            debug_assert_within_footprint(&self.parity, layer, &filled);
+            debug_assert_within_footprint(self.parity, layer, &filled);
 
             self.claims.claim(layer, &filled);
         });
