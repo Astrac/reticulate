@@ -28,6 +28,11 @@ where
     #[inline(always)]
     fn scan_and_fill(&mut self, axis: Axis, face: Face, morton: Morton3D, material: MaterialId) {
         let (morton, layer) = morton.projected_axis_morton(axis);
+
+        if material == 0 && self.materials.is_vacant(axis, morton) {
+            return;
+        }
+
         self.surface_scanner
             .scan_projected(face, morton, layer, material, &*self.materials);
         self.materials.fill_projected(axis, morton, material);

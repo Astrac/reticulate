@@ -77,10 +77,15 @@ impl<'a> Material<'a> {
         material: MaterialId,
         mut on_material: impl FnMut(MaterialId, Coords2D, usize),
     ) {
+        if material == 0 && self.is_vacant(axis, node) {
+            return;
+        }
+
         if node.depth().as_area() == 1 {
             let start = node.as_usize() & (PLANE_AREA - 1);
             let old = core::mem::replace(&mut self.planes[axis.as_usize()][start], material);
             on_material(old, node.as_coords(), 1);
+            // self.mark(axis, start, 1, material);
             return;
         }
         self.iterate_materials(axis, node, &mut on_material);
@@ -92,6 +97,21 @@ impl<'a> Material<'a> {
         for p in &mut self.planes {
             p.fill(0);
         }
+    }
+
+    #[inline(always)]
+    pub fn is_vacant(&self, axis: Axis, node: Morton2D) -> bool {
+        let start = node.as_usize() & (PLANE_AREA - 1);
+        let area = node.depth().as_area();
+        let plane = &*self.planes[axis.as_usize()];
+        if area == 1 {
+            return plane[start] == 0;
+        }
+        // area is a power of 4 >= 4, so the range is a whole number of 4-cell quads
+        let quads: &[[MaterialId; 4]; PLANE_AREA / 4] = bytemuck::cast_ref(plane);
+        quads[start >> 2..(start + area) >> 2]
+            .iter()
+            .all(|q| *q == [0; 4])
     }
 }
 
