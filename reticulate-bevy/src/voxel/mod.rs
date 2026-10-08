@@ -1,6 +1,6 @@
-mod vertices;
 #[allow(dead_code)]
 mod test_model;
+mod vertices;
 
 use bevy::asset::RenderAssetUsages;
 use bevy::light::CascadeShadowConfigBuilder;

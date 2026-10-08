@@ -1,6 +1,6 @@
 use crate::{
     CompactOctree, Coords3D, Fixed8Octree, MaterialId,
-    meshing::{Triangle, Mesher},
+    meshing::{Mesher, Triangle},
     utils::testing::{DIRT, EMPTY, STONE, SeededRandom, VoxelGrid, assert_mesh_matches},
 };
 

@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: ./.github/actions/system-deps
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/system-deps
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace
+
+  bench:
+    name: Benchmark regressions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # to post the benchmark report on the PR
+    env:
+      # Allowed slowdown (percent) before a benchmark is reported as a regression.
+      BENCH_THRESHOLD: "10"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+      - name: Resolve base commit
+        id: base
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "sha=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.event.before }}" >> "$GITHUB_OUTPUT"
+          fi
+      # Both revisions are benchmarked on the same runner in the same job so
+      # the comparison is not skewed by differences between machines.
+      - name: Benchmark base
+        id: bench_base
+        run: |
+          sha="${{ steps.base.outputs.sha }}"
+          if [ -z "$sha" ] || [ "$sha" = "0000000000000000000000000000000000000000" ] \
+             || ! git cat-file -e "$sha^{commit}" 2>/dev/null; then
+            echo "No base commit available; skipping regression check."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git checkout --quiet "$sha"
+          if ! cargo bench -p reticulate --bench chunk -- --save-baseline base; then
+            echo "Base revision has no runnable benchmark; skipping regression check."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+          git checkout --quiet -
+      - name: Benchmark head
+        if: steps.bench_base.outputs.skip != 'true'
+        run: cargo bench -p reticulate --bench chunk -- --save-baseline head
+      - name: Compare
+        if: steps.bench_base.outputs.skip != 'true'
+        run: |
+          status=0
+          python3 .github/scripts/bench_compare.py base head "$BENCH_THRESHOLD" > bench-report.md || status=$?
+          cat bench-report.md >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+      # Fork PRs get a read-only token, so only comment on same-repo PRs.
+      - name: Comment on PR
+        if: >-
+          always() && github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          hashFiles('bench-report.md') != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- bench-report -->';
+            const body = `${marker}\n${fs.readFileSync('bench-report.md', 'utf8')}\n\nCommit: ${context.payload.pull_request.head.sha}`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+      - name: Upload criterion reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: criterion-reports
+          path: target/criterion
+          if-no-files-found: ignore
