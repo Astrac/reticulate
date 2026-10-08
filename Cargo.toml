@@ -5,6 +5,11 @@ members = [
 ]
 resolver = "3"
 
+[workspace.package]
+authors = ["Aldo Stracqudanio <aldo.strac@gmail.com>"]
+license = "BSL-1.1"
+license-file = "LICENSE.md"
+
 [profile.dev]
 opt-level = 0
 debug = "line-tables-only"

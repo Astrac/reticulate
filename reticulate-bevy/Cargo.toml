@@ -2,6 +2,9 @@
 name = "reticulate-bevy"
 version = "0.1.0"
 edition = "2024"
+authors.workspace = true
+license.workspace = true
+license-file.workspace = true
 
 [dependencies]
 bevy = { version = "0.19", features = [ "shader_format_wesl", "file_watcher", "free_camera", "debug", "dynamic_linking", "hotpatching", "bevy_dev_tools" ] }
