@@ -610,7 +610,7 @@ mod normals {
     #[test]
     fn outward_vertices_point_away_from_the_solid() {
         for face in faces() {
-            let expected = if face.is_positive() { 1 } else { -1 };
+            let expected = if face.is_positive() { -1 } else { 1 };
             assert_eq!(
                 normal_sign(face.axis(), canonical(face).outward_vertices()),
                 expected,

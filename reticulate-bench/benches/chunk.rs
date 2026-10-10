@@ -1,6 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use reticulate::Coords3D;
-use reticulate_bench::bench_chunk;
+use reticulate_bench::helpers::bench_chunk;
 
 fn chunk_sphere_single_mat(c: &mut Criterion) {
     bench_chunk(c, "chunk_sphere_single_material", |t| {
