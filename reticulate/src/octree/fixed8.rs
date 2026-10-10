@@ -6,12 +6,14 @@ pub struct Fixed8Octree<Data> {
 }
 
 impl<Data: Clone + PartialEq> Fixed8Octree<Data> {
+    #[inline(always)]
     pub fn new() -> Fixed8Octree<Data> {
         Fixed8Octree {
             nodes: vec![Fixed8OctreeNode::leaf(None)],
         }
     }
 
+    #[inline(always)]
     pub fn nodes(&self) -> &[Fixed8OctreeNode<Data>] {
         &self.nodes
     }
@@ -19,6 +21,7 @@ impl<Data: Clone + PartialEq> Fixed8Octree<Data> {
     pub fn get(&self, coords: Coords3D) -> Option<&Data> {
         let morton_code = Morton3D::from_coords_max_depth(coords);
 
+        #[cfg(feature = "logging")]
         log::debug!(
             "Getting {coords:?} (morton = {:0>32b})",
             morton_code.as_u32()
@@ -64,6 +67,7 @@ impl<Data: Clone + PartialEq> Fixed8Octree<Data> {
     pub fn update(&mut self, coords: Coords3D, data: Option<Data>) {
         let morton_code = Morton3D::from_coords_max_depth(coords);
 
+        #[cfg(feature = "logging")]
         log::debug!(
             "Updating {coords:?} (morton = {:0>32b})",
             morton_code.as_u32()
@@ -105,6 +109,7 @@ impl<Data: Clone + PartialEq> Fixed8Octree<Data> {
                 let target = *children_index + octant;
 
                 if depth == TREE_DEPTH - 1 {
+                    #[cfg(feature = "logging")]
                     log::debug!(
                         "Setting leaf at index {target} - has value: {:?}",
                         data.is_some()

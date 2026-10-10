@@ -4,10 +4,12 @@ use criterion::Criterion;
 use reticulate::{CompactOctree, Fixed8Octree, Mesher};
 
 pub fn bench_chunk(c: &mut Criterion, id: &str, mut demo: impl FnMut(&mut Fixed8Octree<u16>)) {
+    #[cfg(feature = "metrics-recording")]
+    reticulate::metrics::init_metrics();
+
     let mut mesher = Mesher::new();
     let mut tree = Fixed8Octree::new();
     demo(&mut tree);
-    let compact = CompactOctree::from_fixed8(&tree);
 
     c.bench_function(&format!("{id}_fixed_8"), |b| {
         b.iter(|| {
@@ -15,9 +17,16 @@ pub fn bench_chunk(c: &mut Criterion, id: &str, mut demo: impl FnMut(&mut Fixed8
         });
     });
 
+    #[cfg(feature = "metrics-recording")]
+    reticulate::metrics::report_and_reset();
+
+    let tree = CompactOctree::from_fixed8(&tree);
     c.bench_function(&format!("{id}_compact"), |b| {
         b.iter(|| {
-            mesher.make_triangles(black_box(&compact), |d| *d, |_| ());
+            mesher.make_triangles(black_box(&tree), |d| *d, |_| ());
         });
     });
+
+    #[cfg(feature = "metrics-recording")]
+    reticulate::metrics::report_and_reset();
 }

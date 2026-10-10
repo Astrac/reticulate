@@ -40,6 +40,7 @@ pub struct ToCompactWalker<Data> {
 }
 
 impl<Data: Copy + PartialEq> ToCompactWalker<Data> {
+    #[inline(always)]
     fn note_child(&mut self, octant: u8, data: Option<Data>) {
         if let Some(frame) = self.stack.last_mut() {
             frame.seen_mask |= 1 << octant;

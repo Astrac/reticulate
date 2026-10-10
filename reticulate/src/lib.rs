@@ -6,6 +6,7 @@ mod definitions;
 mod depth;
 mod face;
 mod meshing;
+mod metrics_macros;
 mod morton_2d;
 mod morton_3d;
 mod morton_lut;
@@ -28,6 +29,9 @@ pub use walking::{DenseWalk, DenseWalker, Walk, Walker};
 pub type ChunkCoord = u8;
 pub type CellMask = u32;
 pub type BoundaryMask = u64;
+
+#[cfg(feature = "metrics-recording")]
+pub mod metrics;
 
 #[cfg(test)]
 mod tests;

@@ -25,6 +25,7 @@ impl<'a> Filler<'a> {
         edges: &Edges,
         seed: Coords2D,
     ) -> [u32; PLANE_SIDE] {
+        crate::start_timer!(timer_fill_region);
         let mut region = [0u32; PLANE_SIDE];
         let seed_row = seed.u as usize; // row: u, column: v
         region[seed_row] = self.expand(layer, edges, seed_row, 1 << seed.v);

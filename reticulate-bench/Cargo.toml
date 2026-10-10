@@ -16,6 +16,10 @@ noise = "0.9.0"
 reticulate = { version = "0.1", path = "../reticulate" }
 reticulate-demo = { version = "0.1", path = "../reticulate-demo" }
 
+[features]
+metrics-recording = ["reticulate/metrics-recording"]
+logging = ["reticulate/logging"]
+
 [[bench]]
 name = "chunk"
 harness = false

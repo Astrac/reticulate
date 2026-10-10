@@ -26,6 +26,7 @@ impl<'a> Weaver<'a> {
         region: &[u32; PLANE_SIDE],
         mut emit: impl FnMut(Triangle2D),
     ) {
+        crate::start_timer!(timer_weave_region);
         let Some(first) = region.iter().position(|&cells| cells != 0) else {
             return;
         };

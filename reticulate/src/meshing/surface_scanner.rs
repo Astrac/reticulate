@@ -42,6 +42,7 @@ where
         current_material: MaterialId,
         materials: &Material<'a>,
     ) {
+        crate::start_timer!(timer_scan_projected);
         let axis = face.axis();
         let layer = SurfaceLayer::new(axis, axis_coord);
         let parity = self.parity;

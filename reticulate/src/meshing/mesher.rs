@@ -31,6 +31,9 @@ impl Mesher {
         M: FnMut(&Data) -> MaterialId,
         F: FnMut(Triangle),
     {
+        crate::start_timer!(timer_make_triangles);
+        crate::increase_counter!(counter_make_triangles);
+
         let Bitfields {
             mut claims,
             mut parity,
@@ -39,7 +42,10 @@ impl Mesher {
 
         let mut gathering_walker =
             GatheringWalker::new(&mut material, &mut parity, &mut to_material);
+
+        crate::start_timer!(timer_gathering_walk, as = gathering_timer);
         tree.walk_dense(&mut gathering_walker);
+        crate::stop_timer!(gathering_timer);
 
         material.clear();
 
@@ -47,6 +53,8 @@ impl Mesher {
         let mut surface_walker =
             SurfaceWalker::new(&mut material, surface_scanner, &mut to_material);
 
+        crate::start_timer!(timer_surface_walk, as = surface_timer);
         tree.walk_dense(&mut surface_walker);
+        crate::stop_timer!(surface_timer);
     }
 }

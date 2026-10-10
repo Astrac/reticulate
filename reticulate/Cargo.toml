@@ -10,9 +10,13 @@ license-file.workspace = true
 workspace = true
 
 [dependencies]
-# TODO: Make this optional under "log" feature
-log = "0.4"
-bytemuck = "1.25.2"
+bytemuck = "1.25"
+crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
+rayon = "1.12"
+# Optional dependencies, feature-controlled
+comfy-table = { version = "8.0", optional = true }
+log = { version = "0.4", optional = true }
+metrics-lib = { version = "1.0", optional = true, features = ["meter"] }
 
 [dev-dependencies]
 criterion = "0.8"
@@ -20,3 +24,7 @@ rand = "0.10"
 rstest = "0.26"
 rstest_reuse = "0.7.0"
 spdlog-rs = { version = "0.5", features = ["log"] }
+
+[features]
+metrics-recording = ["dep:metrics-lib", "dep:comfy-table"]
+logging = ["dep:log"]

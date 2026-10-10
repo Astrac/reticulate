@@ -15,6 +15,7 @@ impl<'a> Material<'a> {
         morton: Morton2D,
         mut on_material: impl FnMut(MaterialId, Coords2D, usize),
     ) {
+        crate::start_timer!(timer_iterate_materials);
         let plane: &[MaterialId; PLANE_AREA] = &*self.planes[axis.as_usize()];
 
         let start = morton.as_usize() & (PLANE_AREA - 1);
@@ -50,6 +51,7 @@ impl<'a> Material<'a> {
 
     #[inline]
     pub fn fill_projected(&mut self, axis: Axis, morton: Morton2D, material: MaterialId) {
+        crate::start_timer!(timer_fill_projected);
         let area = PLANE_AREA >> (morton.depth().as_usize() << 1);
         let start = morton.as_usize();
         debug_assert!(start.is_multiple_of(area) && start + area <= PLANE_AREA);
