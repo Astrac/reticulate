@@ -12,6 +12,11 @@ pub struct Coords3D {
 
 impl Coords3D {
     #[inline(always)]
+    pub const fn from_xyz(x: ChunkCoord, y: ChunkCoord, z: ChunkCoord) -> Coords3D {
+        Coords3D { x, y, z }
+    }
+
+    #[inline(always)]
     pub const fn from_morton(value: Morton3D) -> Self {
         let morton = value.code;
         let depth_shift = (TREE_DEPTH as ChunkCoord - value.depth().0) * 3;

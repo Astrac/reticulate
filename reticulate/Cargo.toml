@@ -20,7 +20,3 @@ rand = "0.10"
 rstest = "0.26"
 rstest_reuse = "0.7.0"
 spdlog-rs = { version = "0.5", features = ["log"] }
-
-[[bench]]
-name = "chunk"
-harness = false

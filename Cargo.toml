@@ -1,7 +1,9 @@
 [workspace]
 members = [
-  "reticulate-bevy",
   "reticulate",
+  "reticulate-bench",
+  "reticulate-bevy",
+  "reticulate-demo",
 ]
 resolver = "3"
 
