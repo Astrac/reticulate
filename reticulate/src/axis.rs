@@ -17,6 +17,11 @@ impl Axis {
     }
 
     #[inline(always)]
+    pub const fn from_usize(i: usize) -> Axis {
+        Self::AXES[i]
+    }
+
+    #[inline(always)]
     pub const fn next(&self) -> Axis {
         match self {
             Axis::X => Axis::Y,

@@ -19,7 +19,7 @@ impl Face {
 
     #[inline(always)]
     pub const fn is_positive(&self) -> bool {
-        matches!(*self, Face::Negative(_))
+        matches!(*self, Face::Positive(_))
     }
 
     #[inline(always)]

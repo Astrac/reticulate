@@ -10,3 +10,7 @@ pub(crate) mod triangulation;
 
 pub use mesher::Mesher;
 pub use triangle::Triangle;
+
+// TODO - Support this or delete it
+#[allow(unused)]
+pub mod packed_triangle;
