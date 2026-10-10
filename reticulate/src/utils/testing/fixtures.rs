@@ -84,16 +84,6 @@ pub fn voxel(a: usize, c: i32, u: i32, v: i32) -> (i32, i32, i32) {
     }
 }
 
-/// A 3D point as (plane coordinate along axis `a`, u, v): the inverse of
-/// [`voxel`] for real-valued points.
-pub fn project(a: usize, x: f64, y: f64, z: f64) -> (f64, f64, f64) {
-    match a {
-        0 => (x, y, z),
-        1 => (y, z, x),
-        _ => (z, x, y),
-    }
-}
-
 /// A voxel grid together with the parity and claims storage of its chunk.
 ///
 /// Parity is built by brute force the way the gathering pass does it: a

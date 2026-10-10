@@ -94,7 +94,7 @@ pub fn assert_no_t_junctions(tris: &[Triangle2D]) {
 
 /// 3D counterpart of [`assert_no_t_junctions`].
 pub fn assert_no_t_junctions_3d(tris: &[Triangle]) {
-    let points = |t: &Triangle| t.vertices.map(|q| (q.x as i64, q.y as i64, q.z as i64));
+    let points = |t: &Triangle| t.vertices().map(|q| (q.x as i64, q.y as i64, q.z as i64));
     for (i, a) in tris.iter().enumerate() {
         for (j, b) in tris.iter().enumerate() {
             if i == j {

@@ -71,7 +71,6 @@ pub fn setup(mut commands: Commands) {
     let mesher = Vertices::new();
     commands.insert_resource(mesher);
 
-    // Sun
     let cascade_shadow_config = CascadeShadowConfigBuilder {
         maximum_distance: 7000.0,
         ..default()
@@ -88,7 +87,6 @@ pub fn setup(mut commands: Commands) {
         cascade_shadow_config,
     ));
 
-    // // Ambient light, same color as sun
     commands.insert_resource(GlobalAmbientLight {
         color: light_color,
         brightness: 100.4,

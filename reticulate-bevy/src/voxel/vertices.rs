@@ -47,9 +47,9 @@ impl Vertices {
                 self.indices.push(next_index + 1);
                 self.indices.push(next_index + 2);
 
-                self.normals.push(to_normal(t.face));
-                self.normals.push(to_normal(t.face));
-                self.normals.push(to_normal(t.face));
+                self.normals.push(to_normal(t.face()));
+                self.normals.push(to_normal(t.face()));
+                self.normals.push(to_normal(t.face()));
 
                 self.colors.push(Vec4::new(1., 0., 0., 1.));
                 self.colors.push(Vec4::new(0., 1., 0., 1.));

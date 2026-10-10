@@ -123,8 +123,8 @@ fn edge_touching_voxels_are_seamless() {
 fn different_materials_split_and_skip_occluded_face() {
     let mut f = Fixture::new(&[((2, 3, 4), STONE), ((3, 3, 4), DIRT)]);
     let tris = mesh(&mut f, &[]);
-    let stone = tris.iter().filter(|t| t.material == STONE).count();
-    let dirt = tris.iter().filter(|t| t.material == DIRT).count();
+    let stone = tris.iter().filter(|t| t.material() == STONE).count();
+    let dirt = tris.iter().filter(|t| t.material() == DIRT).count();
     assert_eq!((stone, dirt), (10, 10));
     assert_mesh_matches(&f.grid, &tris);
 }

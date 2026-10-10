@@ -1,5 +1,5 @@
 use crate::{
-    ChunkCoord, Coords3D, Face, MaterialId,
+    Axis, ChunkCoord, Coords3D, Face, MaterialId,
     meshing::{surface_layer::SurfaceLayer, triangulation::Triangle2D},
 };
 
@@ -46,13 +46,38 @@ impl Triangle {
     }
 
     #[inline(always)]
+    pub const fn vertices(&self) -> [Coords3D; 3] {
+        self.vertices
+    }
+
+    #[inline(always)]
+    pub const fn face(&self) -> Face {
+        self.face
+    }
+
+    #[inline(always)]
+    pub const fn axis(&self) -> Axis {
+        self.face.axis()
+    }
+
+    #[inline(always)]
+    pub const fn material(&self) -> MaterialId {
+        self.material
+    }
+
+    #[inline(always)]
+    pub const fn is_normal_positive(&self) -> bool {
+        self.face.is_positive()
+    }
+
+    #[inline(always)]
     pub const fn outward_vertices(&self) -> [Coords3D; 3] {
         let [a, b, c] = self.vertices;
 
         if self.face.is_positive() {
-            [a, b, c]
-        } else {
             [a, c, b]
+        } else {
+            [a, b, c]
         }
     }
 }

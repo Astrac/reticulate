@@ -84,8 +84,8 @@ fn different_materials_split_the_shared_boundary() {
     let mut tris = triangulate_fixed8(&mut Mesher::new(), &voxels);
 
     assert_mesh_matches(&VoxelGrid::new(&voxels), &tris);
-    let stone = tris.iter().filter(|t| t.material == STONE).count();
-    let dirt = tris.iter().filter(|t| t.material == DIRT).count();
+    let stone = tris.iter().filter(|t| t.material() == STONE).count();
+    let dirt = tris.iter().filter(|t| t.material() == DIRT).count();
     assert_eq!((stone, dirt), (10, 10));
     tris.clear();
 }
@@ -129,7 +129,7 @@ fn to_material_maps_the_payload_to_a_material() {
     Mesher::new().make_triangles(&tree, |id| *id as MaterialId * 10, |t| tris.push(t));
 
     assert_eq!(tris.len(), 12);
-    assert!(tris.iter().all(|t| t.material == 70));
+    assert!(tris.iter().all(|t| t.material() == 70));
 }
 
 #[test]
@@ -149,9 +149,9 @@ fn every_triangle_is_a_unit_aligned_non_degenerate_triangle_in_the_chunk() {
     let tris = triangulate_fixed8(&mut Mesher::new(), &voxels);
 
     for t in &tris {
-        let [a, b, c] = t.vertices;
+        let [a, b, c] = t.vertices();
         assert!(a != b && b != c && a != c, "degenerate: {t:?}");
-        for v in t.vertices {
+        for v in t.vertices() {
             assert!(v.x <= 32 && v.y <= 32 && v.z <= 32, "{t:?}");
         }
     }
@@ -165,9 +165,9 @@ fn fixed8_and_compact_trees_give_the_same_mesh() {
     let mut compact = triangulate_compact(&mut Mesher::new(), &voxels);
 
     let key = |t: &Triangle| {
-        let mut vs = t.vertices.map(|v| (v.x, v.y, v.z));
+        let mut vs = t.vertices().map(|v| (v.x, v.y, v.z));
         vs.sort();
-        (vs, t.material)
+        (vs, t.material())
     };
     // Different leaf sizes can split the faces differently, but they must
     // cover the same area with the same materials.
