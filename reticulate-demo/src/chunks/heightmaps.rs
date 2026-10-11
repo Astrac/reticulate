@@ -1,6 +1,4 @@
-use reticulate::{Coords3D, Fixed8Octree};
-
-use crate::utils;
+use crate::{ChunkDemo, chunks::helpers};
 
 /// Smooth 2D value noise in 0..1.
 fn value_noise(x: f32, z: f32, seed: u32) -> f32 {
@@ -8,7 +6,7 @@ fn value_noise(x: f32, z: f32, seed: u32) -> f32 {
     let (fx, fz) = (x - xi, z - zi);
     let (sx, sz) = (fx * fx * (3.0 - 2.0 * fx), fz * fz * (3.0 - 2.0 * fz));
     let corner = |dx: i32, dz: i32| {
-        (utils::hash3(xi as i32 + dx, 0, zi as i32 + dz, seed) & 0xFFFF) as f32 / 65535.0
+        (helpers::hash3(xi as i32 + dx, 0, zi as i32 + dz, seed) & 0xFFFF) as f32 / 65535.0
     };
     let top = corner(0, 0) + (corner(1, 0) - corner(0, 0)) * sx;
     let bottom = corner(0, 1) + (corner(1, 1) - corner(0, 1)) * sx;
@@ -30,20 +28,15 @@ fn heightmap() -> [[i32; 32]; 32] {
     h
 }
 
-pub fn chunk_terrain(
-    tree: &mut Fixed8Octree<u16>,
-    material_at: impl Fn(i32, i32, i32, i32) -> u16,
-) {
+pub fn terrain(material_at: impl Fn(i32, i32, i32, i32) -> u16 + 'static) -> ChunkDemo {
     let heights = heightmap();
-    for z in 0..32u8 {
-        for y in 0..32u8 {
-            for x in 0..32u8 {
-                let surface = heights[z as usize][x as usize];
-                if y < surface as u8 {
-                    let m = material_at(x as i32, y as i32, z as i32, surface);
-                    tree.update(Coords3D { x, y, z }, Some(m));
-                }
-            }
+    ChunkDemo::new("heightmap_terrain", move |coords| {
+        let surface = heights[coords.z as usize][coords.x as usize];
+        if coords.y < surface as u8 {
+            let m = material_at(coords.x as i32, coords.y as i32, coords.z as i32, surface);
+            m
+        } else {
+            0
         }
-    }
+    })
 }

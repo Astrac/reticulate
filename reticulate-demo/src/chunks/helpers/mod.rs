@@ -1,3 +1,6 @@
+pub mod demo;
+pub mod materials;
+
 pub fn hash3(x: i32, y: i32, z: i32, seed: u32) -> u32 {
     let mut h = (x as u32).wrapping_mul(0x9E37_79B1)
         ^ (y as u32).wrapping_mul(0x85EB_CA77)

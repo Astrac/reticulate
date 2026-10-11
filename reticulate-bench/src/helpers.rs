@@ -1,17 +1,27 @@
 use std::hint::black_box;
 
 use criterion::Criterion;
-use reticulate::{CompactOctree, Fixed8Octree, Mesher};
+use reticulate::{CompactOctree, Mesher};
+use reticulate_demo::ChunkDemo;
 
-pub fn bench_chunk(c: &mut Criterion, id: &str, mut demo: impl FnMut(&mut Fixed8Octree<u16>)) {
+#[derive(Debug)]
+enum OctreeRepr {
+    Compact,
+    Fixed8,
+}
+
+fn bench_id(demo: &ChunkDemo, id: &str, repr: OctreeRepr) -> String {
+    format!("{:?}::{}::{}", repr, demo.id(), id)
+}
+
+pub fn bench_chunk(c: &mut Criterion, id: &str, mut demo: ChunkDemo) {
     #[cfg(feature = "metrics-recording")]
     reticulate::metrics::init_metrics();
 
     let mut mesher = Mesher::new();
-    let mut tree = Fixed8Octree::new();
-    demo(&mut tree);
+    let tree = demo.make_tree();
 
-    c.bench_function(&format!("{id}_fixed_8"), |b| {
+    c.bench_function(&bench_id(&demo, id, OctreeRepr::Fixed8), |b| {
         b.iter(|| {
             mesher.make_triangles(black_box(&tree), |d| *d, |_| ());
         });
@@ -22,7 +32,7 @@ pub fn bench_chunk(c: &mut Criterion, id: &str, mut demo: impl FnMut(&mut Fixed8
     reticulate::metrics::report_and_reset();
 
     let tree = CompactOctree::from_fixed8(&tree);
-    c.bench_function(&format!("{id}_compact"), |b| {
+    c.bench_function(&bench_id(&demo, id, OctreeRepr::Compact), |b| {
         b.iter(|| {
             mesher.make_triangles(black_box(&tree), |d| *d, |_| ());
         });
@@ -32,15 +42,18 @@ pub fn bench_chunk(c: &mut Criterion, id: &str, mut demo: impl FnMut(&mut Fixed8
     reticulate::metrics::report_and_reset();
 }
 
-pub fn mesh_chunk(id: &str, mut demo: impl FnMut(&mut Fixed8Octree<u16>)) {
+pub fn mesh_chunk(id: &str, mut demo: ChunkDemo) {
     #[cfg(feature = "metrics-recording")]
     reticulate::metrics::init_metrics();
 
     let mut mesher = Mesher::new();
-    let mut tree = Fixed8Octree::new();
-    demo(&mut tree);
+    let tree = demo.make_tree();
 
-    println!("Meshing scenario: {id}_fixed_8");
+    println!(
+        "Meshing scenario: {}",
+        bench_id(&demo, id, OctreeRepr::Fixed8)
+    );
+
     for _ in 0..100 {
         mesher.make_triangles(black_box(&tree), |d| *d, |_| ());
     }
@@ -49,7 +62,12 @@ pub fn mesh_chunk(id: &str, mut demo: impl FnMut(&mut Fixed8Octree<u16>)) {
     reticulate::metrics::report_and_reset();
 
     let tree = CompactOctree::from_fixed8(&tree);
-    println!("Meshing scenario: {id}_compact");
+
+    println!(
+        "Meshing scenario: {}",
+        bench_id(&demo, id, OctreeRepr::Compact)
+    );
+
     for _ in 0..100 {
         mesher.make_triangles(black_box(&tree), |d| *d, |_| ());
     }
