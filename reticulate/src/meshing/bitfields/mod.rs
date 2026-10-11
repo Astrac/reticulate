@@ -24,6 +24,15 @@ pub struct BitfieldsStorage {
     claims: [[Word; CLAIMS_WORDS]; 3],
 }
 
+impl BitfieldsStorage {
+    #[inline(always)]
+    pub fn reset(&mut self) {
+        self.parity.iter_mut().for_each(|p| p.fill(0));
+        self.claims.iter_mut().for_each(|p| p.fill(0));
+        self.material.iter_mut().for_each(|p| p.fill(0));
+    }
+}
+
 impl Default for BitfieldsStorage {
     fn default() -> Self {
         Self {

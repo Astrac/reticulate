@@ -21,6 +21,10 @@ impl Mesher {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.storage.reset();
+    }
+
     pub fn make_triangles<Data, F, M>(
         &mut self,
         tree: &impl DenseWalk<Data>,

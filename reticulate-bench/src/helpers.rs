@@ -17,6 +17,7 @@ pub fn bench_chunk(c: &mut Criterion, id: &str, mut demo: impl FnMut(&mut Fixed8
         });
     });
 
+    mesher.reset();
     #[cfg(feature = "metrics-recording")]
     reticulate::metrics::report_and_reset();
 
