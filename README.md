@@ -14,10 +14,16 @@ mesher with an optional integration into the bevy game engine.
 These are the high-level features currently implemented:
 
 - Sparse Voxel Octree data structure variants for reading and editing
-- Mesher component that produces a greedy-triangles mesh with no t-junctions
-  supporting materials up to 16bits
+- Mesher component supporting materials up to 16bits
 - Criterion benchmarks for chunk meshing
 - Small bevy demo
+
+Guaranteed features of the generate mesh:
+
+- The mesh is built from greedy triangles
+- The number of triangles in a single-material mesh is guaranteed minimal
+- The number of triangles in a multi-material mesh is [very close to minimal](#minimality)
+- The mesh is watertight with no t-junctions of any kind
 
 On the roadmap:
 
@@ -185,6 +191,16 @@ For every not-yet-claimed starting cell the scanner:
 3. **Claims** the region's cells and emits the triangles, lifted to 3D by
    `Triangle::from_strip_triangle`.
 
+#### Minimality
+
+Single-material meshes will have the minimum number of triangles required by the
+topology. Multi-material meshes could have some extra vertices due to the fact
+that the parity approach can only tell about tranitions but not occupancy of a
+particular cell.
+
+As a result, if a transition is buried under a uniform wall the wall will get an
+extra vertex that could actually have been simplified. This should happen in a very
+small number of non-degenerate cases.
 
 ### Linear octree
 

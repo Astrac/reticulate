@@ -5,8 +5,7 @@ use crate::{
         triangulation::{edges::Edges, filler::Filler, weaver::Weaver},
     },
     utils::testing::{
-        DIRT, Fixture, STONE, assert_covers_exactly, assert_no_t_junctions, assert_scan, cells,
-        claims_of, mesh::scan_plane, parity_of, weave_rows,
+        DIRT, Fixture, STONE, assertions, cells, claims_of, mesh::scan_plane, parity_of, weave_rows,
     },
 };
 
@@ -15,7 +14,7 @@ fn column_seeded_at_its_top() {
     let shape: Vec<_> = (0..4).map(|r| (r, 5)).collect();
     let mut f = Fixture::plane(&shape);
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (3, 5));
-    assert_scan(&filled, &tris, &shape);
+    assertions::assert_canonical_weave(&filled, &shape, &tris);
 }
 
 #[test]
@@ -26,7 +25,7 @@ fn seed_above_two_runs() {
     }
     let mut f = Fixture::plane(&shape);
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (3, 3));
-    assert_scan(&filled, &tris, &shape);
+    assertions::assert_canonical_weave(&filled, &shape, &tris);
 }
 
 #[test]
@@ -41,7 +40,7 @@ fn seed_above_hole() {
     }
     let mut f = Fixture::plane(&shape);
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (3, 1));
-    assert_scan(&filled, &tris, &shape);
+    assertions::assert_canonical_weave(&filled, &shape, &tris);
 }
 
 #[test]
@@ -52,7 +51,7 @@ fn inverted_u_is_covered() {
     }
     let mut f = Fixture::plane(&shape);
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (0, 1));
-    assert_scan(&filled, &tris, &shape);
+    assertions::assert_canonical_weave(&filled, &shape, &tris);
 }
 
 #[test]
@@ -61,7 +60,7 @@ fn dip_below_start_is_covered() {
     shape.extend((1..=4).map(|c| (1, c)));
     let mut f = Fixture::plane(&shape);
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (2, 1));
-    assert_scan(&filled, &tris, &shape);
+    assertions::assert_canonical_weave(&filled, &shape, &tris);
 }
 
 #[test]
@@ -69,7 +68,7 @@ fn pinch_start_below_end_above() {
     let shape = [(0, 1), (0, 2), (0, 3), (1, 1), (1, 3), (2, 1), (2, 2)];
     let mut f = Fixture::plane(&shape);
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (0, 1));
-    assert_scan(&filled, &tris, &shape);
+    assertions::assert_canonical_weave(&filled, &shape, &tris);
 }
 
 #[test]
@@ -77,7 +76,7 @@ fn pinch_end_below_start_above() {
     let shape = [(0, 1), (0, 2), (0, 3), (1, 1), (1, 3), (2, 2), (2, 3)];
     let mut f = Fixture::plane(&shape);
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (0, 1));
-    assert_scan(&filled, &tris, &shape);
+    assertions::assert_canonical_weave(&filled, &shape, &tris);
 }
 
 #[test]
@@ -95,7 +94,7 @@ fn pinch_between_stacked_runs() {
     ];
     let mut f = Fixture::plane(&shape);
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (0, 1));
-    assert_scan(&filled, &tris, &shape);
+    assertions::assert_canonical_weave(&filled, &shape, &tris);
 }
 
 #[test]
@@ -135,8 +134,8 @@ fn adjacent_regions_share_boundary_vertices() {
     assert_eq!(b_filled, cells(&[(4, 3)]), "dirt region");
 
     let all: Vec<_> = a_tris.into_iter().chain(b_tris).collect();
-    assert_covers_exactly(&all, &cells(&[(4, 2), (5, 2), (4, 3)]));
-    assert_no_t_junctions(&all);
+    assertions::assert_covers_exactly(&all, &cells(&[(4, 2), (5, 2), (4, 3)]));
+    assertions::assert_no_t_junctions_2d(&all);
 }
 
 #[test]
@@ -158,7 +157,7 @@ fn single_cell_is_a_quad_of_two_triangles() {
     let mut f = Fixture::plane(&[(4, 6)]);
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (4, 6));
 
-    assert_scan(&filled, &tris, &[(4, 6)]);
+    assertions::assert_canonical_weave(&filled, &[(4, 6)], &tris);
     assert_eq!(tris.len(), 2);
 }
 
@@ -168,7 +167,7 @@ fn rectangle_needs_no_interior_vertices() {
     let mut f = Fixture::plane(&shape);
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (2, 3));
 
-    assert_scan(&filled, &tris, &shape);
+    assertions::assert_canonical_weave(&filled, &shape, &tris);
     assert_eq!(tris.len(), 2, "a rectangle is a single quad");
 }
 

@@ -3,7 +3,7 @@ use crate::{
         Triangle2D,
         stepper::{BOUNDARIES_COUNT, GRID_SIDE, INACTIVE_VERTEX, Stepper},
     },
-    utils::testing::{AsciiGrid, assert_covers_exactly, weave_rows},
+    utils::testing::{AsciiGrid, assertions, weave_rows},
 };
 
 #[test]
@@ -158,7 +158,7 @@ fn weave_strip_around_hole() {
 
     let triangles = grid.weave_triangles();
 
-    assert_covers_exactly(&triangles, &[0b1110, 0b1010, 0b1110]);
+    assertions::assert_covers_exactly(&triangles, &[0b1110, 0b1010, 0b1110]);
 
     assert_eq!(
         triangles,
@@ -337,7 +337,7 @@ fn weave_strip_two_holes_close_same_row() {
         })
         .collect();
 
-    assert_covers_exactly(&triangles, &expected);
+    assertions::assert_covers_exactly(&triangles, &expected);
 }
 
 #[test]
@@ -355,7 +355,7 @@ fn weave_strip_branch_3() {
     let grid = AsciiGrid::parse(&rows);
     let triangles = grid.weave_triangles();
 
-    assert_covers_exactly(
+    assertions::assert_covers_exactly(
         &triangles,
         &[
             0b00001111111100, // row 0
@@ -374,7 +374,7 @@ fn weave_strip_branch_3() {
 fn l_shape_with_a_missing_corner_cell() {
     let mut cells = vec![0b1111_1110];
     cells.extend([0xFF; 7]);
-    assert_covers_exactly(&weave_rows(&cells), &cells);
+    assertions::assert_covers_exactly(&weave_rows(&cells), &cells);
 }
 
 #[test]

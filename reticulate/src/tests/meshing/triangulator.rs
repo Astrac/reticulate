@@ -1,7 +1,7 @@
 use crate::{
     CompactOctree, Coords3D, Fixed8Octree, MaterialId,
     meshing::{Mesher, Triangle},
-    utils::testing::{DIRT, EMPTY, STONE, SeededRandom, VoxelGrid, assert_mesh_matches},
+    utils::testing::{DIRT, EMPTY, STONE, SeededRandom, VoxelGrid, assertions},
 };
 
 type Voxels = Vec<((usize, usize, usize), MaterialId)>;
@@ -52,10 +52,10 @@ fn assert_meshes_correctly(voxels: &Voxels) -> usize {
     let grid = VoxelGrid::new(voxels);
 
     let fixed8 = triangulate_fixed8(&mut Mesher::new(), voxels);
-    assert_mesh_matches(&grid, &fixed8);
+    assertions::assert_canonical_mesh(&grid, &fixed8, true);
 
     let compact = triangulate_compact(&mut Mesher::new(), voxels);
-    assert_mesh_matches(&grid, &compact);
+    assertions::assert_canonical_mesh(&grid, &compact, true);
 
     fixed8.len()
 }
@@ -83,7 +83,7 @@ fn different_materials_split_the_shared_boundary() {
     let voxels = vec![((2, 3, 4), STONE), ((3, 3, 4), DIRT)];
     let mut tris = triangulate_fixed8(&mut Mesher::new(), &voxels);
 
-    assert_mesh_matches(&VoxelGrid::new(&voxels), &tris);
+    assertions::assert_canonical_mesh(&VoxelGrid::new(&voxels), &tris, true);
     let stone = tris.iter().filter(|t| t.material() == STONE).count();
     let dirt = tris.iter().filter(|t| t.material() == DIRT).count();
     assert_eq!((stone, dirt), (10, 10));
@@ -174,8 +174,8 @@ fn fixed8_and_compact_trees_give_the_same_mesh() {
     assert_eq!(!fixed8.is_empty(), !compact.is_empty());
     fixed8.sort_by_key(key);
     compact.sort_by_key(key);
-    assert_mesh_matches(&VoxelGrid::new(&voxels), &fixed8);
-    assert_mesh_matches(&VoxelGrid::new(&voxels), &compact);
+    assertions::assert_canonical_mesh(&VoxelGrid::new(&voxels), &fixed8, false);
+    assertions::assert_canonical_mesh(&VoxelGrid::new(&voxels), &compact, false);
 }
 
 #[test]
@@ -210,7 +210,7 @@ fn reusing_a_triangulator_for_the_same_chunk_gives_the_same_mesh() {
     let second = triangulate_fixed8(&mut triangulator, &voxels);
 
     assert_eq!(first.len(), second.len());
-    assert_mesh_matches(&VoxelGrid::new(&voxels), &second);
+    assertions::assert_canonical_mesh(&VoxelGrid::new(&voxels), &second, false);
 }
 
 #[test]
@@ -223,7 +223,7 @@ fn reusing_a_triangulator_for_an_overlapping_chunk_gives_a_correct_mesh() {
     triangulate_fixed8(&mut triangulator, &first);
     let tris = triangulate_fixed8(&mut triangulator, &second);
 
-    assert_mesh_matches(&VoxelGrid::new(&second), &tris);
+    assertions::assert_canonical_mesh(&VoxelGrid::new(&second), &tris, false);
 }
 
 #[test]
@@ -232,5 +232,5 @@ fn voxel_at_the_far_corner_meshes_only_its_near_faces() {
     let tris = triangulate_fixed8(&mut Mesher::new(), &voxels);
 
     assert_eq!(tris.len(), 6);
-    assert_mesh_matches(&VoxelGrid::new(&voxels), &tris);
+    assertions::assert_canonical_mesh(&VoxelGrid::new(&voxels), &tris, false);
 }

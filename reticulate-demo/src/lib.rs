@@ -83,3 +83,22 @@ pub fn chunk_ortho_labyrinth<Data: Clone + PartialEq>(
         }
     }
 }
+
+pub fn chunk_multi_material_non_minimal_triangles_example<Data: Clone + PartialEq>(
+    tree: &mut Fixed8Octree<Data>,
+    floor: Data,
+    wall: Data,
+) {
+    let voxels = [
+        ((2, 1, 1), &floor),
+        ((2, 1, 2), &floor),
+        ((3, 1, 2), &floor),
+        ((3, 1, 1), &wall),
+        ((3, 2, 1), &wall),
+        ((3, 2, 2), &wall),
+    ];
+
+    for ((x, y, z), material) in voxels {
+        tree.update(Coords3D { x, y, z }, Some(material.clone()));
+    }
+}

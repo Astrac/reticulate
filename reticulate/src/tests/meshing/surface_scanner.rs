@@ -1,7 +1,7 @@
 use crate::{
     Axis, PLANE_SIDE,
     meshing::surface_layer::SurfaceLayer,
-    utils::testing::{Fixture, assert_scan, cells, claims_of, mesh::scan_plane},
+    utils::testing::{Fixture, assertions, cells, claims_of, mesh::scan_plane},
 };
 
 /// A voxel at an asymmetric position. Each of its six faces must be
@@ -19,7 +19,7 @@ fn single_voxel_all_six_faces() {
     ] {
         for plane in [c, c + 1] {
             let (filled, tris) = scan_plane(&mut f, axis, plane, (cell.0 as u32, cell.1 as u32));
-            assert_scan(&filled, &tris, &[cell]);
+            assertions::assert_canonical_weave(&filled, &[cell], &tris);
             assert_eq!(
                 tris.len(),
                 2,
@@ -36,16 +36,16 @@ fn domino_faces_are_not_transposed() {
     let mut f = Fixture::solid(&[(3, 4, 5), (4, 4, 5)]);
 
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 4, (5, 3)); // rows z, cols x
-    assert_scan(&filled, &tris, &[(5, 3), (5, 4)]);
+    assertions::assert_canonical_weave(&filled, &[(5, 3), (5, 4)], &tris);
 
     let (filled, tris) = scan_plane(&mut f, Axis::Z, 5, (3, 4)); // rows x, cols y
-    assert_scan(&filled, &tris, &[(3, 4), (4, 4)]);
+    assertions::assert_canonical_weave(&filled, &[(3, 4), (4, 4)], &tris);
 
     let (filled, tris) = scan_plane(&mut f, Axis::X, 3, (4, 5)); // rows y, cols z
-    assert_scan(&filled, &tris, &[(4, 5)]);
+    assertions::assert_canonical_weave(&filled, &[(4, 5)], &tris);
 
     let (filled, tris) = scan_plane(&mut f, Axis::X, 5, (4, 5)); // positive X face
-    assert_scan(&filled, &tris, &[(4, 5)]);
+    assertions::assert_canonical_weave(&filled, &[(4, 5)], &tris);
 }
 
 /// A 2x2x2 cube missing (1,1,1). On plane x = 1, both slabs are solid
@@ -66,10 +66,10 @@ fn face_exists_only_where_the_two_slabs_differ() {
     let mut f = Fixture::solid(&solid);
 
     let (filled, tris) = scan_plane(&mut f, Axis::X, 1, (1, 1));
-    assert_scan(&filled, &tris, &[(1, 1)]);
+    assertions::assert_canonical_weave(&filled, &[(1, 1)], &tris);
 
     let (filled, tris) = scan_plane(&mut f, Axis::X, 0, (0, 0)); // outer face: full 2x2
-    assert_scan(&filled, &tris, &[(0, 0), (0, 1), (1, 0), (1, 1)]);
+    assertions::assert_canonical_weave(&filled, &[(0, 0), (0, 1), (1, 0), (1, 1)], &tris);
 }
 
 /// A 3x3 face with one cell already claimed. The scan must go around it,
@@ -86,9 +86,8 @@ fn claimed_cells_are_skipped() {
     claims_of(&mut f.claims).claim(SurfaceLayer::new(Axis::Y, 0), &cells(&[(1, 3)]));
 
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (0, 1)); // rows z, cols x
-    assert_scan(
+    assertions::assert_canonical_weave(
         &filled,
-        &tris,
         &[
             (0, 1),
             (0, 2),
@@ -99,6 +98,7 @@ fn claimed_cells_are_skipped() {
             (2, 2),
             (2, 3),
         ],
+        &tris,
     );
 }
 
@@ -108,7 +108,7 @@ fn face_touching_chunk_top_closes_cleanly() {
     let mut f = Fixture::solid(&solid);
 
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 0, (28, 5)); // rows z, cols x
-    assert_scan(&filled, &tris, &[(28, 5), (29, 5), (30, 5), (31, 5)]);
+    assertions::assert_canonical_weave(&filled, &[(28, 5), (29, 5), (30, 5), (31, 5)], &tris);
 }
 
 #[test]
@@ -124,7 +124,7 @@ fn unconnected_shapes_below_the_seed_are_not_claimed() {
     let mut f = Fixture::solid(&voxels);
 
     let (filled, tris) = scan_plane(&mut f, Axis::Y, 1, (3, 1)); // rows z, cols x
-    assert_scan(&filled, &tris, &[(3, 1), (3, 2), (3, 3)]);
+    assertions::assert_canonical_weave(&filled, &[(3, 1), (3, 2), (3, 3)], &tris);
 }
 
 #[test]
@@ -140,9 +140,8 @@ fn valley_below_seed_is_claimed() {
     let mut f = Fixture::solid(&solid);
 
     let (filled, tris) = scan_plane(&mut f, Axis::X, 0, (1, 0)); // rows y, cols z
-    assert_scan(
+    assertions::assert_canonical_weave(
         &filled,
-        &tris,
         &[
             (0, 1),
             (0, 2),
@@ -153,5 +152,6 @@ fn valley_below_seed_is_claimed() {
             (2, 1),
             (2, 2),
         ],
+        &tris,
     );
 }

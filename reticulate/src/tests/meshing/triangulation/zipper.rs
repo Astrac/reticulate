@@ -5,7 +5,7 @@ use crate::{
         stepper::{BOUNDARIES_COUNT, INACTIVE_VERTEX},
         zipper::Zipper,
     },
-    utils::testing::{area2, assert_covers_exactly, weave_rows},
+    utils::testing::{assertions, weave_rows},
 };
 
 /// A zipper whose bottom vertices sit at the given columns, all at `height`.
@@ -100,7 +100,7 @@ fn zip_emits_counter_clockwise_triangles() {
     zipper.zip(mask(&[1, 2, 3, 4]), 5, mask(&[1, 4]), &mut |t| tris.push(t));
 
     assert!(!tris.is_empty());
-    assert!(tris.iter().all(|t| area2(t) > 0), "{tris:?}");
+    assertions::assert_canonical_winding(&tris);
 }
 
 #[test]
@@ -131,11 +131,8 @@ fn advance_keeps_only_moved_columns_that_are_still_scanned() {
 fn collinear_bottom_vertex_is_skipped_not_connected() {
     let cells = [0b0010, 0b1110, 0b0110]; // .x.. / .xxx / .xx.
     let tris = weave_rows(&cells);
-    assert_covers_exactly(&tris, &cells);
-    assert!(
-        tris.iter().all(|t| area2(t) != 0),
-        "zero-area triangle: {tris:?}"
-    );
+    assertions::assert_covers_exactly(&tris, &cells);
+    assertions::assert_canonical_winding(&tris);
 }
 
 /// A staircase growing to the left leaves a pending diagonal, (6,1)-(7,0), and
@@ -145,9 +142,6 @@ fn collinear_bottom_vertex_is_skipped_not_connected() {
 fn pending_diagonal_is_left_for_a_later_strip() {
     let cells = [0b100, 0b110, 0b111].map(|m: u32| m << 2); // ..x / .xx / xxx, moved right
     let tris = weave_rows(&cells);
-    assert_covers_exactly(&tris, &cells);
-    assert!(
-        tris.iter().all(|t| area2(t) != 0),
-        "zero-area triangle: {tris:?}"
-    );
+    assertions::assert_covers_exactly(&tris, &cells);
+    assertions::assert_canonical_winding(&tris);
 }
