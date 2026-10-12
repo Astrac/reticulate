@@ -17,3 +17,10 @@ spdlog-rs = { version = "0.5", features = ["log"] }
 # TODO: Make these optional under "test" feature
 rstest = "0.26"
 rstest_reuse = "0.7.0"
+
+[package.metadata.wgsl-analyzer]
+edition = "2026_pre"
+root = "assets/shaders"
+
+[package.metadata.wgsl-analyzer.dependencies]
+bevy_pbr = { path = "../../bevy/crates/bevy_pbr" }

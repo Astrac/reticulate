@@ -21,5 +21,6 @@ pub static DEMOS: LazyLock<Vec<ChunkDemo>> = LazyLock::new(|| {
         grids::ortho_labyrinth(materials::single),
         grids::gyroid(materials::single),
         heightmaps::terrain(materials::terrain_single),
+        heightmaps::terrain(materials::terrain_layered),
     ]
 });

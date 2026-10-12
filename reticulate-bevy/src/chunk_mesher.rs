@@ -1,5 +1,5 @@
 use bevy::{asset::RenderAssetUsages, mesh::PrimitiveTopology, prelude::*};
-use reticulate::{Coords3D, DenseWalk, MaterialId, Mesher};
+use reticulate::{Coords3D, DenseWalk, Face, MaterialId, Mesher};
 
 const INITIAL_CAPACITY: usize = 1500;
 const NORMALS: [Vec3; 6] = [
@@ -14,8 +14,8 @@ const NORMALS: [Vec3; 6] = [
 pub struct ChunkMesher {
     positions: Vec<Vec3>,
     normals: Vec<Vec3>,
-    colors: Vec<Vec4>,
-    indices: Vec<u32>,
+    uvs: Vec<[f32; 2]>,
+    materials: Vec<[f32; 2]>,
     mesher: Mesher,
 }
 
@@ -24,38 +24,27 @@ impl ChunkMesher {
         ChunkMesher {
             positions: Vec::with_capacity(INITIAL_CAPACITY),
             normals: Vec::with_capacity(INITIAL_CAPACITY),
-            colors: Vec::with_capacity(INITIAL_CAPACITY),
-            indices: Vec::with_capacity(INITIAL_CAPACITY),
+            uvs: Vec::with_capacity(INITIAL_CAPACITY),
+            materials: Vec::with_capacity(INITIAL_CAPACITY),
             mesher: Mesher::default(),
         }
     }
 
     pub fn mesh(&mut self, tree: &impl DenseWalk<MaterialId>) -> Mesh {
-        let mut next_index = 0;
-
         self.mesher.reset();
         self.mesher.make_triangles(
             tree,
             |m| *m,
             |t| {
-                let [v1, v2, v3] = t.outward_vertices();
-                self.positions.push(to_position(v1));
-                self.positions.push(to_position(v2));
-                self.positions.push(to_position(v3));
+                let face = t.face();
 
-                self.indices.push(next_index);
-                self.indices.push(next_index + 1);
-                self.indices.push(next_index + 2);
-
-                self.normals.push(to_normal(t.face()));
-                self.normals.push(to_normal(t.face()));
-                self.normals.push(to_normal(t.face()));
-
-                self.colors.push(Vec4::new(1., 0., 0., 1.));
-                self.colors.push(Vec4::new(0., 1., 0., 1.));
-                self.colors.push(Vec4::new(0., 0., 1., 1.));
-
-                next_index += 3;
+                for v in t.outward_vertices() {
+                    let pos = to_position(v);
+                    self.positions.push(pos);
+                    self.normals.push(to_normal(face));
+                    self.uvs.push(face_uv(pos, face));
+                    self.materials.push([t.material() as f32, 0.0]);
+                }
             },
         );
 
@@ -66,7 +55,8 @@ impl ChunkMesher {
         let cap = self.positions.capacity();
         let positions = std::mem::replace(&mut self.positions, Vec::with_capacity(cap));
         let normals = std::mem::replace(&mut self.normals, Vec::with_capacity(cap));
-        let colors = std::mem::replace(&mut self.colors, Vec::with_capacity(cap));
+        let uvs = std::mem::replace(&mut self.uvs, Vec::with_capacity(cap));
+        let materials = std::mem::replace(&mut self.materials, Vec::with_capacity(cap));
 
         let mut mesh = Mesh::new(
             PrimitiveTopology::TriangleList,
@@ -75,12 +65,21 @@ impl ChunkMesher {
 
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_1, materials);
         mesh
     }
 }
 
-fn to_normal(face: reticulate::Face) -> Vec3 {
+fn face_uv(p: Vec3, face: Face) -> [f32; 2] {
+    match face.axis() {
+        reticulate::Axis::X => [p.z, p.y],
+        reticulate::Axis::Y => [p.x, p.z],
+        reticulate::Axis::Z => [p.x, p.y],
+    }
+}
+
+fn to_normal(face: Face) -> Vec3 {
     NORMALS[face.as_usize()]
 }
 

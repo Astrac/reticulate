@@ -29,3 +29,11 @@ overflow-checks = false
 debug = "line-tables-only"   # keeps symbols for the profiler
 lto = "fat"
 codegen-units = 1
+
+# [package]
+# name = "reticulate-root"
+# version = "0.1.0"
+# edition = "2024"
+# authors.workspace = true
+# license-file.workspace = true
+# publish = false

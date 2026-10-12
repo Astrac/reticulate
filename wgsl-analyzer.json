@@ -1,8 +1,0 @@
-{
-  "success": true,
-  "customImports": {},
-  "shaderDefs": [],
-  "entryPoints": [
-    "sandbox.wgsl"
-  ]
-}

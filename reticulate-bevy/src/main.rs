@@ -1,6 +1,7 @@
 mod chunk_mesher;
 mod demo_mesher;
 mod demo_scene;
+mod voxel_material;
 
 #[allow(dead_code, unused)]
 mod grid_material;
@@ -10,7 +11,10 @@ use bevy::{
     prelude::*,
 };
 
-use crate::demo_scene::{CameraPlugin, CameraSettingsPlugin};
+use crate::{
+    demo_scene::{CameraPlugin, CameraSettingsPlugin},
+    voxel_material::{VoxelMaterial, setup_voxel_material},
+};
 
 fn main() {
     App::new()
@@ -26,6 +30,8 @@ fn main() {
         .add_systems(Startup, demo_scene::setup)
         .add_systems(Startup, setup_grid)
         .add_systems(Update, demo_scene::ChunkMesh::redraw)
+        .add_plugins(MaterialPlugin::<VoxelMaterial>::default())
+        .add_systems(Startup, setup_voxel_material)
         .run();
 }
 
