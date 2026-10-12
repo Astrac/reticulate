@@ -14,7 +14,7 @@ fn bench_id(demo: &ChunkDemo, id: &str, repr: OctreeRepr) -> String {
     format!("{:?}::{}::{}", repr, demo.id(), id)
 }
 
-pub fn bench_chunk(c: &mut Criterion, id: &str, mut demo: ChunkDemo) {
+pub fn bench_chunk(c: &mut Criterion, id: &str, demo: ChunkDemo) {
     #[cfg(feature = "metrics-recording")]
     reticulate::metrics::init_metrics();
 
@@ -42,7 +42,7 @@ pub fn bench_chunk(c: &mut Criterion, id: &str, mut demo: ChunkDemo) {
     reticulate::metrics::report_and_reset();
 }
 
-pub fn mesh_chunk(id: &str, mut demo: ChunkDemo) {
+pub fn mesh_chunk(id: &str, demo: ChunkDemo) {
     #[cfg(feature = "metrics-recording")]
     reticulate::metrics::init_metrics();
 

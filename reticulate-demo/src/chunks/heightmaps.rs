@@ -33,8 +33,7 @@ pub fn terrain(material_at: impl Fn(i32, i32, i32, i32) -> u16 + 'static) -> Chu
     ChunkDemo::new("heightmap_terrain", move |coords| {
         let surface = heights[coords.z as usize][coords.x as usize];
         if coords.y < surface as u8 {
-            let m = material_at(coords.x as i32, coords.y as i32, coords.z as i32, surface);
-            m
+            material_at(coords.x as i32, coords.y as i32, coords.z as i32, surface)
         } else {
             0
         }

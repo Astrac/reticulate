@@ -23,6 +23,10 @@ fn chunk_ortho_labyrinth(c: &mut Criterion) {
     );
 }
 
+fn chunk_gyroid(c: &mut Criterion) {
+    bench_chunk(c, "single_material", grids::gyroid(materials::single));
+}
+
 fn chunk_terrain_single_material(c: &mut Criterion) {
     bench_chunk(
         c,
@@ -46,6 +50,7 @@ criterion_group!(
         chunk_sphere_single_mat,
         chunk_full_checkerboard,
         chunk_ortho_labyrinth,
+        chunk_gyroid,
         chunk_terrain_single_material,
         chunk_terrain_layered_material,
 );

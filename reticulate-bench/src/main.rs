@@ -14,6 +14,8 @@ pub fn main() {
 
     mesh_chunk("single_material", grids::ortho_labyrinth(materials::single));
 
+    mesh_chunk("single_material", grids::gyroid(materials::single));
+
     mesh_chunk(
         "single_material",
         heightmaps::terrain(materials::terrain_single),
