@@ -6,10 +6,7 @@ authors.workspace = true
 license-file.workspace = true
 
 [dependencies]
-bevy = { version = "0.19", features = [ "shader_format_wesl", "file_watcher", "free_camera", "debug", "dynamic_linking", "hotpatching", "bevy_dev_tools" ] }
-bevy_voxel_world = "0.17.0"
-noise = "0.9.0"
-bitfield-struct = "0.13.0"
+bevy = { version = "0.20", features = [ "file_watcher", "free_camera", "debug", "dynamic_linking", "hotpatching", "bevy_dev_tools", "render_dev_tools" ] }
 
 reticulate = { version = "0.1", path = "../reticulate" }
 reticulate-demo = { version = "0.1", path = "../reticulate-demo" }

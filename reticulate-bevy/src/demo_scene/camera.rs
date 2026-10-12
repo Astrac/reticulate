@@ -4,11 +4,7 @@ use bevy::{
     },
     prelude::*,
 };
-// use bevy_voxel_world::prelude::VoxelWorldCamera;
 
-// use crate::world::MainWorld;
-
-// Plugin that spawns the camera.
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
@@ -20,8 +16,7 @@ impl Plugin for CameraPlugin {
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Camera3d::default(),
-        // VoxelWorldCamera::<MainWorld>::default(),
-        Transform::from_xyz(0.0, 0.0, 1.0).looking_to(-Vec3::Z, Vec3::Y),
+        Transform::from_xyz(5.0, 10.0, -10.0).looking_at(Vec3::ZERO, Vec3::Y),
         FreeCamera {
             sensitivity: 0.2,
             friction: 25.0,
@@ -32,7 +27,6 @@ fn spawn_camera(mut commands: Commands) {
     ));
 }
 
-// Plugin that handles camera settings controls and information text
 pub struct CameraSettingsPlugin;
 impl Plugin for CameraSettingsPlugin {
     fn build(&self, app: &mut App) {

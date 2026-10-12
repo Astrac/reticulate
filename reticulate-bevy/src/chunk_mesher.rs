@@ -1,7 +1,7 @@
-use bevy::prelude::*;
-use reticulate::{Coords3D, DenseWalk, Mesher};
+use bevy::{asset::RenderAssetUsages, mesh::PrimitiveTopology, prelude::*};
+use reticulate::{Coords3D, DenseWalk, MaterialId, Mesher};
 
-const INITIAL_CAPACITY: usize = 8000;
+const INITIAL_CAPACITY: usize = 1500;
 const NORMALS: [Vec3; 6] = [
     Vec3::new(1., 0., 0.),
     Vec3::new(0., 1., 0.),
@@ -11,32 +11,32 @@ const NORMALS: [Vec3; 6] = [
     Vec3::new(0., 0., -1.),
 ];
 
-#[derive(Resource)]
-pub struct Vertices {
-    pub positions: Vec<Vec3>,
-    pub normals: Vec<Vec3>,
-    pub colors: Vec<Vec4>,
-    pub indices: Vec<u32>,
+pub struct ChunkMesher {
+    positions: Vec<Vec3>,
+    normals: Vec<Vec3>,
+    colors: Vec<Vec4>,
+    indices: Vec<u32>,
+    mesher: Mesher,
 }
 
-impl Vertices {
-    pub fn new() -> Vertices {
-        Vertices {
+impl ChunkMesher {
+    pub fn new() -> ChunkMesher {
+        ChunkMesher {
             positions: Vec::with_capacity(INITIAL_CAPACITY),
             normals: Vec::with_capacity(INITIAL_CAPACITY),
             colors: Vec::with_capacity(INITIAL_CAPACITY),
             indices: Vec::with_capacity(INITIAL_CAPACITY),
+            mesher: Mesher::default(),
         }
     }
 
-    pub fn build_mesh<A: PartialEq>(&mut self, octree: impl DenseWalk<A>) {
+    pub fn mesh(&mut self, tree: &impl DenseWalk<MaterialId>) -> Mesh {
         let mut next_index = 0;
 
-        let mut mesher = Mesher::default();
-
-        mesher.make_triangles(
-            &octree,
-            |_| 1,
+        self.mesher.reset();
+        self.mesher.make_triangles(
+            tree,
+            |m| *m,
             |t| {
                 let [v1, v2, v3] = t.outward_vertices();
                 self.positions.push(to_position(v1));
@@ -58,6 +58,25 @@ impl Vertices {
                 next_index += 3;
             },
         );
+
+        self.take_mesh()
+    }
+
+    fn take_mesh(&mut self) -> Mesh {
+        let cap = self.positions.capacity();
+        let positions = std::mem::replace(&mut self.positions, Vec::with_capacity(cap));
+        let normals = std::mem::replace(&mut self.normals, Vec::with_capacity(cap));
+        let colors = std::mem::replace(&mut self.colors, Vec::with_capacity(cap));
+
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::RENDER_WORLD,
+        );
+
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+        mesh
     }
 }
 
