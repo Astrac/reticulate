@@ -28,7 +28,9 @@ fn heightmap() -> [[i32; 32]; 32] {
     h
 }
 
-pub fn terrain(material_at: impl Fn(i32, i32, i32, i32) -> u16 + 'static) -> ChunkDemo {
+pub fn terrain(
+    material_at: impl Fn(i32, i32, i32, i32) -> u16 + 'static + Send + Sync,
+) -> ChunkDemo {
     let heights = heightmap();
     ChunkDemo::new("heightmap_terrain", move |coords| {
         let surface = heights[coords.z as usize][coords.x as usize];

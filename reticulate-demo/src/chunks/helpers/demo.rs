@@ -4,7 +4,7 @@ use reticulate::{ChunkCoord, Coords3D, Fixed8Octree, MaterialId};
 
 pub struct ChunkDemo {
     id: String,
-    make_cell: Box<dyn Fn(Coords3D) -> MaterialId>,
+    make_cell: Box<dyn Fn(Coords3D) -> MaterialId + Send + Sync>,
     x_range: Range<ChunkCoord>,
     y_range: Range<ChunkCoord>,
     z_range: Range<ChunkCoord>,
@@ -13,7 +13,7 @@ pub struct ChunkDemo {
 impl ChunkDemo {
     pub fn new(
         id: impl Into<String>,
-        make_cell: impl Fn(Coords3D) -> MaterialId + 'static,
+        make_cell: impl Fn(Coords3D) -> MaterialId + 'static + Send + Sync,
     ) -> ChunkDemo {
         ChunkDemo {
             id: id.into(),

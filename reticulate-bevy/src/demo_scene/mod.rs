@@ -1,6 +1,3 @@
-#[allow(dead_code)]
-mod test_model;
-
 mod camera;
 mod chunk_mesh;
 mod setup;
@@ -14,7 +11,7 @@ use std::sync::LazyLock;
 
 use reticulate_demo::{ChunkDemo, chunks::*};
 
-pub const DEMOS: LazyLock<Vec<ChunkDemo>> = LazyLock::new(|| {
+pub static DEMOS: LazyLock<Vec<ChunkDemo>> = LazyLock::new(|| {
     vec![
         geometries::sphere(Coords3D::from_xyz(16, 16, 16), 14, materials::single),
         geometries::cube_2x2_missing_corner(materials::single),

@@ -2,7 +2,9 @@ use reticulate::{Coords3D, MaterialId};
 
 use crate::ChunkDemo;
 
-pub fn checkerboard(material: impl Fn(Coords3D) -> MaterialId + 'static) -> ChunkDemo {
+pub fn checkerboard(
+    material: impl Fn(Coords3D) -> MaterialId + 'static + Send + Sync,
+) -> ChunkDemo {
     ChunkDemo::new("checkerboard", move |coords| {
         if (coords.x + coords.y + coords.z) % 2 == 0 {
             material(coords)
@@ -12,7 +14,9 @@ pub fn checkerboard(material: impl Fn(Coords3D) -> MaterialId + 'static) -> Chun
     })
 }
 
-pub fn ortho_labyrinth(material: impl Fn(Coords3D) -> MaterialId + 'static) -> ChunkDemo {
+pub fn ortho_labyrinth(
+    material: impl Fn(Coords3D) -> MaterialId + 'static + Send + Sync,
+) -> ChunkDemo {
     ChunkDemo::new("ortho_labyrinth", move |coords| {
         let mut is_solid = false;
 
@@ -32,7 +36,7 @@ pub fn ortho_labyrinth(material: impl Fn(Coords3D) -> MaterialId + 'static) -> C
     })
 }
 
-pub fn gyroid(material: impl Fn(Coords3D) -> MaterialId + 'static) -> ChunkDemo {
+pub fn gyroid(material: impl Fn(Coords3D) -> MaterialId + 'static + Send + Sync) -> ChunkDemo {
     let period_wavelength = 16.0;
     let k = (2.0 * std::f64::consts::PI) / period_wavelength;
 

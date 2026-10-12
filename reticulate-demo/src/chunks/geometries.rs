@@ -5,7 +5,7 @@ use crate::ChunkDemo;
 pub fn sphere(
     center: Coords3D,
     radius: u8,
-    material: impl Fn(Coords3D) -> MaterialId + 'static,
+    material: impl Fn(Coords3D) -> MaterialId + 'static + Send + Sync,
 ) -> ChunkDemo {
     let (center_x, center_y, center_z) = (center.x, center.y, center.z);
     let radius_squared = radius * radius;
@@ -22,7 +22,7 @@ pub fn sphere(
     })
 }
 
-pub fn tunnel(material: impl Fn(Coords3D) -> MaterialId + 'static) -> ChunkDemo {
+pub fn tunnel(material: impl Fn(Coords3D) -> MaterialId + 'static + Send + Sync) -> ChunkDemo {
     let mut demo = ChunkDemo::new("tunnel", move |coords| {
         if (coords.y == 1) && (coords.x == 1) {
             0
@@ -38,7 +38,9 @@ pub fn tunnel(material: impl Fn(Coords3D) -> MaterialId + 'static) -> ChunkDemo 
     demo
 }
 
-pub fn nested_cubes(material: impl Fn(Coords3D) -> MaterialId + 'static) -> ChunkDemo {
+pub fn nested_cubes(
+    material: impl Fn(Coords3D) -> MaterialId + 'static + Send + Sync,
+) -> ChunkDemo {
     let mut demo = ChunkDemo::new("nested_cubes", move |coords| {
         if (coords.y == 3 || coords.y == 4)
             && (coords.x == 3 || coords.x == 4)
@@ -57,7 +59,9 @@ pub fn nested_cubes(material: impl Fn(Coords3D) -> MaterialId + 'static) -> Chun
     demo
 }
 
-pub fn cube_2x2_missing_corner(material: impl Fn(Coords3D) -> MaterialId + 'static) -> ChunkDemo {
+pub fn cube_2x2_missing_corner(
+    material: impl Fn(Coords3D) -> MaterialId + 'static + Send + Sync,
+) -> ChunkDemo {
     let mut demo = ChunkDemo::new("2x2_missing_corner", move |coords| {
         if coords.x == 1 && coords.y == 1 && coords.z == 1 {
             0
