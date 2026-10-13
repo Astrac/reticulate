@@ -41,7 +41,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  ZOLA_VERSION: "0.21.0"
+  ZOLA_VERSION: "0.23.6"
   BINARYEN_VERSION: "version_129"
   CARGO_TERM_COLOR: always
 
