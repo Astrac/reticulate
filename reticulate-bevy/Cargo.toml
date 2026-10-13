@@ -6,14 +6,12 @@ authors.workspace = true
 license-file.workspace = true
 
 [dependencies]
-bevy = { version = "0.20", features = [ "file_watcher", "free_camera", "debug", "dynamic_linking", "hotpatching", "bevy_dev_tools", "render_dev_tools" ] }
+# bevy = { version = "0.20", features = [ "file_watcher", "free_camera", "debug", "dynamic_linking", "hotpatching", "bevy_dev_tools", "render_dev_tools" ] }
+bevy = { version = "0.20", features = [ "free_camera", "debug", "dynamic_linking", "hotpatching", "bevy_dev_tools", "render_dev_tools", "webgpu" ] }
 
 reticulate = { version = "0.1", path = "../reticulate" }
 reticulate-demo = { version = "0.1", path = "../reticulate-demo" }
 
-# TODO: Make these optional under "log" feature
-log = "0.4"
-spdlog-rs = { version = "0.5", features = ["log"] }
 # TODO: Make these optional under "test" feature
 rstest = "0.26"
 rstest_reuse = "0.7.0"
