@@ -1,0 +1,14 @@
+# base_url is overridden at build time (`zola build --base-url ...`).
+base_url = "https://astrac.github.io/reticulate"
+title = "Reticulate"
+description = "A high performance voxel meshing library."
+compile_sass = false
+build_search_index = false
+
+[markdown]
+highlight_code = true
+highlight_theme = "base16-ocean-dark"
+render_emoji = false
+
+[extra]
+repo_url = "https://github.com/Astrac/reticulate"

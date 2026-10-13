@@ -5,6 +5,7 @@ mesher with an optional integration into the bevy game engine.
 
 - [Features](#features)
 - [Benchmarks](#benchmarks)
+- [Demo](#demo)
 - [Components](#components)
 - [License](./LICENSE.md)
 - [Contributing](./CONTRIBUTING.md.md)
@@ -84,6 +85,10 @@ chunk_terrain_layered_material_fixed_8:        [268.52 µs 269.06 µs 269.64 µs
 chunk_terrain_single_material_compact:         [32.031 µs 32.113 µs 32.196 µs]
 chunk_terrain_single_material_fixed_8:         [135.94 µs 136.44 µs 136.97 µs]
 ```
+
+## Demo
+
+A demo built with bevy is available at this address:
 
 ## Components
 
