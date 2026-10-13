@@ -8,8 +8,14 @@ on:
       - README.md
       - CONTRIBUTING.md
       - LICENSE.md
-      - .github/scripts/prepare_site.sh
+      - .github/scripts/**
       - .github/workflows/pages.yml
+      # The Demo page is built from these.
+      - reticulate/**
+      - reticulate-bevy/**
+      - reticulate-demo/**
+      - Cargo.toml
+      - Cargo.lock
   pull_request:
     branches: [main]
     paths:
@@ -17,8 +23,14 @@ on:
       - README.md
       - CONTRIBUTING.md
       - LICENSE.md
-      - .github/scripts/prepare_site.sh
+      - .github/scripts/**
       - .github/workflows/pages.yml
+      # The Demo page is built from these.
+      - reticulate/**
+      - reticulate-bevy/**
+      - reticulate-demo/**
+      - Cargo.toml
+      - Cargo.lock
   workflow_dispatch:
 
 permissions:
@@ -30,6 +42,8 @@ concurrency:
 
 env:
   ZOLA_VERSION: "0.21.0"
+  BINARYEN_VERSION: "version_129"
+  CARGO_TERM_COLOR: always
 
 jobs:
   build:
@@ -42,6 +56,22 @@ jobs:
           curl -sSL "https://github.com/getzola/zola/releases/download/v${ZOLA_VERSION}/zola-v${ZOLA_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
             | tar xz -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Install wasm-bindgen and wasm-opt
+        run: |
+          # wasm-bindgen must match the version locked in Cargo.lock.
+          wb=$(awk '/^name = "wasm-bindgen"$/ {getline; gsub(/[^0-9.]/, "", $3); print $3; exit}' Cargo.lock)
+          curl -sSL "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/${wb}/wasm-bindgen-${wb}-x86_64-unknown-linux-musl.tar.gz" \
+            | tar xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/wasm-bindgen-${wb}-x86_64-unknown-linux-musl" >> "$GITHUB_PATH"
+          curl -sSL "https://github.com/WebAssembly/binaryen/releases/download/${BINARYEN_VERSION}/binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz" \
+            | tar xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/binaryen-${BINARYEN_VERSION}/bin" >> "$GITHUB_PATH"
+      - name: Build the demo (wasm)
+        run: .github/scripts/build_demo.sh
       - name: Generate pages from root markdown files
         run: .github/scripts/prepare_site.sh
       - uses: actions/configure-pages@v5

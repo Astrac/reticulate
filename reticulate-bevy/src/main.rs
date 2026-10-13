@@ -19,11 +19,21 @@ use crate::{
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins.set(AssetPlugin {
-                watch_for_changes_override: Some(true),
-                meta_check: bevy::asset::AssetMetaCheck::Never,
-                ..Default::default()
-            }),
+            DefaultPlugins
+                .set(AssetPlugin {
+                    watch_for_changes_override: Some(true),
+                    meta_check: bevy::asset::AssetMetaCheck::Never,
+                    ..Default::default()
+                })
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        // Only used on the web: render into the demo page's canvas.
+                        canvas: Some("#bevy".into()),
+                        fit_canvas_to_parent: true,
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
             CameraPlugin,
             CameraSettingsPlugin,
             InfiniteGridPlugin,
