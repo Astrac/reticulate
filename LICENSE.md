@@ -1,10 +1,9 @@
 Business Source License 1.1
 
-Parameters:
-Licensor:                 Aldo Stracquadanio
-Software:                 Reticulate
-Change License:           Apache License, Version 2.0
-Change Date:              2030-01-01
+- Licensor:                 Aldo Stracquadanio
+- Software:                 Reticulate
+- Change License:           Apache License, Version 2.0
+- Change Date:              2030-01-01
 
 Business Source License
 =======================
@@ -12,13 +11,13 @@ Business Source License
 License text copyright (c) 2020 MariaDB Corporation Ab, All Rights Reserved.
 “Business Source License” is a trademark of MariaDB Corporation Ab.
 
-Parameters
+## Parameters
 
-Licensor:             Aldo Stracquadanio
-Licensed Works:       The reticulate software library
-Change Date:          Four years from the date the Licensed Work is published
-Change License:       Apache License, Version 2.0
-Additional Use Grant: You may use the Software for any non-commercial purpose,
+- Licensor:             Aldo Stracquadanio
+- Licensed Works:       The reticulate software library
+- Change Date:          Four years from the date the Licensed Work is published
+- Change License:       Apache License, Version 2.0
+- Additional Use Grant: You may use the Software for any non-commercial purpose,
                       for educational purposes, or for personal use. You may also
                       use the Software for commercial purposes if your annual
                       gross revenue (or the annual gross revenue of your entity)
@@ -29,11 +28,11 @@ Additional Use Grant: You may use the Software for any non-commercial purpose,
 For information about commercial licensing arrangements for the Licensed Work,
 please contact aldo.strac@gmail.com.
 
-Notice
+## Notice
 
 Business Source License 1.1
 
-Terms
+## Terms
 
 The Licensor hereby grants you the right to copy, modify, create derivative
 works, redistribute, and make non-production use of the Licensed Work. The

@@ -11,7 +11,7 @@ enum OctreeRepr {
 }
 
 fn bench_id(demo: &ChunkDemo, id: &str, repr: OctreeRepr) -> String {
-    format!("{:?}::{}::{}", repr, demo.id(), id)
+    format!("Chunk::{}::{}::{:?}", demo.id(), id, repr)
 }
 
 pub fn bench_chunk(c: &mut Criterion, id: &str, demo: ChunkDemo) {

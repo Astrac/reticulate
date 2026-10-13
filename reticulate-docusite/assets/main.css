@@ -1,0 +1,190 @@
+body {
+  font-family:
+    'Fantasque Sans Mono',
+    "JetBrains Mono",
+    Monaco,
+    Consolas,
+    "Ubuntu Mono",
+    monospace;
+
+
+  #main {
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+}
+
+button:hover {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+#demo-frame {
+  aspect-ratio: 16/9;
+  background: #000;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+#demo-frame canvas {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+#demo-status {
+  &:before {
+    content: ">> ";
+  }
+
+  &:after {
+    content: " <<";
+  }
+}
+
+.demo-loading {
+  animation: blinker 1s linear infinite;
+}
+
+@keyframes demo-loading {
+  50% {
+    opacity: 0;
+  }
+}
+
+.demo-error {
+  color: #df4c2c;
+  font-weight: bold;
+}
+
+main {
+  display: flex;
+  align-items: flex-start;
+  align-items: stretch;
+
+  section.content {
+    padding-left: 2rem;
+    padding-right: 10rem;
+    padding-top: 1.5rem;
+    padding-bottom: 35vh;
+    width: 100%;
+
+    *:first-child {
+      margin-top: 0;
+    }
+
+    ul {
+      list-style: square;
+    }
+
+    ol {
+      list-style: decimal;
+    }
+
+    h1 {
+      font-size: 2.0em;
+    }
+
+    h2 {
+      font-size: 1.5em;
+    }
+
+    h1,
+    h2 {
+      text-transform: none;
+      text-decoration: none;
+      font-variant: small-caps;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      scroll-margin-top: 1.5rem;
+    }
+  }
+}
+
+aside.toc {
+  box-shadow: 0px 0px 10px 0px var(--accent);
+  -webkit-box-shadow: 0px 0px 10px 0px var(--accent);
+  background-color: var(--accent);
+  flex-shrink: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 0em 1.5em;
+  font-size: 1.1em;
+
+  .logo {
+    margin-top: 0.5em;
+    padding-bottom: 0.5em;
+    text-transform: none;
+    font-size: 2.5em;
+    color: var(--background);
+    font-variant: small-caps;
+    text-decoration: none;
+    border-bottom: 3px solid var(--background);
+  }
+
+  ul {
+    margin-top: 0.5em;
+    margin-left: 0;
+
+    li {
+      padding-right: 0.5em;
+      text-align: left;
+      font-weight: bold;
+
+      a {
+        color: var(--background);
+        font-variant: small-caps;
+        font-size: 1.5em;
+      }
+    }
+  }
+
+  .toc-link {
+    display: block;
+    opacity: 0.55;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 0.2em;
+  }
+
+  .toc-link.active {
+    opacity: 1;
+  }
+
+  .toc-link-1 {
+    font-size: 1.2em;
+
+    &:not(:first-child) {
+      margin-top: 0.8em;
+    }
+  }
+
+  .toc-link-2 {
+    font-size: 0.9em;
+    margin-left: 1em;
+  }
+
+  .toc-link-3 {
+    font-size: 0.7em;
+    margin-left: 2em;
+  }
+
+  .toc-link-4 {
+    font-size: 0.8em;
+    margin-left: 2.5em;
+  }
+}

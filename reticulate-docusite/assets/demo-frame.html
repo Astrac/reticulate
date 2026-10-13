@@ -1,0 +1,25 @@
+<p id="demo-status" class="demo-loading">Loading demo…</p>
+<div id="demo-frame"><canvas id="bevy"></canvas></div>
+<script type="module">
+  const status = document.getElementById("demo-status");
+  const frame = document.getElementById("demo-frame");
+
+  if (!("gpu" in navigator)) {
+    status.textContent = "WebGPU is not available in this browser, so the demo cannot run.";
+    status.classList.remove("demo-loading");
+    status.classList.add("demo-error");
+  } else {
+    try {
+      const { default: init } = await import("./reticulate_bevy.js");
+      await init({ module_or_path: "./reticulate_bevy_bg.wasm" });
+    } catch (e) {
+      status.textContent = "Failed to start the demo: " + e;
+      status.classList.remove("demo-loading");
+      status.classList.add("demo-error");
+      frame.hidden = true;
+      console.dir(e);
+    }
+
+    status.hidden = true;
+  }
+</script>
