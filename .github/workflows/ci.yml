@@ -88,14 +88,14 @@ jobs:
             exit 0
           fi
           git checkout --quiet "$sha"
-          if ! cargo bench -p reticulate --bench chunk -- --save-baseline base; then
+          if ! cargo bench -p reticulate-bench --bench chunk -- --save-baseline base; then
             echo "Base revision has no runnable benchmark; skipping regression check."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
           git checkout --quiet -
       - name: Benchmark head
         if: steps.bench_base.outputs.skip != 'true'
-        run: cargo bench -p reticulate --bench chunk -- --save-baseline head
+        run: cargo bench -p reticulate-bench --bench chunk -- --save-baseline head
       - name: Compare
         if: steps.bench_base.outputs.skip != 'true'
         run: |
