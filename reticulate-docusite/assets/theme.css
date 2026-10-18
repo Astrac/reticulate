@@ -247,7 +247,7 @@ kbd {
     Monaco,
     Consolas,
     Ubuntu Mono,
-    monospace !important;
+    monospace;
   font-feature-settings: normal;
   background: color-mix(in srgb, var(--foreground) 5%, transparent);
   color: color-mix(in srgb, var(--foreground) 5%, var(--accent));

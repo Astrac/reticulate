@@ -1,29 +1,29 @@
-use dioxus::{fullstack::http::Uri, prelude::*};
+use dioxus::prelude::*;
 
 use crate::{
-    app::{README, REPOSITORY},
+    app::{README, REPOSITORY, Route},
     markdown::TocLink,
 };
 
-#[derive(Default, Clone, Debug, PartialEq, Props)]
+#[derive(Debug, Default, Clone, PartialEq, Props)]
 pub struct TocProps {
     pub content: Vec<TocLink>,
 }
 
 impl TocProps {
     pub fn global() -> TocProps {
-        let mut content = TocLink::from_document_heading(Uri::from_static("/readme"), README);
+        let mut content = TocLink::from_document_heading(Route::Readme {}.into(), README);
 
         content.append(&mut vec![
             TocLink {
                 level: 1,
                 text: "License".to_owned(),
-                href: "/license".to_owned(),
+                target: Route::License {}.to_string(),
             },
             TocLink {
                 level: 1,
                 text: "Repository".to_owned(),
-                href: REPOSITORY.to_owned(),
+                target: REPOSITORY.into(),
             },
         ]);
 
@@ -50,14 +50,11 @@ fn Nav(props: TocProps) -> Element {
         }
         nav {
             ul {
-                for (index, link) in props.content.iter().enumerate() {
+                for (index, TocLink { level, text, target }) in props.content.into_iter().enumerate() {
                     li {
-                        class: "toc-link-{link.level}",
+                        class: "toc-link-{level}",
                         key: "toc-link-{index}",
-                        a {
-                            href: &link.href,
-                            {link.text.as_str()}
-                        }
+                        a { href: target, {text} },
                     }
                 }
             }

@@ -1,18 +1,22 @@
 use comrak::nodes::{NodeHeading, NodeValue};
 use comrak::{Anchorizer, Arena, parse_document};
-use dioxus::fullstack::http::Uri;
+use dioxus::router::NavigationTarget;
 
+use crate::app::Route;
 use crate::markdown::page_options;
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TocLink {
     pub level: u8,
     pub text: String,
-    pub href: String,
+    pub target: String,
 }
 
 impl TocLink {
-    pub fn from_document_heading(uri: Uri, markdown: &str) -> Vec<TocLink> {
+    pub fn from_document_heading(
+        document_nav: NavigationTarget<Route>,
+        markdown: &str,
+    ) -> Vec<TocLink> {
         let arena = Arena::new();
         let mut anchorizer = Anchorizer::new();
         let options = page_options();
@@ -29,9 +33,18 @@ impl TocLink {
                     }
                 }
 
-                let href = format!("{uri}#{}", anchorizer.anchorize(&text));
+                let route = match &document_nav {
+                    NavigationTarget::Internal(s) => s.to_string(),
+                    NavigationTarget::External(r) => r.clone(),
+                };
 
-                headings.push(TocLink { level, href, text });
+                let target = format!("{}#{}", route, anchorizer.anchorize(&text));
+
+                headings.push(TocLink {
+                    level,
+                    text,
+                    target,
+                });
             }
         }
 

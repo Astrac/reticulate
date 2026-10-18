@@ -15,8 +15,6 @@ const THEME_CSS: Asset = asset!("/assets/theme.css");
 #[rustfmt::skip]
 pub enum Route {
     #[route("/")]
-    Home {},
-    #[route("/readme")]
     Readme {},
     #[route("/license")]
     License {},
@@ -29,10 +27,8 @@ pub fn App() -> Element {
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         document::Link { rel: "stylesheet", href: THEME_CSS }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
-        document::Link {
-            href: "https://fonts.cdnfonts.com/css/fantasque-sans-mono",
-            rel: "stylesheet"
-        }
+        document::Link { rel: "stylesheet", href: "https://fontlibrary.org" }
+
 
         Router::<Route> {}
     }
@@ -58,9 +54,4 @@ fn Readme() -> Element {
             inner_html: html
         }
     }
-}
-
-#[component]
-fn Home() -> Element {
-    Readme()
 }

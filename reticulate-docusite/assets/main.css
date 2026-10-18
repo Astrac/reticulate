@@ -1,4 +1,13 @@
 body {
+  #main {
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+}
+
+body,
+code,
+kbd {
   font-family:
     'Fantasque Sans Mono',
     "JetBrains Mono",
@@ -7,11 +16,8 @@ body {
     "Ubuntu Mono",
     monospace;
 
-
-  #main {
-    display: grid;
-    grid-template-rows: auto 1fr;
-  }
+  font-variant-ligatures: common-ligatures contextual;
+  font-feature-settings: "liga" 1, "calt" 1;
 }
 
 button:hover {
@@ -107,7 +113,19 @@ main {
     h2,
     h3,
     h4 {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: left;
       scroll-margin-top: 1.5rem;
+
+      a.anchor {
+        font-size: 1.5rem;
+        margin-right: 0.5em;
+      }
+
+      a.anchor::before {
+        content: ">>";
+      }
     }
   }
 }
