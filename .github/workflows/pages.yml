@@ -3,14 +3,13 @@ name: Pages
 on:
   push:
     branches: [main]
-    paths:
-      - site/**
+    paths: &paths
+      - reticulate-docusite/**
       - README.md
-      - CONTRIBUTING.md
       - LICENSE.md
       - .github/scripts/**
       - .github/workflows/pages.yml
-      # The Demo page is built from these.
+      # The demo embedded in the site is built from these.
       - reticulate/**
       - reticulate-bevy/**
       - reticulate-demo/**
@@ -18,19 +17,7 @@ on:
       - Cargo.lock
   pull_request:
     branches: [main]
-    paths:
-      - site/**
-      - README.md
-      - CONTRIBUTING.md
-      - LICENSE.md
-      - .github/scripts/**
-      - .github/workflows/pages.yml
-      # The Demo page is built from these.
-      - reticulate/**
-      - reticulate-bevy/**
-      - reticulate-demo/**
-      - Cargo.toml
-      - Cargo.lock
+    paths: *paths
   workflow_dispatch:
 
 permissions:
@@ -41,7 +28,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  ZOLA_VERSION: "0.23.6"
   BINARYEN_VERSION: "version_129"
   CARGO_TERM_COLOR: always
 
@@ -51,40 +37,55 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Zola
-        run: |
-          curl -sSL "https://github.com/getzola/zola/releases/download/v${ZOLA_VERSION}/zola-v${ZOLA_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
-            | tar xz -C "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
-      - name: Install wasm-bindgen and wasm-opt
+      - name: Install wasm-bindgen, wasm-opt and dx
         run: |
-          # wasm-bindgen must match the version locked in Cargo.lock.
-          wb=$(awk '/^name = "wasm-bindgen"$/ {getline; gsub(/[^0-9.]/, "", $3); print $3; exit}' Cargo.lock)
+          # wasm-bindgen and dx must match the versions locked in Cargo.lock.
+          locked() {
+            awk -v n="$1" '$0 == "name = \"" n "\"" {getline; gsub(/[^0-9.]/, "", $3); print $3; exit}' Cargo.lock
+          }
+          wb=$(locked wasm-bindgen)
+          dx=$(locked dioxus)
           curl -sSL "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/${wb}/wasm-bindgen-${wb}-x86_64-unknown-linux-musl.tar.gz" \
             | tar xz -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/wasm-bindgen-${wb}-x86_64-unknown-linux-musl" >> "$GITHUB_PATH"
           curl -sSL "https://github.com/WebAssembly/binaryen/releases/download/${BINARYEN_VERSION}/binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz" \
             | tar xz -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/binaryen-${BINARYEN_VERSION}/bin" >> "$GITHUB_PATH"
+          mkdir -p "$RUNNER_TEMP/dx"
+          curl -sSL "https://github.com/DioxusLabs/dioxus/releases/download/v${dx}/dx-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar xz -C "$RUNNER_TEMP/dx"
+          echo "$RUNNER_TEMP/dx" >> "$GITHUB_PATH"
       - name: Build the demo (wasm)
-        run: .github/scripts/build_demo.sh
-      - name: Generate pages from root markdown files
-        run: .github/scripts/prepare_site.sh
+        run: .github/scripts/build_demo.sh demo-dist
       - uses: actions/configure-pages@v5
         id: pages
         if: github.event_name != 'pull_request'
-      - name: Build
-        working-directory: site
+      - name: Set the site base path
+        # Project sites are served from a sub-path (e.g. /reticulate).
+        if: github.event_name != 'pull_request' && steps.pages.outputs.base_path != ''
         run: |
-          zola build --base-url "${{ steps.pages.outputs.base_url || 'https://example.invalid' }}"
+          base="${{ steps.pages.outputs.base_path }}"
+          sed -i "s#^\[web.app\]#[web.app]\nbase_path = \"${base#/}\"#" reticulate-docusite/Dioxus.toml
+      - name: Build the site (SSG)
+        run: dx bundle -p reticulate-docusite --release --ssg --web
+      - name: Add the demo to the site
+        run: |
+          public=target/dx/reticulate-docusite/release/web/public
+          # The demo snippet loads ./reticulate_bevy*.{js,wasm} and ./assets/
+          # relative to the page, so it must sit next to each page that embeds
+          # it: / and /readme/.
+          for dir in "$public" "$public/readme"; do
+            mkdir -p "$dir"
+            cp -r demo-dist/. "$dir"
+          done
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
-          path: site/public
+          path: target/dx/reticulate-docusite/release/web/public
 
   deploy:
     name: Deploy to GitHub Pages

@@ -28,9 +28,10 @@ pub fn to_html(markdown: &str) -> String {
         let data = &node.data.borrow_mut().value;
 
         if let NodeValue::Link(link) = data
-            && link.url == DEMO_URL {
-                demo_targets.push(node);
-            }
+            && link.url == DEMO_URL
+        {
+            demo_targets.push(node);
+        }
     }
 
     for target in demo_targets {
