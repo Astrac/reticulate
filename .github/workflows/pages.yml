@@ -64,14 +64,10 @@ jobs:
       - uses: actions/configure-pages@v5
         id: pages
         if: github.event_name != 'pull_request'
-      - name: Set the site base path
-        # Project sites are served from a sub-path (e.g. /reticulate).
-        if: github.event_name != 'pull_request' && steps.pages.outputs.base_path != ''
-        run: |
-          base="${{ steps.pages.outputs.base_path }}"
-          sed -i "s#^\[web.app\]#[web.app]\nbase_path = \"${base#/}\"#" reticulate-docusite/Dioxus.toml
       - name: Build the site (SSG)
-        run: .github/scripts/build_site.sh "$(sed -n 's/^base_path = "\(.*\)"/\1/p' reticulate-docusite/Dioxus.toml)"
+        # Project sites are served from a sub-path (e.g. /reticulate); the
+        # script sets it as the app's base_path. Empty on PR builds.
+        run: .github/scripts/build_site.sh "${{ steps.pages.outputs.base_path }}"
       - name: Add the demo to the site
         run: |
           public=target/dx/reticulate-docusite/release/web/public
