@@ -71,7 +71,7 @@ jobs:
           base="${{ steps.pages.outputs.base_path }}"
           sed -i "s#^\[web.app\]#[web.app]\nbase_path = \"${base#/}\"#" reticulate-docusite/Dioxus.toml
       - name: Build the site (SSG)
-        run: dx build -p reticulate-docusite --release --ssg --verbose --trace
+        run: .github/scripts/build_site.sh "$(sed -n 's/^base_path = "\(.*\)"/\1/p' reticulate-docusite/Dioxus.toml)"
       - name: Add the demo to the site
         run: |
           public=target/dx/reticulate-docusite/release/web/public
