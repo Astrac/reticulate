@@ -71,7 +71,12 @@ jobs:
           base="${{ steps.pages.outputs.base_path }}"
           sed -i "s#^\[web.app\]#[web.app]\nbase_path = \"${base#/}\"#" reticulate-docusite/Dioxus.toml
       - name: Build the site (SSG)
-        run: dx bundle -p reticulate-docusite --release --ssg --web
+        # dx starts the server on IP:PORT and pre-renders every static route
+        # into the public dir (index.html, readme/, license/).
+        env:
+          IP: "127.0.0.1"
+          PORT: "9991"
+        run: dx build -p reticulate-docusite --release --ssg
       - name: Add the demo to the site
         run: |
           public=target/dx/reticulate-docusite/release/web/public
