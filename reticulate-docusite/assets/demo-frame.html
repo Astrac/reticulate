@@ -3,23 +3,45 @@
 <script type="module">
   const status = document.getElementById("demo-status");
   const frame = document.getElementById("demo-frame");
+  let demoLoaded = false;
 
-  if (!("gpu" in navigator)) {
-    status.textContent = "WebGPU is not available in this browser, so the demo cannot run.";
-    status.classList.remove("demo-loading");
-    status.classList.add("demo-error");
-  } else {
+  const observer = new IntersectionObserver((entries, observerInstance) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        loadDemo();
+        observerInstance.unobserve(entry.target);
+      }
+    });
+  }, {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.1,
+  });
+
+  observer.observe(frame);
+
+  async function loadDemo() {
+    console.log("Loading demo!");
+    if (demoLoaded) return;
+    demoLoaded = true;
+
+    if (!("gpu" in navigator)) {
+      status.textContent = "WebGPU is not available in this browser, so the demo cannot run.";
+      status.classList.remove("demo-loading");
+      status.classList.add("demo-error");
+      status.hidden = false;
+      return;
+    }
+
     try {
       const { default: init } = await import("./reticulate_bevy.js");
       await init({ module_or_path: "./reticulate_bevy_bg.wasm" });
+      status.hidden = true;
     } catch (e) {
       status.textContent = "Failed to start the demo: " + e;
       status.classList.remove("demo-loading");
       status.classList.add("demo-error");
-      frame.hidden = true;
-      console.dir(e);
+      status.hidden = false;
     }
-
-    status.hidden = true;
   }
 </script>

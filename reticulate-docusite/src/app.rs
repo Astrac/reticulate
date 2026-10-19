@@ -27,8 +27,7 @@ pub fn App() -> Element {
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         document::Link { rel: "stylesheet", href: THEME_CSS }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
-        document::Link { rel: "stylesheet", href: "https://fontlibrary.org" }
-
+        document::Link { rel: "stylesheet", href: "https://fontlibrary.org/face/fantasque-sans-mono", type: "text/css" }
 
         Router::<Route> {}
     }
