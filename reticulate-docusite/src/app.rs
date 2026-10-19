@@ -27,7 +27,7 @@ pub fn App() -> Element {
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         document::Link { rel: "stylesheet", href: THEME_CSS }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
-        document::Link { rel: "stylesheet", href: "https://fontlibrary.org/face/fantasque-sans-mono", type: "text/css" }
+        document::Link { rel: "stylesheet", href: "https://esm.sh/@_fg/font@0.5.0/main.css" }
 
         Router::<Route> {}
     }

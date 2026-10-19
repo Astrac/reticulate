@@ -5,6 +5,8 @@ use bevy::{
     prelude::*,
 };
 
+const OVERLAY_FONT_SIZE: f32 = 13.0;
+
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
@@ -46,10 +48,10 @@ fn spawn_text(mut commands: Commands, free_camera_query: Query<&FreeCamera>) {
             left: px(12),
             ..default()
         },
-        children![Text::new(format!(
-            "{}",
-            free_camera_query.single().unwrap(),
-        ))],
+        children![(
+            Text::new(format!("{}", free_camera_query.single().unwrap(),)),
+            TextFont::default().with_font_size(OVERLAY_FONT_SIZE)
+        )],
     ));
     commands.spawn((
         Node {
@@ -58,13 +60,18 @@ fn spawn_text(mut commands: Commands, free_camera_query: Query<&FreeCamera>) {
             left: px(12),
             ..default()
         },
-        children![Text::new(concat![
-            "Z/X: decrease/increase sensitivity\n",
-            "C/V: decrease/increase friction\n",
-            "F/G: decrease/increase scroll factor\n",
-            "B: enable/disable controller\n",
-            "T: world/local vertical movement"
-        ]),],
+        children![(
+            Text::new(concat![
+                "Z/X: decrease/increase sensitivity\n",
+                "C/V: decrease/increase friction\n",
+                "F/G: decrease/increase scroll factor\n",
+                "B: enable/disable controller\n",
+                "T: world/local vertical movement\n",
+                "Enter: Next demo\n",
+                "Tab: Loop triangles/shaded views\n",
+            ]),
+            TextFont::default().with_font_size(OVERLAY_FONT_SIZE)
+        ),],
     ));
 
     // Mutable text marked with component
@@ -75,7 +82,11 @@ fn spawn_text(mut commands: Commands, free_camera_query: Query<&FreeCamera>) {
             right: px(12),
             ..default()
         },
-        children![(InfoText, Text::new(""))],
+        children![(
+            InfoText,
+            Text::new(""),
+            TextFont::default().with_font_size(OVERLAY_FONT_SIZE)
+        )],
     ));
 }
 
