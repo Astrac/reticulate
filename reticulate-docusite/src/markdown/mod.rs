@@ -5,7 +5,7 @@ pub use toc_link::TocLink;
 use comrak::nodes::NodeValue;
 use comrak::{Arena, Options, format_html, parse_document};
 
-const DEMO_URL: &str = "https://astrac.github.io/reticulate/readme#demo";
+const DEMO_URL: &str = "https://reticulate.astrac.me/#demo";
 const DEMO_HTML: &str = include_str!("../../assets/demo-frame.html");
 
 pub fn page_options<'a>() -> Options<'a> {

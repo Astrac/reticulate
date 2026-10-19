@@ -70,7 +70,7 @@ To run the bevy demo of the mesher run the following command:
 cargo -p reticulate-bevy run --profile release
 ```
 
-[Live on WebGPU](https://astrac.github.io/reticulate/readme#demo)
+[Live on WebGPU](https://reticulate.astrac.me/#demo)
 
 # Definitions
 

@@ -65,9 +65,7 @@ jobs:
         id: pages
         if: github.event_name != 'pull_request'
       - name: Build the site (SSG)
-        # Project sites are served from a sub-path (e.g. /reticulate); the
-        # script sets it as the app's base_path. Empty on PR builds.
-        run: .github/scripts/build_site.sh "${{ steps.pages.outputs.base_path }}"
+        run: .github/scripts/build_site.sh
       - name: Add the demo to the site
         run: |
           public=target/dx/reticulate-docusite/release/web/public
