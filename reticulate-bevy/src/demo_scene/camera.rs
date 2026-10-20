@@ -7,10 +7,17 @@ use bevy::{
 
 const OVERLAY_FONT_SIZE: f32 = 13.0;
 
+#[derive(Clone, Component, Copy)]
+struct CameraOverlay;
+
+#[derive(Clone, Copy, Resource)]
+struct CameraOverlayShowing(bool);
+
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(FreeCameraPlugin)
+            .insert_resource(CameraOverlayShowing(true))
             .add_systems(Startup, spawn_camera);
     }
 }
@@ -32,7 +39,7 @@ fn spawn_camera(mut commands: Commands) {
 pub struct CameraSettingsPlugin;
 impl Plugin for CameraSettingsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PostStartup, spawn_text)
+        app.add_systems(PostStartup, spawn_text_system)
             .add_systems(Update, (update_camera_settings, update_text));
     }
 }
@@ -40,7 +47,11 @@ impl Plugin for CameraSettingsPlugin {
 #[derive(Component)]
 pub struct InfoText;
 
-fn spawn_text(mut commands: Commands, free_camera_query: Query<&FreeCamera>) {
+fn spawn_text_system(commands: Commands, free_camera: Query<&FreeCamera>) {
+    spawn_text(commands, free_camera.single().unwrap());
+}
+
+fn spawn_text(mut commands: Commands, free_camera: &FreeCamera) {
     commands.spawn((
         Node {
             position_type: PositionType::Absolute,
@@ -49,14 +60,15 @@ fn spawn_text(mut commands: Commands, free_camera_query: Query<&FreeCamera>) {
             ..default()
         },
         children![(
-            Text::new(format!("{}", free_camera_query.single().unwrap(),)),
-            TextFont::default().with_font_size(OVERLAY_FONT_SIZE)
+            Text::new(format!("{}", free_camera)),
+            TextFont::default().with_font_size(OVERLAY_FONT_SIZE),
         )],
+        CameraOverlay,
     ));
     commands.spawn((
         Node {
             position_type: PositionType::Absolute,
-            bottom: px(12),
+            bottom: px(8),
             left: px(12),
             ..default()
         },
@@ -69,9 +81,11 @@ fn spawn_text(mut commands: Commands, free_camera_query: Query<&FreeCamera>) {
                 "T: world/local vertical movement\n",
                 "Enter: Next demo\n",
                 "Tab: Loop triangles/shaded views\n",
+                "/: Enable/Disable camera overlay",
             ]),
-            TextFont::default().with_font_size(OVERLAY_FONT_SIZE)
-        ),],
+            TextFont::default().with_font_size(OVERLAY_FONT_SIZE),
+        )],
+        CameraOverlay,
     ));
 
     // Mutable text marked with component
@@ -85,13 +99,17 @@ fn spawn_text(mut commands: Commands, free_camera_query: Query<&FreeCamera>) {
         children![(
             InfoText,
             Text::new(""),
-            TextFont::default().with_font_size(OVERLAY_FONT_SIZE)
+            TextFont::default().with_font_size(OVERLAY_FONT_SIZE),
         )],
+        CameraOverlay,
     ));
 }
 
 fn update_camera_settings(
+    mut commands: Commands,
     mut camera_query: Query<(&mut FreeCamera, &mut FreeCameraState)>,
+    overlay_query: Query<Entity, With<CameraOverlay>>,
+    mut overlay_showing: ResMut<CameraOverlayShowing>,
     input: Res<ButtonInput<KeyCode>>,
 ) {
     let (mut free_camera, mut free_camera_state) = camera_query.single_mut().unwrap();
@@ -123,24 +141,35 @@ fn update_camera_settings(
             VerticalMovementAxis::Local => VerticalMovementAxis::World,
         };
     }
+    if input.just_pressed(KeyCode::Slash) {
+        if overlay_showing.0 {
+            for o in overlay_query {
+                commands.entity(o).despawn();
+            }
+        } else {
+            spawn_text(commands, camera_query.single().unwrap().0);
+        }
+
+        overlay_showing.0 = !overlay_showing.0;
+    }
 }
 
 fn update_text(
     mut text_query: Query<&mut Text, With<InfoText>>,
     camera_query: Query<(&FreeCamera, &FreeCameraState)>,
 ) {
-    let mut text = text_query.single_mut().unwrap();
+    if let Ok(mut text) = text_query.single_mut() {
+        let (free_camera, free_camera_state) = camera_query.single().unwrap();
 
-    let (free_camera, free_camera_state) = camera_query.single().unwrap();
-
-    text.0 = format!(
-        "Enabled: {},\nSensitivity: {:.03}\nFriction: {:.01}\nScroll factor: {:.02}\nWalk Speed: {:.02}\nRun Speed: {:.02}\nSpeed: {:.02}",
-        free_camera_state.enabled,
-        free_camera.sensitivity,
-        free_camera.friction,
-        free_camera.scroll_factor,
-        free_camera.walk_speed * free_camera_state.speed_multiplier,
-        free_camera.run_speed * free_camera_state.speed_multiplier,
-        free_camera_state.velocity.length(),
-    );
+        text.0 = format!(
+            "Enabled: {},\nSensitivity: {:.03}\nFriction: {:.01}\nScroll factor: {:.02}\nWalk Speed: {:.02}\nRun Speed: {:.02}\nSpeed: {:.02}",
+            free_camera_state.enabled,
+            free_camera.sensitivity,
+            free_camera.friction,
+            free_camera.scroll_factor,
+            free_camera.walk_speed * free_camera_state.speed_multiplier,
+            free_camera.run_speed * free_camera_state.speed_multiplier,
+            free_camera_state.velocity.length(),
+        );
+    }
 }

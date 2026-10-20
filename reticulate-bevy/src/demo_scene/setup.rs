@@ -25,7 +25,7 @@ pub fn setup(mut commands: Commands) {
 
     commands.insert_resource(GlobalAmbientLight {
         color: light_color,
-        brightness: 100.4,
+        brightness: 500.0,
         affects_lightmapped_meshes: true,
     });
 }
